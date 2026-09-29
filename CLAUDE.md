@@ -110,6 +110,12 @@ Steps 1-6 were done in Sep 2026 (see Status). Notes from doing them:
 - `details.more` CSS is still used (the collapsible "Game log" on player season cards), and `rankOf()` is still used (team rank in the player card). Both were kept. `spark()`, `when`, `rollingRatio()` and 29 unused CSS classes were removed; the page renders pixel-identical before and after.
 - GitHub pauses scheduled workflows after 60 days without repo activity; the workflow re-enables itself via the API after each scheduled deploy.
 
+Season changeover (checked Sep 29, 2026):
+- `club-schedule-season/DAL/now` is a 307 redirect to the current season (requests follows it). It already reports 20262027; the builder falls back to `previousSeason` until the first *regular-season* game is final (preseason games are ignored). 2026-27 opens Fri Oct 2 vs STL and has **84 games**, not 82 (the static trend PNG in `stars_viz.py` still paces to 82 points games; the page doesn't show pace).
+- The page shows one season at a time: when 2026-27 starts, 2025-26 disappears from the page (its data stays in `.nhl_cache/`).
+- Game 1 of a season: every player's score equals his season average, so the quadrant's y values are all 0 and every table delta reads "even". Deltas become meaningful from game 2 and settle after ~10 games. The owner hasn't asked to change this.
+- Games are cached for good only at gameState `OFF` (official), not `FINAL` (just ended), so post-game stat corrections are picked up.
+
 Original checklist:
 
 1. **Run against the live API.** `python build_dashboard.py --season 20252026`, then `--season now` once the 2026-27 season starts. Fix any schema mismatches. Watch for: games where `right-rail` 404s, players traded mid-season (not on the roster endpoint, so they fall back to boxscore names), missing `faceoffWinningPctg`, shootout plays (period 5) and playoff games (gameType 3, excluded from the regular-season list).
