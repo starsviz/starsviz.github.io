@@ -259,13 +259,11 @@ ul.wts b { text-align: right; color: var(--ink); }
 .swipe { display: none; font-size: 12px; color: var(--muted); margin: 0 0 4px; text-align: right; }
 @media (max-width: 700px) {
   .rank-tbl .full { display: none; } .rank-tbl .short { display: inline; }
-  .scorecell { grid-template-columns: 1.9em auto; gap: 6px; } .scorecell .scbar { display: none; }
+  .scorecell { grid-template-columns: 1.9em auto; gap: 6px; }
   .swipe { display: block; }
 }
-.scorecell { display: grid; grid-template-columns: 2.1em 64px auto; gap: 8px; align-items: center; }
+.scorecell { display: grid; grid-template-columns: 2.1em auto; gap: 8px; align-items: center; }
 .scv { font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1; }
-.scbar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
-.scbar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); } .scbar i.D { background: var(--defc); }
 .scorecell .dv { margin-top: 0; justify-self: start; }
 footer { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 0 28px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
 @media (prefers-reduced-motion: reduce) { .chips { scroll-behavior: auto; } }
@@ -436,10 +434,11 @@ function statCell(r, c) {
   return `<td title="${esc(c.title)}: ${fmt(v)} this game, ${avgTxt} season average"><span class="cv">${fmt(v)}</span><span class="dv ${tier}">${txt}</span></td>`;
 }
 function scoreCell(r) {
-  const sc = Math.round(r.l.score), d = r.l.dScore;
-  const t = Math.abs(d) < 5 ? "flat" : (d > 0 ? "up" : "down") + (Math.abs(d) >= 15 ? " s2" : "");
-  return `<div class="scorecell" title="Player score ${sc}; his season average is ${Math.round(r.s.avgScore)}"><span class="scv num">${sc}</span>
-    <span class="scbar" aria-hidden="true"><i class="${r.grp}" style="width:${sc}%"></i></span><span class="dv ${t}">${Math.round(d) === 0 ? "even" : (d > 0 ? "▲" : "▼") + Math.abs(d).toFixed(0)}</span></div>`;
+  // change vs. his season-average score, as a percentage of that average
+  const sc = Math.round(r.l.score), avg = r.s.avgScore, pc = avg > 0 ? Math.round(r.l.dScore / avg * 100) : 0;
+  const t = Math.abs(pc) < 10 ? "flat" : (pc > 0 ? "up" : "down") + (Math.abs(pc) >= 30 ? " s2" : "");
+  return `<div class="scorecell" title="Player score ${sc}; his season average is ${Math.round(avg)}"><span class="scv num">${sc}</span>
+    <span class="dv ${t}">${pc === 0 ? "even" : (pc > 0 ? "▲" : "▼") + Math.abs(pc) + "%"}</span></div>`;
 }
 function rankTable(rows, grp, g) {
   const cols = STATCOLS.filter(c => !c.fOnly || (grp === "F" && rows.some(r => r.l.fo != null)));
