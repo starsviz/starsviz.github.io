@@ -192,3 +192,68 @@ def test_quadrant_pinch_on_phone(browser, built_page):
     page.wait_for_selector(".sheet")
     assert errors == []
     ctx.close()
+
+
+def axis_labels(page):
+    return page.eval_on_selector_all("#quad .axis text", "ts => ts.map(t => t.textContent)")
+
+
+def test_quadrant_pan_by_scrolling(browser, built_page):
+    """Zoomed in, a trackpad/wheel scroll over the chart moves the view; at the chart's edge the page scrolls."""
+    page, errors = open_page(browser, built_page)
+    page.locator("#quad").scroll_into_view_if_needed()
+    page.click('[data-z="in"]')
+    page.click('[data-z="in"]')
+    assert page.locator(".zhint").is_visible()
+    box = page.locator("#quad svg").bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    y0, ticks0 = page.evaluate("scrollY"), axis_labels(page)
+    page.mouse.wheel(120, 0)  # sideways
+    page.wait_for_timeout(80)
+    ticks1 = axis_labels(page)
+    assert ticks1 != ticks0 and page.evaluate("scrollY") == y0, "sideways scroll pans the chart, page stays put"
+    page.mouse.wheel(0, 80)  # down
+    page.wait_for_timeout(80)
+    assert axis_labels(page) != ticks1 and page.evaluate("scrollY") == y0, "downward scroll pans the chart"
+    for _ in range(30):  # keep going: once the chart's bottom edge is reached, the page takes over
+        page.mouse.wheel(0, 200)
+        page.wait_for_timeout(20)
+    assert page.evaluate("scrollY") > y0, "at the edge, scrolling goes back to the page"
+    assert errors == []
+    page.close()
+
+
+def test_quadrant_pan_by_dragging_on_phone(browser, built_page):
+    """Zoomed in on a phone, one finger drags the view around; a tap still opens a player card."""
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
+    page.goto(built_page.as_uri())
+    page.wait_for_selector("#quad svg")
+    page.locator("#quad").scroll_into_view_if_needed()
+    page.locator('[data-z="in"]').tap()
+    page.locator('[data-z="in"]').tap()
+    box = page.locator("#quad svg").bounding_box()
+    cx, cy = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    y0, ticks0 = page.evaluate("scrollY"), axis_labels(page)
+    cdp = ctx.new_cdp_session(page)
+
+    def touch(kind, pts):
+        cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": [{"x": x, "y": y, "id": i} for i, (x, y) in enumerate(pts)]})
+
+    touch("touchStart", [(cx, cy)])
+    for k in range(1, 11):
+        touch("touchMove", [(cx - 8 * k, cy - 6 * k)])
+        page.wait_for_timeout(15)
+    touch("touchEnd", [])
+    page.wait_for_timeout(150)
+    assert axis_labels(page) != ticks0, "the view moved"
+    assert page.evaluate("scrollY") == y0, "the page didn't scroll"
+    assert page.locator(".sheet").count() == 0, "a drag isn't a tap"
+    dot = page.locator("#quad .qd").first.bounding_box()
+    page.touchscreen.tap(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2)
+    page.wait_for_selector(".sheet")
+    assert errors == []
+    ctx.close()

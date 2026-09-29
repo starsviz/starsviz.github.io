@@ -241,7 +241,9 @@ td.hot { font-weight: 700; }
 .dlab { fill: var(--ink); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
 /* chart zoom: the chart takes two-finger pinches; one finger still scrolls the page */
 svg.zoomable { touch-action: pan-y; -webkit-user-select: none; user-select: none; }
-svg.zoomable.zoomed { cursor: grab; } svg.zoomable.zoomed:active { cursor: grabbing; }
+/* zoomed in, a finger on the chart moves the chart (the page still scrolls from outside it) */
+svg.zoomable.zoomed { touch-action: none; cursor: grab; } svg.zoomable.zoomed:active { cursor: grabbing; }
+.zoom .zhint { align-self: center; font-size: 12px; color: var(--muted); margin-right: 4px; }
 .zoom { margin-left: auto; display: inline-flex; gap: 4px; }
 .zoom button { min-width: 30px; height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; font-size: 17px; line-height: 1; }
 .zoom button.zr { font-size: 12.5px; font-weight: 600; }
@@ -537,7 +539,7 @@ function quadChart(el, rows, g, zoomUi) {
     });
     setHl(hlPid);
     svg.classList.toggle("zoomed", !isFull());
-    if (zoomUi) { zoomUi.querySelector('[data-z="reset"]').hidden = isFull(); zoomUi.querySelector('[data-z="out"]').disabled = isFull();
+    if (zoomUi) { zoomUi.querySelector('[data-z="reset"]').hidden = zoomUi.querySelector(".zhint").hidden = isFull(); zoomUi.querySelector('[data-z="out"]').disabled = isFull();
       zoomUi.querySelector('[data-z="in"]').disabled = v.x1 - v.x0 <= (FULL.x1 - FULL.x0) * MIN_FRAC + 1e-6; }
   }
 
@@ -570,8 +572,9 @@ function quadChart(el, rows, g, zoomUi) {
       const [a, b] = [...ptrs.values()];
       pinch = { from: { ...v }, d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
       drag = null; gestured = true; hideTip();
-    } else if (evt.pointerType === "mouse" && evt.button === 0 && !isFull()) {
+    } else if (ptrs.size === 1 && evt.button === 0 && !isFull()) {  // zoomed in: one finger or the mouse moves the view
       drag = { from: { ...v }, x: ptrs.get(evt.pointerId).x, y: ptrs.get(evt.pointerId).y, moved: false };
+      svg.setPointerCapture?.(evt.pointerId);
     }
   });
   svg.addEventListener("pointermove", evt => {
@@ -582,7 +585,7 @@ function quadChart(el, rows, g, zoomUi) {
     }
     if (drag && evt.buttons & 1) {
       const p = ptrs.get(evt.pointerId), dx = p.x - drag.x, dy = p.y - drag.y;
-      if (Math.hypot(dx, dy) > 3) { drag.moved = gestured = true; hideTip(); }
+      if (Math.hypot(dx, dy) > (evt.pointerType === "mouse" ? 3 : 6)) { drag.moved = gestured = true; hideTip(); setHl(null); }
       if (drag.moved) { v = zoomed(drag.from, 1, m.l, m.t, dx, dy); redraw(); return; }
     }
     hover(evt);
@@ -592,9 +595,19 @@ function quadChart(el, rows, g, zoomUi) {
   svg.addEventListener("pointerleave", evt => { lift(evt); hideTip(); setHl(null); });
   // trackpad pinch arrives as ctrl+wheel in Chrome, Edge and Firefox; plain scrolling still scrolls the page
   svg.addEventListener("wheel", evt => {
-    if (!evt.ctrlKey) return;
-    evt.preventDefault(); hideTip();
-    const p = toChart(evt); v = zoomed(v, Math.exp(-evt.deltaY * .01), p.x, p.y); redraw();
+    if (evt.ctrlKey) {
+      evt.preventDefault(); hideTip();
+      const p = toChart(evt); v = zoomed(v, Math.exp(-evt.deltaY * .01), p.x, p.y); redraw(); return;
+    }
+    // zoomed in, scrolling (trackpad or wheel) moves the view; at the edge it goes back to scrolling the page
+    if (isFull()) return;
+    const unit = evt.deltaMode === 1 ? 16 : evt.deltaMode === 2 ? ph : 1;
+    let dx = evt.deltaX * unit, dy = evt.deltaY * unit;
+    if (evt.shiftKey && !dx) { dx = dy; dy = 0; }
+    const next = zoomed(v, 1, m.l, m.t, -dx, -dy), moved = Math.abs(dy) >= Math.abs(dx)
+      ? Math.abs(next.y0 - v.y0) > 1e-9 : Math.abs(next.x0 - v.x0) > 1e-9;
+    if (!moved) return;
+    evt.preventDefault(); hideTip(); v = next; redraw();
   }, { passive: false });
   // Safari: trackpad pinch on Mac, and blocks the page zoom that iOS would otherwise do for a pinch on the chart
   let g0 = null;
@@ -1016,7 +1029,7 @@ function renderGame() {
       <div class="legend"><span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="5.5" class="dot-f"/></svg>Forward</span>
         <span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><rect x="-5" y="-5" width="10" height="10" rx="2" class="dot-d"/></svg>Defenseman</span>
         <span class="k">Tap a dot for his night</span>
-        <span class="zoom" id="quadzoom" role="group" aria-label="Zoom the chart"><button data-z="out" aria-label="Zoom out" title="Zoom out">−</button><button data-z="in" aria-label="Zoom in" title="Zoom in (or pinch the chart)">+</button><button data-z="reset" class="zr" hidden>Reset</button></span></div>
+        <span class="zoom" id="quadzoom" role="group" aria-label="Zoom the chart"><span class="zhint" hidden>Drag or scroll to look around</span><button data-z="out" aria-label="Zoom out" title="Zoom out">−</button><button data-z="in" aria-label="Zoom in" title="Zoom in (or pinch the chart)">+</button><button data-z="reset" class="zr" hidden>Reset</button></span></div>
       ${howItWorks()}
     </div>
     ${fw.length ? `<div class="card"><p class="chapter-label">Forwards · ranked by player score</p>
