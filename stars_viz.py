@@ -43,7 +43,8 @@ except ImportError:  # only needed when fetching
 
 WEB = "https://api-web.nhle.com/v1"
 STATS = "https://api.nhle.com/stats/rest/en"
-FINAL_STATES = ("FINAL", "OFF")
+FINAL_STATES = ("FINAL", "OFF")   # game over (FINAL = just ended, OFF = stats made official)
+OFFICIAL = "OFF"                  # only then is a game cached for good; FINAL stats can still be corrected
 
 # ---- palette (validated: team green vs neutral gray passes CVD + contrast) ----
 TEAM_COLOR = "#00754a"     # Stars green, stepped to clear the chroma floor
@@ -91,8 +92,11 @@ def url_team_report(report: str, team_id: int, season: int) -> str:
 
 
 class Api:
-    """Tiny cached client. Finished games are cached for good; everything
-    else refreshes after `ttl` seconds. --offline reads only from cache."""
+    """Tiny cached client. Games whose stats are official are cached for good;
+    everything else refreshes after `ttl` seconds. --offline reads only from cache.
+    `final_only_cache`: keep for good once the response itself says the game is OFF.
+    `official`: the caller already knows the game is OFF (for responses without a
+    gameState, like right-rail)."""
 
     def __init__(self, cache_dir: Path, offline: bool = False, ttl: int = 1800):
         self.dir = Path(cache_dir)
@@ -103,12 +107,12 @@ class Api:
     def _path(self, url: str) -> Path:
         return self.dir / (hashlib.sha1(url.encode()).hexdigest()[:20] + ".json")
 
-    def get(self, url: str, final_only_cache: bool = False) -> dict:
+    def get(self, url: str, final_only_cache: bool = False, official: bool = False) -> dict:
         path = self._path(url)
         if path.exists():
             data = json.loads(path.read_text())
             fresh = time.time() - path.stat().st_mtime < self.ttl
-            done = final_only_cache and data.get("gameState") in FINAL_STATES
+            done = official or (final_only_cache and data.get("gameState") == OFFICIAL)
             if self.offline or fresh or done:
                 return data
         if self.offline:
@@ -817,7 +821,7 @@ def run_game(api, args, out):
     box = api.get(url_game(gid, "boxscore"), final_only_cache=True)
     pbp = api.get(url_game(gid, "play-by-play"), final_only_cache=True)
     try:
-        rail = api.get(url_game(gid, "right-rail"), final_only_cache=True)
+        rail = api.get(url_game(gid, "right-rail"), official=box.get("gameState") == OFFICIAL)
     except Exception:
         rail = {}
     if box.get("gameState") not in FINAL_STATES:

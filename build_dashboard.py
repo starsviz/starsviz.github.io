@@ -81,7 +81,7 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
         box = api.get(sv.url_game(gid, "boxscore"), final_only_cache=True)
         pbp = api.get(sv.url_game(gid, "play-by-play"), final_only_cache=True)
         try:
-            rail = api.get(sv.url_game(gid, "right-rail"), final_only_cache=True)
+            rail = api.get(sv.url_game(gid, "right-rail"), official=box.get("gameState") == sv.OFFICIAL)
         except Exception:
             rail = {}
         g = sv.parse_game(box, pbp, rail, team)

@@ -662,11 +662,11 @@ window.addEventListener("scroll", hideTip, { passive: true });
 const NS = "http://www.w3.org/2000/svg";
 let clipSeq = 0;
 function niceTicks(lo, hi, count = 4) {
-  if (lo === hi) { lo -= 1; hi += 1; }
+  if (!(hi - lo > 1e-9)) { lo -= 1; hi += 1; }  // equal up to rounding (e.g. a 3-game average vs. a 3-game season)
   const span = hi - lo, raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
   const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= count + .5);
   const t = [], top = Math.ceil(hi / step - 1e-9) * step;
-  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= top + 1e-9; v += step) t.push(+v.toFixed(10));
+  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= top + 1e-9 && t.length < 100; v += step) t.push(+v.toFixed(10));
   return { ticks: t, lo: Math.min(lo, t[0]), hi: Math.max(hi, t[t.length - 1]) };
 }
 function monthTicks(ns) {
@@ -702,7 +702,7 @@ function chart(el, o) {
   if (!vals.length) vals = [0, 1];
   let lo = o.yDomain ? o.yDomain[0] : Math.min(...vals), hi = o.yDomain ? o.yDomain[1] : Math.max(...vals);
   if (!o.yDomain) {
-    const pad = (hi - lo) * .08 || 1; lo = o.bars || o.zeroBase ? Math.min(0, lo) : lo - pad; hi += pad;
+    const pad = hi - lo > 1e-9 ? (hi - lo) * .08 : 1; lo = o.bars || o.zeroBase ? Math.min(0, lo) : lo - pad; hi += pad;
     if (o.symmetric) { const a = Math.max(Math.abs(lo), Math.abs(hi)); lo = -a; hi = a; }
   }
   const nt = niceTicks(lo, hi, o.ticks || 4); if (!o.yDomain) { lo = nt.lo; hi = nt.hi; }

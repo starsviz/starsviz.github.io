@@ -87,3 +87,33 @@ def test_every_game_renders_and_score_scale(browser, sample_page):
         assert 48 <= statistics.mean(vals) <= 52, (grp, statistics.mean(vals))
         assert 12.5 <= statistics.pstdev(vals) <= 16, (grp, statistics.pstdev(vals))
     page.close()
+
+
+def page_with_first_games(src, n, out):
+    """Copy of a built page keeping only its first n games: what the site shows early in a season."""
+    import json
+    import re
+
+    html = src.read_text(encoding="utf-8")
+    m = re.search(r'<script id="data" type="application/json">(.*?)</script>', html, re.S)
+    data = json.loads(m.group(1).replace("<\\/", "</"))
+    data["games"] = data["games"][:n]
+    blob = json.dumps(data, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
+    out.write_text(html[:m.start(1)] + blob + html[m.end(1):], encoding="utf-8")
+    return out
+
+
+@pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 82])
+def test_every_player_card_opens(browser, sample_page, tmp_path, n):
+    """Open each player's card, season and one-game views, with only n games played.
+    Early-season data once hung a chart axis (a 3-game average equal to a 3-game season)."""
+    path = sample_page if n == 82 else page_with_first_games(sample_page, n, tmp_path / f"first{n}.html")
+    page, errors = open_page(browser, path)
+    for pid in page.eval_on_selector_all("tr[data-pid]", "rs => rs.map(r => r.dataset.pid)"):
+        page.locator(f'tr[data-pid="{pid}"] .linkish').click()
+        page.wait_for_selector(".sheet")
+        page.locator('#scopeseg button[data-k="season"]').click()
+        page.locator('#scopeseg button[data-k="game"]').click()
+        page.keyboard.press("Escape")
+        assert errors == [], (n, pid, errors)
+    page.close()

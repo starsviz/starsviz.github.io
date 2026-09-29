@@ -142,3 +142,37 @@ def test_fragment_has_no_wrapper(sample_cache, tmp_path):
     html = out.read_text(encoding="utf-8")
     assert html.startswith("<title>") and "<head>" not in html and "<body>" not in html
     assert '<script id="data"' in html
+
+
+def test_cache_keeps_only_official_games(tmp_path, monkeypatch):
+    """A game fetched right at the horn (FINAL) is re-fetched until its stats are official (OFF)."""
+    import os
+    import time
+
+    api = sv.Api(tmp_path, ttl=60)
+    calls = []
+
+    class Resp:
+        def __init__(self, data): self.data = data
+        def raise_for_status(self): pass
+        def json(self): return self.data
+
+    states = iter(["FINAL", "OFF", "OFF"])
+    monkeypatch.setattr(sv.requests, "get", lambda url, **kw: calls.append(url) or Resp({"gameState": next(states)}))
+    monkeypatch.setattr(sv.time, "sleep", lambda s: None)
+    url = sv.url_game(1, "boxscore")
+    age = lambda: os.utime(api._path(url), (time.time() - 3600,) * 2)  # pretend the saved copy is an hour old
+
+    assert api.get(url, final_only_cache=True)["gameState"] == "FINAL"
+    age()
+    assert api.get(url, final_only_cache=True)["gameState"] == "OFF"   # re-fetched: FINAL isn't kept
+    age()
+    assert api.get(url, final_only_cache=True)["gameState"] == "OFF"   # kept for good now
+    assert len(calls) == 2
+
+    rail = sv.url_game(1, "right-rail")
+    monkeypatch.setattr(sv.requests, "get", lambda url, **kw: calls.append(url) or Resp({"teamGameStats": []}))
+    api.get(rail, official=True)
+    os.utime(api._path(rail), (time.time() - 3600,) * 2)
+    api.get(rail, official=True)
+    assert calls.count(rail) == 1, "right-rail of an official game isn't re-fetched"
