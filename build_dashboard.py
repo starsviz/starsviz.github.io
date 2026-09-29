@@ -271,6 +271,7 @@ def main(argv=None):
 
     api = sv.Api(Path(args.cache), offline=args.offline)
     data = build_data(api, args.team.upper(), args.season, args.color, args.credit, sample=args.sample)
+    data["meta"]["siteUrl"] = args.site_url.rstrip("/") + "/" if args.site_url else ""  # printed on share images
     out = render(data, Path(args.template), Path(args.out), fragment=args.fragment, site_url=args.site_url)
     kb = out.stat().st_size / 1024
     print(f"Dashboard: {out}  ({len(data['games'])} games, {len(data['players'])} players, {kb:.0f} KB)")

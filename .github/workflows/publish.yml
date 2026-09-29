@@ -44,7 +44,7 @@ jobs:
       - name: Install
         run: |
           pip install -r requirements-dev.txt
-          python -m playwright install --with-deps chromium
+          python -m playwright install --with-deps chromium webkit   # webkit = Safari's engine (iPhones)
 
       # Finished games never change, so keep the downloaded NHL data between runs.
       # Each run saves a fresh copy; the newest one is restored next time.
@@ -70,7 +70,7 @@ jobs:
           python tools/make_share_image.py _site/index.html _site/og-image.png
 
       - name: Smoke-test the real page
-        run: python -m pytest -q tests/test_browser.py --page _site/index.html -k "loads_and_draws or player_card"
+        run: python -m pytest -q tests/test_browser.py --page _site/index.html -k "loads_and_draws or player_card or share_game or share_player or safari"
 
       - uses: actions/upload-pages-artifact@v3
         with:

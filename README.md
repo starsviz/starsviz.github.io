@@ -7,6 +7,7 @@ Dallas Stars data tools built on the NHL's free public API:
    - A quadrant chart plots each player's score against his own season average: big night, better than usual, below his usual, off night.
    - Forwards and defensemen are ranked by score, with every stat color-coded against that player's season average. Goalies follow.
    - Tap any player for his card: score trend, production, role and shot profile, or switch to **One game** for his night against his normal.
+   - **Share image** buttons (beside the game score, and in every player card) make a 1200×675 picture sized for X, Reddit and Substack: a game card (headline, quadrant, top performers), a rankings card (every skater's score), a player's game, or a player's season, in light or dark. On a phone, **Share…** opens the normal share menu; on a computer, **Copy image** pastes straight into an X post or a Substack draft, or use **Download**.
    - **The player score**: each stat is compared with how Stars players at the same position usually do in a game, weighted, and scaled so 50 is a typical game. Forwards weigh goals, primary assists, slot shots and shots most heavily. Defensemen weigh plus-minus, ice time, goals, primary assists and blocks most heavily. Both land on the same scale. The weights are at the top of the `player score` section in `dashboard_template.html` if you want to tune them.
 2. **Static graphics** (`stars_viz.py`): a game card PNG and a trend PNG for dropping straight into a Substack post, plus a notes file with the key facts.
 
