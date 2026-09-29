@@ -29,7 +29,8 @@ concurrency:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # pinned so GitHub's switch to a newer Ubuntu (from Oct 19, 2026) can't break the browser install mid-season
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
