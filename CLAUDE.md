@@ -13,7 +13,7 @@ The main product is **one web page of player rankings**, rebuilt after every gam
 - Built against the live API for the full 2025-26 season (82 games). Fixed: blocked shots were credited to the wrong team (see the API notes), players who left mid-season had no bio (now filled from `player/{id}/landing`), and faceoff % was rounded one digit too early.
 - Verified 3 games (regulation 2025021285, OT 2025021239, shootout 2025021301) against the NHL's official HTML game sheets with `tools/check_game.py`: 813 of 814 checks match. The one miss is an NHL-side inconsistency (play-by-play credits Hyry with a shot the official sheet doesn't), not a parsing bug.
 - pytest suite in `tests/` (sample-season fixture + Playwright smoke tests) runs before every publish.
-- Published nightly to GitHub Pages by `.github/workflows/publish.yml`.
+- Published nightly to GitHub Pages by `.github/workflows/publish.yml`, from the repo `starsviz/starsviz.github.io` (a free org the owner created) to **https://starsviz.github.io/**. It is deliberately *not* on the owner's personal account: his user Pages site (`SJJ363.github.io`) is Insurtech Daily with the custom domain insurtechdaily.io, and GitHub would serve any project site on that account under that domain. Keep his other projects (Insurtech Daily, the `warriorlog` workout app) untouched. The footer credit is the repo Actions variable `CREDIT` (blank for now).
 
 ## Files
 
