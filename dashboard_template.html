@@ -444,7 +444,7 @@ function scoreCell(r) {
 function rankTable(rows, grp, g) {
   const cols = STATCOLS.filter(c => !c.fOnly || (grp === "F" && rows.some(r => r.l.fo != null)));
   return `<p class="swipe">Swipe the table for all stats →</p><div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Player</th><th class="l">Score</th>${cols.map(c => `<th title="${esc(c.title)}">${c.h}</th>`).join("")}</tr></thead><tbody>
-    ${rows.map((r, i) => `<tr data-pid="${r.pid}" data-gid="${g.id}"><td class="nm"><span class="rk">${i + 1}</span><button class="linkish who" aria-haspopup="dialog" title="Open player card"><span class="full">${esc(pname(r.pid))}</span><span class="short">${esc(plast(r.pid))}</span>${GO}</button></td>
+    ${rows.map((r, i) => `<tr data-pid="${r.pid}" data-gid="${g.id}"><td class="nm"><span class="rk">${i + 1}</span><button class="linkish who" aria-haspopup="dialog" aria-label="${esc(pname(r.pid))}, open player card"><span class="full">${esc(pname(r.pid))}</span><span class="short">${esc(plast(r.pid))}</span>${GO}</button></td>
       <td class="l">${scoreCell(r)}</td>${cols.map(c => statCell(r, c)).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 const howItWorks = () => `<details class="how"><summary>How the player score works</summary>
@@ -918,7 +918,7 @@ function renderGame() {
       ${gk.map(x => { const v = x.sa ? x.sv / x.sa : null, sv = x.s ? x.s.svp : null, d = v != null && sv != null ? v - sv : null;
         const t = d == null || Math.abs(d) < .01 ? "flat" : (d > 0 ? "up" : "down") + (Math.abs(d) >= .03 ? " s2" : "");
         const sa = x.s ? x.s.sa / x.s.gp : null, dsa = sa != null ? x.sa - sa : null;
-        return `<tr data-pid="${x.pid}" data-gid="${g.id}"><td class="nm"><button class="linkish who" aria-haspopup="dialog" title="Open player card"><span class="full">${esc(pname(x.pid))}</span><span class="short">${esc(plast(x.pid))}</span>${GO}</button></td>
+        return `<tr data-pid="${x.pid}" data-gid="${g.id}"><td class="nm"><button class="linkish who" aria-haspopup="dialog" aria-label="${esc(pname(x.pid))}, open player card"><span class="full">${esc(pname(x.pid))}</span><span class="short">${esc(plast(x.pid))}</span>${GO}</button></td>
           <td class="l">${x.dec ? `<span class="pill ${x.dec}">${x.dec}</span>` : "–"}</td>
           <td title="Season average ${svp(sv)}"><span class="cv">${svp(v)}</span><span class="dv ${t}">${d == null ? "" : Math.abs(d) < .0005 ? "even" : (d > 0 ? "▲" : "▼") + Math.abs(d).toFixed(3).replace(/^0/, "")}</span></td>
           <td><span class="cv">${x.sv}</span></td><td title="Season average ${sa == null ? "–" : sa.toFixed(1)}"><span class="cv">${x.sa}</span>${dsa == null ? "" : `<span class="dv flat">${dsa > 0 ? "▲" : dsa < 0 ? "▼" : ""}${sdDelta(dsa)}</span>`}</td>
