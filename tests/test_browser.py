@@ -45,6 +45,8 @@ def test_page_loads_and_draws(browser, built_page, built_data, width, scheme):
     n = skater_rows(page).count()
     assert n == len(latest["sk"]) >= 17, "every dressed skater gets a row"
     assert page.locator("#quad .qd").count() == n, "one quadrant dot per skater"
+    rows = page.locator("tr[data-pid]").count()
+    assert page.locator("tr[data-pid] .linkish.who .go").count() == rows, "every clickable name shows the open-card icon"
     assert page.locator("#banner").is_visible() == built_data["meta"]["sample"], "sample banner only on sample data"
     overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
     assert overflow <= 0, f"page scrolls sideways by {overflow}px"

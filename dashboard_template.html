@@ -170,6 +170,13 @@ details.more[open] { padding-bottom: 14px; }
 .pill.W { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
 .linkish { background: none; border: 0; padding: 0; color: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; text-align: left; }
 .linkish:hover { text-decoration-color: var(--accent); }
+/* "opens the player card" cue next to names in the ranking tables */
+.linkish.who { display: inline-flex; align-items: center; gap: 6px; }
+.go { flex: 0 0 auto; width: 18px; height: 18px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--line); display: inline-grid; place-items: center; transition: background-color .15s, border-color .15s; }
+.go svg { width: 10px; height: 10px; fill: none; stroke: var(--muted); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; transition: stroke .15s, transform .15s; }
+tr[data-pid]:hover .go, .linkish.who:focus-visible .go { background: var(--accent-soft); border-color: var(--accent); }
+tr[data-pid]:hover .go svg, .linkish.who:focus-visible .go svg { stroke: var(--accent); transform: translateX(1px); }
+@media (prefers-reduced-motion: reduce) { .go svg { transition: none; transform: none !important; } }
 .tbl-wrap { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
 table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
 th, td { padding: 7px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
@@ -319,6 +326,7 @@ const KIND = ["Goal", "Shot on goal", "Missed", "Blocked"];
 const byN = new Map(G.map(g => [g.n, g]));
 const byId = new Map(G.map(g => [g.id, g]));
 const N = G.length;
+const GO = `<span class="go" aria-hidden="true"><svg viewBox="0 0 10 10"><path d="M3.5 1.5 7 5l-3.5 3.5"/></svg></span>`;
 const inSlot = (x, y, ours) => ours ? (x >= 69 && x <= 89 && Math.abs(y) <= 22) : (x <= -69 && x >= -89 && Math.abs(y) <= 22);
 
 /* ================= aggregates ================= */
@@ -436,7 +444,7 @@ function scoreCell(r) {
 function rankTable(rows, grp, g) {
   const cols = STATCOLS.filter(c => !c.fOnly || (grp === "F" && rows.some(r => r.l.fo != null)));
   return `<p class="swipe">Swipe the table for all stats →</p><div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Player</th><th class="l">Score</th>${cols.map(c => `<th title="${esc(c.title)}">${c.h}</th>`).join("")}</tr></thead><tbody>
-    ${rows.map((r, i) => `<tr data-pid="${r.pid}" data-gid="${g.id}"><td class="nm"><span class="rk">${i + 1}</span><button class="linkish"><span class="full">${esc(pname(r.pid))}</span><span class="short">${esc(plast(r.pid))}</span></button></td>
+    ${rows.map((r, i) => `<tr data-pid="${r.pid}" data-gid="${g.id}"><td class="nm"><span class="rk">${i + 1}</span><button class="linkish who" aria-haspopup="dialog" title="Open player card"><span class="full">${esc(pname(r.pid))}</span><span class="short">${esc(plast(r.pid))}</span>${GO}</button></td>
       <td class="l">${scoreCell(r)}</td>${cols.map(c => statCell(r, c)).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 const howItWorks = () => `<details class="how"><summary>How the player score works</summary>
@@ -910,7 +918,7 @@ function renderGame() {
       ${gk.map(x => { const v = x.sa ? x.sv / x.sa : null, sv = x.s ? x.s.svp : null, d = v != null && sv != null ? v - sv : null;
         const t = d == null || Math.abs(d) < .01 ? "flat" : (d > 0 ? "up" : "down") + (Math.abs(d) >= .03 ? " s2" : "");
         const sa = x.s ? x.s.sa / x.s.gp : null, dsa = sa != null ? x.sa - sa : null;
-        return `<tr data-pid="${x.pid}" data-gid="${g.id}"><td class="nm"><button class="linkish"><span class="full">${esc(pname(x.pid))}</span><span class="short">${esc(plast(x.pid))}</span></button></td>
+        return `<tr data-pid="${x.pid}" data-gid="${g.id}"><td class="nm"><button class="linkish who" aria-haspopup="dialog" title="Open player card"><span class="full">${esc(pname(x.pid))}</span><span class="short">${esc(plast(x.pid))}</span>${GO}</button></td>
           <td class="l">${x.dec ? `<span class="pill ${x.dec}">${x.dec}</span>` : "–"}</td>
           <td title="Season average ${svp(sv)}"><span class="cv">${svp(v)}</span><span class="dv ${t}">${d == null ? "" : Math.abs(d) < .0005 ? "even" : (d > 0 ? "▲" : "▼") + Math.abs(d).toFixed(3).replace(/^0/, "")}</span></td>
           <td><span class="cv">${x.sv}</span></td><td title="Season average ${sa == null ? "–" : sa.toFixed(1)}"><span class="cv">${x.sa}</span>${dsa == null ? "" : `<span class="dv flat">${dsa > 0 ? "▲" : dsa < 0 ? "▼" : ""}${sdDelta(dsa)}</span>`}</td>
