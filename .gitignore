@@ -1,0 +1,11 @@
+.nhl_cache/
+.sample_cache/
+.venv/
+_site/
+output/
+dashboard.html
+sample.html
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store

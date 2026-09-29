@@ -1,0 +1,1173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__DASHBOARD_TITLE__</title>
+<meta name="description" content="__DASHBOARD_DESCRIPTION__">
+<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131b1f" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,__DASHBOARD_FAVICON__">
+<!--share-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: a story feed. Each view opens with a headline written from the data, then "chapters": one point, one chart, one caption. Stat tables sit collapsed at the end. */
+:root {
+  --bg: #eaf0f2;
+  --surface: #ffffff;
+  --surface-2: #f3f7f8;
+  --ink: #0e171b;
+  --ink-2: #41515a;
+  --muted: #6b7b83;
+  --line: #d9e2e6;
+  --rink: #c9d5da;
+  --ice: #fbfdfd;
+  --slot: #e6f2ec;
+  --accent: #00754a;
+  --accent-soft: #dff0e7;
+  --opp: #88949a;
+  --opp-soft: #e8edef;
+  --otl: #c3cdd1;
+  --hot: #b4481b;
+  --hot-soft: #fbe9e0;
+  --cold: #2c6fa8;
+  --cold-soft: #e3eef8;
+  --defc: #2a78d6;
+  --good: #13733c;
+  --good-soft: #dcf1e3;
+  --bad: #b42318;
+  --bad-soft: #fbe4e1;
+  --tip-bg: #0e171b;
+  --tip-fg: #f2f6f7;
+  --shadow: 0 1px 2px rgba(14, 23, 27, .06), 0 4px 16px rgba(14, 23, 27, .05);
+  --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b1114; --surface: #131b1f; --surface-2: #182227; --ink: #e8eff1; --ink-2: #a7b6bd; --muted: #7b8a91;
+    --line: #243038; --rink: #34444c; --ice: #151e22; --slot: #17302a; --accent: #20a36b; --accent-soft: #13302a;
+    --opp: #5f6a70; --opp-soft: #1d272c; --otl: #37434a; --hot: #ef8a5c; --hot-soft: #3a2218; --cold: #6fb0e8; --cold-soft: #162a3b; --defc: #3987e5; --good: #5cc98f; --good-soft: #15321f; --bad: #f2837a; --bad-soft: #3d1c19;
+    --tip-bg: #e8eff1; --tip-fg: #0e171b; --shadow: 0 1px 2px rgba(0,0,0,.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b1114; --surface: #131b1f; --surface-2: #182227; --ink: #e8eff1; --ink-2: #a7b6bd; --muted: #7b8a91;
+  --line: #243038; --rink: #34444c; --ice: #151e22; --slot: #17302a; --accent: #20a36b; --accent-soft: #13302a;
+  --opp: #5f6a70; --opp-soft: #1d272c; --otl: #37434a; --hot: #ef8a5c; --hot-soft: #3a2218; --cold: #6fb0e8; --cold-soft: #162a3b; --defc: #3987e5; --good: #5cc98f; --good-soft: #15321f; --bad: #f2837a; --bad-soft: #3d1c19;
+  --tip-bg: #e8eff1; --tip-fg: #0e171b; --shadow: 0 1px 2px rgba(0,0,0,.3);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+button { font: inherit; color: inherit; }
+button:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.num, table { font-variant-numeric: tabular-nums; }
+
+/* ---------- top bar ---------- */
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
+.bar-in { max-width: 980px; margin: 0 auto; padding: 10px 16px 0; display: flex; flex-wrap: wrap; align-items: end; gap: 6px 20px; }
+.brand { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; min-width: 0; }
+.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: .01em; margin: 0; line-height: 1; text-transform: uppercase; }
+.brand .season { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--muted); letter-spacing: .04em; }
+.brand .rec { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--accent); }
+
+
+main { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; display: grid; gap: 14px; }
+.banner { background: var(--surface-2); border: 1px dashed var(--muted); color: var(--ink-2); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; }
+#games { display: grid; gap: 14px; min-width: 0; }
+
+/* ---------- story blocks ---------- */
+.lede { padding: 6px 2px 4px; }
+.kicker { font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--accent); margin: 0 0 6px; }
+.headline { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 6.4vw, 46px); line-height: 1.02; letter-spacing: .005em; margin: 0; text-wrap: balance; }
+.dek { font-size: 17px; line-height: 1.5; color: var(--ink-2); margin: 10px 0 0; max-width: 64ch; text-wrap: pretty; }
+.facts { display: flex; flex-wrap: wrap; gap: 6px 18px; margin-top: 12px; font-size: 13px; color: var(--muted); }
+.facts b { color: var(--ink); font-weight: 700; }
+
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; box-shadow: var(--shadow); }
+.chapter-label { font-size: 11.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; color: var(--muted); margin: 0 0 4px; }
+.card h2 { font-family: var(--font-display); font-weight: 700; font-size: 24px; line-height: 1.1; margin: 0 0 6px; text-wrap: balance; }
+.cap { margin: 0 0 12px; color: var(--ink-2); max-width: 66ch; }
+.grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .grid2 { grid-template-columns: minmax(0, 1fr); } }
+.note { font-size: 12.5px; color: var(--muted); margin: 8px 0 0; }
+
+.seg { display: inline-flex; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 2px; gap: 2px; flex-wrap: wrap; }
+.seg button { border: 0; background: none; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; color: var(--ink-2); cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+
+details.more { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 0 16px; }
+details.more > summary { cursor: pointer; padding: 13px 0; font-weight: 600; color: var(--ink-2); list-style: none; display: flex; justify-content: space-between; }
+details.more > summary::-webkit-details-marker { display: none; }
+details.more > summary::after { content: "+"; font-size: 18px; line-height: 1; color: var(--muted); }
+details.more[open] > summary::after { content: "–"; }
+details.more[open] { padding-bottom: 14px; }
+
+/* ---------- game picker ---------- */
+.picker { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.chips { display: flex; gap: 6px; overflow-x: auto; scroll-behavior: smooth; padding: 2px 2px 8px; flex: 1; min-width: 0; scrollbar-width: thin; }
+.chip { flex: 0 0 auto; display: grid; gap: 1px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+  padding: 5px 9px 6px; cursor: pointer; min-width: 74px; border-bottom-width: 3px; }
+.chip .d { font-size: 11px; color: var(--muted); }
+.chip .o { font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.1; }
+.chip .r { font-size: 11.5px; font-weight: 600; }
+.chip.W { border-bottom-color: var(--accent); } .chip.L { border-bottom-color: var(--opp); } .chip.OTL { border-bottom-color: var(--otl); }
+.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip[aria-pressed="true"] .d { color: var(--bg); opacity: .75; }
+.step { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 16px; }
+.step:disabled { opacity: .35; cursor: default; }
+
+/* score strip */
+.score-strip { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-family: var(--font-display); font-weight: 700; font-size: 22px; letter-spacing: .02em; margin-top: 14px; }
+.score-strip .t { display: inline-flex; align-items: center; gap: 7px; }
+.score-strip .s { font-size: 30px; }
+.score-strip .st { font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
+.sw { width: 11px; height: 11px; border-radius: 3px; display: inline-block; flex: 0 0 auto; }
+.sw.us { background: var(--accent); } .sw.them { background: var(--opp); }
+
+/* rink */
+.rink { width: 100%; height: auto; display: block; touch-action: pan-y; }
+.rink .ice { fill: var(--ice); stroke: var(--rink); stroke-width: 1.6; vector-effect: non-scaling-stroke; }
+.rink .slot { fill: var(--slot); }
+.rink .ln { stroke: var(--rink); stroke-width: 1.1; fill: none; vector-effect: non-scaling-stroke; }
+.rink .ln.heavy { stroke-width: 2.2; }
+.rink .dot { fill: var(--rink); }
+.shot { cursor: pointer; }
+.shot.us.sog { fill: var(--accent); stroke: var(--surface); stroke-width: .5; }
+.shot.them.sog { fill: var(--opp); stroke: var(--surface); stroke-width: .5; }
+.shot.us.miss { fill: var(--ice); stroke: var(--accent); stroke-width: .7; }
+.shot.them.miss { fill: var(--ice); stroke: var(--opp); stroke-width: .7; }
+.shot.us.goal { fill: var(--accent); stroke: var(--ink); stroke-width: .45; }
+.shot.them.goal { fill: var(--opp); stroke: var(--ink); stroke-width: .45; }
+.shot.hl { stroke: var(--ink); stroke-width: .9; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12.5px; color: var(--ink-2); align-items: center; margin-top: 8px; }
+.legend .k { display: inline-flex; align-items: center; gap: 5px; }
+.legend svg { display: block; }
+.kbox { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+.kbox.us { background: var(--accent); } .kbox.them { background: var(--opp); } .kbox.otl { background: var(--otl); } .kbox.slot { background: var(--slot); border: 1px solid var(--rink); }
+.kbox.ref { height: 2px; background: var(--muted); }
+/* player comparisons */
+.vs { display: grid; gap: 12px; }
+.vs-row { display: grid; grid-template-columns: 7.5em minmax(0, 1fr) 8.6em; gap: 10px; align-items: center; font-size: 13.5px; }
+.vs-row .lab { color: var(--ink-2); }
+.vs-row .val { text-align: right; font-size: 12.5px; color: var(--muted); }
+.vs-row .val b { color: var(--ink); font-size: 15px; }
+.track { position: relative; height: 14px; background: var(--surface-2); border-radius: 3px; }
+.track .fill { position: absolute; left: 0; top: 3px; bottom: 3px; border-radius: 2px; background: var(--accent); }
+.track .fill.below { background: var(--opp); }
+.track .avg { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--ink); border-radius: 1px; }
+@media (max-width: 480px) { .vs-row { grid-template-columns: 5.2em minmax(0, 1fr) 7.6em; } }
+
+/* tables */
+.pill { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; border-radius: 99px; padding: 2px 7px; background: var(--surface-2); border: 1px solid var(--line); color: var(--ink-2); white-space: nowrap; }
+.pill.W { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+.linkish { background: none; border: 0; padding: 0; color: inherit; font-weight: 600; cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; text-align: left; }
+.linkish:hover { text-decoration-color: var(--accent); }
+.tbl-wrap { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { padding: 7px 8px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th { font-size: 11.5px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+th:first-child, td:first-child { padding-left: 0; }
+th.l, td.l { text-align: left; }
+td.nm, th.nm { position: sticky; left: 0; background: var(--surface); text-align: left; }
+tbody tr[data-pid], tbody tr[data-game] { cursor: pointer; }
+tbody tr[data-pid]:hover td, tbody tr[data-game]:hover td { background: var(--surface-2); }
+td.hot { font-weight: 700; }
+
+/* charts */
+.chart { position: relative; width: 100%; }
+.chart svg { display: block; width: 100%; overflow: visible; }
+.axis text, .lbl { fill: var(--muted); font-size: 11px; font-family: var(--font-body); }
+.lbl.end { fill: var(--ink); font-weight: 700; font-size: 12px; }
+.annot { fill: var(--ink); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.grid line { stroke: var(--line); stroke-width: 1; }
+.zero { stroke: var(--ink-2); stroke-width: 1; }
+.ref { stroke: var(--muted); stroke-width: 1.2; fill: none; }
+.pline { stroke: var(--line); stroke-width: 1; }
+.ln-us { stroke: var(--accent); stroke-width: 2.2; fill: none; stroke-linejoin: round; }
+.area-pos { fill: var(--accent); opacity: .2; } .area-neg { fill: var(--opp); opacity: .3; }
+.band-hot { fill: var(--hot); opacity: .1; } .band-cold { fill: var(--cold); opacity: .1; }
+.dot-faint { fill: var(--otl); }
+.bar-us { fill: var(--accent); } .bar-them { fill: var(--opp); }
+.cross { stroke: var(--ink-2); stroke-width: 1; }
+.hit { fill: transparent; cursor: pointer; }
+.col-hl { fill: var(--surface-2); }
+.tl-axis { stroke: var(--rink); stroke-width: 2; }
+.ev { cursor: pointer; }
+
+.tip { position: fixed; z-index: 60; pointer-events: none; background: var(--tip-bg); color: var(--tip-fg); font-size: 12.5px; line-height: 1.4;
+  padding: 7px 9px; border-radius: 7px; max-width: 240px; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+.tip .sw { width: 9px; height: 9px; border-radius: 2px; }
+
+/* player sheet */
+.backdrop { position: fixed; inset: 0; z-index: 40; background: rgba(8, 14, 17, .45); display: flex; justify-content: center; align-items: flex-start;
+  padding: calc(env(safe-area-inset-top, 0px) + 24px) 12px 24px; overflow-y: auto; }
+.sheet { background: var(--bg); border-radius: 14px; width: 100%; max-width: 860px; align-content: start; box-shadow: 0 12px 48px rgba(0,0,0,.3); display: grid; gap: 12px; padding: 0 0 16px; }
+.sheet-head { background: var(--surface); border-radius: 14px 14px 0 0; border-bottom: 1px solid var(--line); padding: 14px 16px 12px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; }
+.bignum { font-family: var(--font-display); font-weight: 700; font-size: 54px; line-height: .9; color: var(--accent); grid-row: 1 / span 2; min-width: 1.3em; text-align: center; }
+.pname { font-family: var(--font-display); font-weight: 700; font-size: 28px; line-height: 1; text-transform: uppercase; letter-spacing: .01em; margin: 0; }
+.pmeta { font-size: 13px; color: var(--muted); grid-column: 2; }
+.close { grid-column: 3; grid-row: 1; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface-2); cursor: pointer; font-size: 18px; line-height: 1; }
+.scope { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; grid-column: 1 / -1; margin-top: 8px; }
+.scope select { font: inherit; font-size: 13px; padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); max-width: 100%; }
+.sheet-body { display: grid; gap: 12px; padding: 0 12px; }
+.sheet .lede { padding: 4px 4px 0; }
+.sheet .headline { font-size: clamp(26px, 5.4vw, 38px); }
+@media (max-width: 560px) { .backdrop { padding: 0; } .sheet { border-radius: 0; min-height: 100%; } .sheet-head { border-radius: 0; } .bignum { font-size: 44px; } .pname { font-size: 24px; } }
+
+
+/* player score */
+.dot-f { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.dot-d { fill: var(--defc); stroke: var(--surface); stroke-width: 2; }
+.qd.hl { stroke: var(--ink); stroke-width: 2.5; }
+.q-good { fill: var(--accent); opacity: .07; } .q-bad { fill: var(--opp); opacity: .12; }
+.qline { stroke: var(--ink-2); stroke-width: 1.2; }
+.qlab { fill: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; font-family: var(--font-body); }
+.axt { fill: var(--ink-2); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); }
+.dlab { fill: var(--ink); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+details.how { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
+details.how > summary { cursor: pointer; font-weight: 600; font-size: 13.5px; color: var(--ink-2); }
+details.how p { color: var(--ink-2); font-size: 13.5px; max-width: 70ch; }
+ul.wts { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+ul.wts li { display: grid; grid-template-columns: minmax(0, 1fr) 70px 2.6em; gap: 8px; align-items: center; font-size: 13px; color: var(--ink-2); }
+ul.wts b { text-align: right; color: var(--ink); }
+.wbar { height: 6px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.wbar i { display: block; height: 100%; background: var(--accent); } .wbar i.neg { background: var(--bad); }
+.rank-tbl td { vertical-align: top; padding-top: 8px; padding-bottom: 8px; }
+.rank-tbl th { vertical-align: bottom; }
+.rank-tbl .cv { display: block; font-weight: 600; font-size: 14px; line-height: 1.2; }
+.dv { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1.3; margin-top: 2px; border-radius: 4px; padding: 0 3px; white-space: nowrap; }
+.dv.up { color: var(--good); } .dv.down { color: var(--bad); } .dv.flat { color: var(--muted); font-weight: 600; }
+.dv.up.s2 { background: var(--good-soft); } .dv.down.s2 { background: var(--bad-soft); }
+.rk { display: inline-block; min-width: 1.7em; font-size: 12px; font-weight: 700; color: var(--muted); }
+.rank-tbl th, .rank-tbl td { padding-left: 6px; padding-right: 6px; }
+.rank-tbl .short { display: none; }
+.swipe { display: none; font-size: 12px; color: var(--muted); margin: 0 0 4px; text-align: right; }
+@media (max-width: 700px) {
+  .rank-tbl .full { display: none; } .rank-tbl .short { display: inline; }
+  .scorecell { grid-template-columns: 1.9em auto; gap: 6px; } .scorecell .scbar { display: none; }
+  .swipe { display: block; }
+}
+.scorecell { display: grid; grid-template-columns: 2.1em 64px auto; gap: 8px; align-items: center; }
+.scv { font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1; }
+.scbar { height: 8px; background: var(--surface-2); border-radius: 4px; overflow: hidden; }
+.scbar i { display: block; height: 100%; border-radius: 4px; background: var(--accent); } .scbar i.D { background: var(--defc); }
+.scorecell .dv { margin-top: 0; justify-self: start; }
+footer { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 0 28px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+@media (prefers-reduced-motion: reduce) { .chips { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+<script id="data" type="application/json">__DASHBOARD_DATA__</script>
+
+<header class="bar">
+  <div class="bar-in">
+    <div class="brand"><h1 id="team-name">Stars</h1><span class="season" id="season"></span><span class="rec" id="rec"></span></div>
+  </div>
+</header>
+
+<main>
+  <div class="banner" id="banner" hidden></div>
+  <section id="games"></section>
+</main>
+<footer id="footer"></footer>
+<div class="tip" id="tip" hidden></div>
+<div id="sheet-root"></div>
+
+<script>
+(() => {
+"use strict";
+const D = JSON.parse(document.getElementById("data").textContent);
+const M = D.meta, P = D.players, G = D.games;
+const US = M.team, NAME = M.teamName;
+if (M.color && M.color.toLowerCase() !== "#00754a") document.documentElement.style.setProperty("--accent", M.color);
+
+/* ================= helpers ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+const fdate = (iso, long) => { const d = new Date(iso + "T12:00:00"); return long ? d.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", year: "numeric" }) : `${MONTHS[d.getMonth()]} ${d.getDate()}`; };
+const toi = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60) % 60).padStart(2, "0")}`;
+const pct = (x, d = 0) => x == null || isNaN(x) ? "–" : (x * 100).toFixed(d) + "%";
+const svp = x => x == null || isNaN(x) ? "–" : x.toFixed(3).replace(/^0/, "");
+const pm = x => (x > 0 ? "+" : "") + x;
+const sum = a => a.reduce((s, v) => s + (v || 0), 0);
+const mean = a => a.length ? sum(a) / a.length : null;
+const per = p => ({ 1: "1st", 2: "2nd", 3: "3rd" }[p] || (p === 4 ? "OT" : `${p - 3}OT`));
+const vs = g => (g.home ? "vs " : "at ") + g.opp;
+const resLabel = g => g.res === "OTL" ? (g.sfx || "OT") + "L" : g.res;
+const scoreStr = g => `${g.gf}-${g.ga}${g.sfx ? " " + g.sfx : ""}`;
+const pname = pid => P[pid] ? P[pid].name : "Unknown";
+const plast = pid => P[pid] ? (P[pid].last || P[pid].name) : "?";
+const WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+const word = n => WORDS[n] ?? String(n);
+const cap1 = s => s ? s[0].toUpperCase() + s.slice(1) : s;
+const plural = (n, s, p) => `${n} ${n === 1 ? s : (p || s + "s")}`;
+const periodOf = m => Math.min(4, Math.floor(m / 20) + 1);
+const minClock = m => { const p = periodOf(m), inP = Math.max(0, m - (p - 1) * 20), sec = Math.round(inP * 60); return `${per(p)} ${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`; };
+const POS = { C: "Center", L: "Left wing", R: "Right wing", D: "Defense", G: "Goalie" };
+const STR = { PP: "PP", SH: "SH", EN: "EN", EA: "6v5" };
+const KIND = ["Goal", "Shot on goal", "Missed", "Blocked"];
+const byN = new Map(G.map(g => [g.n, g]));
+const byId = new Map(G.map(g => [g.id, g]));
+const N = G.length;
+const inSlot = (x, y, ours) => ours ? (x >= 69 && x <= 89 && Math.abs(y) <= 22) : (x <= -69 && x >= -89 && Math.abs(y) <= 22);
+
+/* ================= aggregates ================= */
+const gameScore = l => l.gl + 0.7 * l.a + 0.1 * l.sog + 0.05 * (l.hits + l.blk) + 0.15 * l.pm;
+const skaters = {}, goalies = {};
+G.forEach(g => {
+  g.sk.forEach(r => {
+    const [pid, gl, a, pmv, pim, sog, hits, blk, t, ppg, gv, tk, fo, shifts] = r;
+    const s = skaters[pid] ||= { pid, log: [], shots: [] };
+    const l = { g, gl, a, p: gl + a, pm: pmv, pim, sog, hits, blk, toi: t, ppg, gv, tk, fo, shifts };
+    l.gs = gameScore(l); s.log.push(l);
+  });
+  g.gk.forEach(r => {
+    const [pid, sa, sv, ga, t, starter, dec] = r;
+    (goalies[pid] ||= { pid, log: [] }).log.push({ g, sa, sv, ga, toi: t, starter, dec });
+  });
+  g.shots.forEach(s => { if (s[1] && s[5] && skaters[s[5]]) skaters[s[5]].shots.push({ g, s }); });
+});
+Object.values(skaters).forEach(s => {
+  const L = s.log;
+  Object.assign(s, { gp: L.length, gl: sum(L.map(x => x.gl)), a: sum(L.map(x => x.a)), pm: sum(L.map(x => x.pm)),
+    sog: sum(L.map(x => x.sog)), hits: sum(L.map(x => x.hits)), blk: sum(L.map(x => x.blk)), toi: sum(L.map(x => x.toi)) });
+  s.p = s.gl + s.a; s.shp = s.sog ? s.gl / s.sog : null; s.toigp = s.gp ? s.toi / s.gp : 0;
+  s.pos = (P[s.pid] || {}).pos || "";
+  s.trend = skaterTrend(s);
+});
+Object.values(goalies).forEach(s => {
+  const L = s.log;
+  Object.assign(s, { gp: L.length, w: L.filter(x => x.dec === "W").length, l: L.filter(x => x.dec === "L").length, otl: L.filter(x => x.dec === "OTL").length,
+    sa: sum(L.map(x => x.sa)), sv: sum(L.map(x => x.sv)), ga: sum(L.map(x => x.ga)), toi: sum(L.map(x => x.toi)),
+    so: L.filter(x => x.ga === 0 && x.toi >= 3480 && x.sa > 0).length });
+  s.svp = s.sa ? s.sv / s.sa : null; s.gaa = s.toi ? s.ga * 3600 / s.toi : null;
+  s.trend = goalieTrend(s);
+});
+const rankOf = (pid, key) => Object.values(skaters).sort((a, b) => b[key] - a[key]).findIndex(s => s.pid == pid) + 1;
+const ord = n => { const v = n % 100; return n + (v >= 11 && v <= 13 ? "th" : ["th", "st", "nd", "rd"][n % 10] || "th"); };
+
+/* ================= player score ================= */
+// Each stat is standardized against how Stars players at the same position do in a typical game,
+// weighted, summed, then rescaled so 50 = a typical game and 15 points = one standard deviation.
+// Forwards and defensemen use different weights but end up on the same 0-100 scale.
+const WEIGHTS = {
+  F: [["gl", .24, "Goals"], ["a1", .14, "Primary assists"], ["slot", .11, "Shot attempts from the slot"], ["sog", .10, "Shots on goal"],
+      ["toi", .09, "Ice time"], ["pm", .08, "Plus-minus"], ["a2", .07, "Secondary assists"], ["tkgv", .07, "Takeaways minus giveaways"],
+      ["hits", .05, "Hits"], ["pim", -.05, "Penalty minutes (counts against)"]],
+  D: [["pm", .14, "Plus-minus"], ["toi", .14, "Ice time"], ["gl", .12, "Goals"], ["a1", .12, "Primary assists"], ["blk", .12, "Blocked shots"],
+      ["att", .10, "Shot attempts"], ["tkgv", .10, "Takeaways minus giveaways"], ["a2", .06, "Secondary assists"], ["hits", .05, "Hits"],
+      ["pim", -.05, "Penalty minutes (counts against)"]],
+};
+const sdDelta = v => (Math.abs(v) >= 10 ? Math.abs(v).toFixed(0) : Math.abs(v).toFixed(1));
+const STATCOLS = [
+  { k: "gl", h: "G", title: "Goals" }, { k: "a", h: "A", title: "Assists" }, { k: "p", h: "P", title: "Points" },
+  { k: "sog", h: "SOG", title: "Shots on goal" }, { k: "att", h: "ATT", title: "Shot attempts, including missed and blocked" },
+  { k: "pm", h: "+/-", title: "Plus-minus", fmt: pm }, { k: "hits", h: "HIT", title: "Hits" }, { k: "blk", h: "BLK", title: "Blocked shots" },
+  { k: "tk", h: "TK", title: "Takeaways" }, { k: "gv", h: "GV", title: "Giveaways (fewer is better)", inv: true },
+  { k: "toi", h: "TOI", title: "Ice time", fmt: toi, dfmt: v => toi(Math.abs(v)), afmt: toi },
+  { k: "fo", h: "FO%", title: "Faceoff win percentage", fOnly: true, fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v) },
+];
+const GSTATS = { F: {}, D: {} };
+(function buildScores() {
+  const blank = () => ({ att: 0, slot: 0, a1: 0, a2: 0 });
+  const extra = new Map();
+  const get = k => { if (!extra.has(k)) extra.set(k, blank()); return extra.get(k); };
+  G.forEach(g => {
+    g.shots.forEach(s => { if (!s[1] || !s[5]) return; const e = get(g.id + ":" + s[5]); e.att++; if (s[2] !== 3 && s[3] != null && inSlot(s[3], s[4], true)) e.slot++; });
+    g.goals.forEach(x => { if (!x[1]) return; (x[8] || []).forEach((pid, j) => { const e = get(g.id + ":" + pid); j === 0 ? e.a1++ : e.a2++; }); });
+  });
+  const all = { F: [], D: [] };
+  Object.values(skaters).forEach(s => {
+    s.grp = s.pos === "D" ? "D" : "F";
+    s.log.forEach(l => {
+      Object.assign(l, extra.get(l.g.id + ":" + s.pid) || blank());
+      l.tkgv = l.tk - l.gv;
+      if (l.a1 + l.a2 < l.a) l.a2 += l.a - l.a1 - l.a2;
+      if (!(s.pos === "C" && l.fo > 0)) l.fo = null;
+      all[s.grp].push(l);
+    });
+  });
+  ["F", "D"].forEach(grp => {
+    const L = all[grp]; if (!L.length) return;
+    const keys = new Set([...WEIGHTS[grp].map(w => w[0]), ...STATCOLS.map(c => c.k)]);
+    keys.forEach(k => {
+      const v = L.map(l => l[k]).filter(x => x != null);
+      const mu = v.length ? mean(v) : 0, sd = v.length ? Math.sqrt(mean(v.map(x => (x - mu) ** 2))) : 0;
+      GSTATS[grp][k] = { mu, sd };
+    });
+    L.forEach(l => { l.comp = sum(WEIGHTS[grp].map(([k, w]) => { const st = GSTATS[grp][k]; return st.sd ? w * ((l[k] ?? 0) - st.mu) / st.sd : 0; })); });
+    const c = L.map(l => l.comp), mu = mean(c), sd = Math.sqrt(mean(c.map(x => (x - mu) ** 2))) || 1;
+    L.forEach(l => { l.score = Math.max(0, Math.min(100, 50 + 15 * (l.comp - mu) / sd)); });
+  });
+  Object.values(skaters).forEach(s => {
+    s.avgScore = mean(s.log.map(l => l.score));
+    s.log.forEach(l => { l.dScore = l.score - s.avgScore; });
+    s.avg = {};
+    STATCOLS.forEach(c => { const v = s.log.map(l => l[c.k]).filter(x => x != null); s.avg[c.k] = v.length ? mean(v) : null; });
+  });
+})();
+
+function statCell(r, c) {
+  const v = r.l[c.k], avg = r.s.avg[c.k], fmt = c.fmt || (x => x);
+  if (v == null) return `<td><span class="cv" style="color:var(--muted)">–</span></td>`;
+  if (avg == null) return `<td><span class="cv">${fmt(v)}</span></td>`;
+  const d = v - avg, sd = GSTATS[r.grp][c.k]?.sd || 1, z = Math.abs(d) / sd, good = c.inv ? d < 0 : d > 0;
+  const tier = z < .35 ? "flat" : (good ? "up" : "down") + (z >= 1 ? " s2" : "");
+  const txt = Math.abs(d) < .05 ? "even" : (d > 0 ? "▲" : "▼") + (c.dfmt ? c.dfmt(d) : sdDelta(d));
+  const avgTxt = c.afmt ? c.afmt(avg) : avg.toFixed(1);
+  return `<td title="${esc(c.title)}: ${fmt(v)} this game, ${avgTxt} season average"><span class="cv">${fmt(v)}</span><span class="dv ${tier}">${txt}</span></td>`;
+}
+function scoreCell(r) {
+  const sc = Math.round(r.l.score), d = r.l.dScore;
+  const t = Math.abs(d) < 5 ? "flat" : (d > 0 ? "up" : "down") + (Math.abs(d) >= 15 ? " s2" : "");
+  return `<div class="scorecell" title="Player score ${sc}; his season average is ${Math.round(r.s.avgScore)}"><span class="scv num">${sc}</span>
+    <span class="scbar" aria-hidden="true"><i class="${r.grp}" style="width:${sc}%"></i></span><span class="dv ${t}">${Math.round(d) === 0 ? "even" : (d > 0 ? "▲" : "▼") + Math.abs(d).toFixed(0)}</span></div>`;
+}
+function rankTable(rows, grp, g) {
+  const cols = STATCOLS.filter(c => !c.fOnly || (grp === "F" && rows.some(r => r.l.fo != null)));
+  return `<p class="swipe">Swipe the table for all stats →</p><div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Player</th><th class="l">Score</th>${cols.map(c => `<th title="${esc(c.title)}">${c.h}</th>`).join("")}</tr></thead><tbody>
+    ${rows.map((r, i) => `<tr data-pid="${r.pid}" data-gid="${g.id}"><td class="nm"><span class="rk">${i + 1}</span><button class="linkish"><span class="full">${esc(pname(r.pid))}</span><span class="short">${esc(plast(r.pid))}</span></button></td>
+      <td class="l">${scoreCell(r)}</td>${cols.map(c => statCell(r, c)).join("")}</tr>`).join("")}</tbody></table></div>`;
+}
+const howItWorks = () => `<details class="how"><summary>How the player score works</summary>
+  <p>Every stat in a game is compared with how Stars players at the same position usually do in a game, then weighted and added up. The total is scaled so <b>50 is a typical game</b> for that position, and about two out of three games land between 35 and 65. Forwards and defensemen are weighted differently but land on the same scale, so an 80 means the same thing for either.</p>
+  <div class="grid2">${[["F", "Forwards"], ["D", "Defensemen"]].map(([k, lab]) => `<div><p class="chapter-label">${lab}</p><ul class="wts">${WEIGHTS[k].map(([, w, name]) =>
+    `<li><span>${esc(name)}</span><span class="wbar" aria-hidden="true"><i style="width:${Math.abs(w) / .24 * 100}%" class="${w < 0 ? "neg" : ""}"></i></span><b class="num">${Math.round(Math.abs(w) * 100)}%</b></li>`).join("")}</ul></div>`).join("")}</div>
+  <p class="note">The y-axis compares the game with the player's own season average score, so a depth player's strong night and a star's quiet one both stand out.</p></details>`;
+
+function quadChart(el, rows, g) {
+  el.innerHTML = "";
+  const W = Math.max(300, el.clientWidth || 600), narrow = W < 560, H = narrow ? 360 : 440;
+  const m = { l: 46, r: 14, t: 12, b: 40 };
+  const maxAbs = Math.max(15, ...rows.map(r => Math.abs(r.l.dScore)));
+  const yl = Math.ceil((maxAbs + 6) / 10) * 10;
+  const X = v => m.l + v / 100 * (W - m.l - m.r), Y = v => m.t + (yl - v) / (2 * yl) * (H - m.t - m.b);
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H); svg.setAttribute("role", "img");
+  svg.setAttribute("aria-label", "Player score for this game against each player's season average");
+  el.appendChild(svg);
+  add(svg, "rect", { class: "q-good", x: X(50), y: Y(yl), width: X(100) - X(50), height: Y(0) - Y(yl) });
+  add(svg, "rect", { class: "q-bad", x: X(0), y: Y(0), width: X(50) - X(0), height: Y(-yl) - Y(0) });
+  const gGrid = add(svg, "g", { class: "grid" }), gAx = add(svg, "g", { class: "axis" });
+  [0, 25, 50, 75, 100].forEach(v => { add(gGrid, "line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b }); add(gAx, "text", { x: X(v), y: H - m.b + 15, "text-anchor": "middle" }, v); });
+  const step = yl > 30 ? 20 : 10;
+  for (let v = -yl; v <= yl; v += step) { add(gGrid, "line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v) }); add(gAx, "text", { x: m.l - 6, y: Y(v) + 4, "text-anchor": "end" }, pm(v)); }
+  add(svg, "line", { class: "qline", x1: X(50), x2: X(50), y1: m.t, y2: H - m.b });
+  add(svg, "line", { class: "qline", x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0) });
+  add(svg, "text", { class: "axt", x: (m.l + W - m.r) / 2, y: H - 5, "text-anchor": "middle" }, "Player score this game →");
+  const midY = (m.t + H - m.b) / 2;
+  add(svg, "text", { class: "axt", x: 11, y: midY, "text-anchor": "middle", transform: `rotate(-90 11 ${midY})` }, "vs. his season average →");
+  const boxes = [];
+  [[X(100) - 7, m.t + 15, "end", "Big night"], [X(0) + 7, m.t + 15, "start", "Better than usual"],
+   [X(100) - 7, H - m.b - 8, "end", "Below his usual"], [X(0) + 7, H - m.b - 8, "start", "Off night"]].forEach(([x, y, a, t]) => {
+    add(svg, "text", { class: "qlab", x, y, "text-anchor": a }, t.toUpperCase());
+    const w = t.length * 7.4; boxes.push({ x: a === "end" ? x - w : x, y: y - 11, w, h: 14 });
+  });
+  const pts = rows.map(r => ({ r, x: X(r.l.score), y: Y(r.l.dScore) }));
+  pts.forEach(p => boxes.push({ x: p.x - 7, y: p.y - 7, w: 14, h: 14 }));
+  const dots = new Map(), gDots = add(svg, "g", {});
+  pts.slice().sort((a, b) => a.r.grp < b.r.grp ? -1 : 1).forEach(p => {
+    const n = p.r.grp === "D" ? add(gDots, "rect", { class: "qd dot-d", x: p.x - 6, y: p.y - 6, width: 12, height: 12, rx: 2 })
+      : add(gDots, "circle", { class: "qd dot-f", cx: p.x, cy: p.y, r: 6.5 });
+    dots.set(String(p.r.pid), n);
+  });
+  const inside = b => b.x >= m.l + 2 && b.x + b.w <= W - m.r - 2 && b.y >= m.t + 2 && b.y + b.h <= H - m.b - 2;
+  const hit = b => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
+  const cw = narrow ? 6.1 : 6.5;
+  pts.slice().sort((a, b) => (Math.abs(b.r.l.dScore) + Math.abs(b.r.l.score - 50)) - (Math.abs(a.r.l.dScore) + Math.abs(a.r.l.score - 50))).forEach(p => {
+    const t = plast(p.r.pid), w = t.length * cw + 2, h = 13;
+    const cands = [[p.x + 9, p.y - 7, "start", p.x + 10, p.y + 4], [p.x - 9 - w, p.y - 7, "end", p.x - 10, p.y + 4],
+                   [p.x - w / 2, p.y - 22, "middle", p.x, p.y - 11], [p.x - w / 2, p.y + 9, "middle", p.x, p.y + 20]];
+    for (const [bx, by, a, tx, ty] of cands) {
+      const b = { x: bx, y: by, w, h };
+      if (inside(b) && !hit(b)) { boxes.push(b); add(svg, "text", { class: "dlab", x: tx, y: ty, "text-anchor": a }, t); return; }
+    }
+  });
+  const setHl = pid => dots.forEach((n, k) => n.classList.toggle("hl", k === String(pid)));
+  const pick = evt => {
+    const r = svg.getBoundingClientRect(), px = (evt.clientX - r.left) * (W / r.width), py = (evt.clientY - r.top) * (H / r.height);
+    let best = null, bd = 22; pts.forEach(p => { const d = Math.hypot(p.x - px, p.y - py); if (d < bd) { bd = d; best = p; } }); return best;
+  };
+  const tip = r => `<b>${esc(pname(r.pid))}</b> · ${r.grp === "D" ? "Defense" : "Forward"}<br>Score ${Math.round(r.l.score)} · ${pm(Math.round(r.l.dScore))} vs his average (${Math.round(r.s.avgScore)})<br>${r.l.gl}G ${r.l.a}A · ${r.l.sog} SOG · ${toi(r.l.toi)}<br><i>Tap for his night</i>`;
+  const move = evt => { const p = pick(evt); svg.style.cursor = p ? "pointer" : ""; if (!p) { hideTip(); setHl(null); return; } setHl(p.r.pid); showTip(tip(p.r), evt.clientX, evt.clientY); };
+  svg.addEventListener("pointermove", move); svg.addEventListener("pointerdown", move);
+  svg.addEventListener("pointerleave", () => { hideTip(); setHl(null); });
+  svg.addEventListener("click", evt => { const p = pick(evt); if (p) { hideTip(); openPlayer(p.r.pid, g.id); } });
+  return { highlight: setHl };
+}
+
+
+/* ================= story engine ================= */
+function scoreTrack(g) {
+  let u = 0, t = 0; const out = [{ m: 0, u: 0, t: 0 }];
+  g.goals.forEach(x => { x[1] ? u++ : t++; out.push({ m: x[0], u, t, x }); });
+  return out;
+}
+const scoreAt = (track, m) => { let s = track[0]; for (const p of track) { if (p.m <= m) s = p; else break; } return s; };
+function lineText(l) {
+  const g = l.gl, a = l.a;
+  const gs = g === 3 ? "a hat trick" : g >= 2 ? `${word(g)} goals` : g === 1 ? "a goal" : "";
+  const as = a === 1 ? "an assist" : a > 1 ? `${word(a)} assists` : "";
+  if (gs && as) return `${gs} and ${as}`;
+  return gs || as || plural(l.sog, "shot");
+}
+function starsOfGame(g) {
+  const sk = g.sk.map(r => { const l = { kind: "sk", pid: r[0], gl: r[1], a: r[2], pm: r[3], sog: r[5], hits: r[6], blk: r[7], toi: r[8] }; l.gs = gameScore(l); return l; });
+  const gk = g.gk.map(r => ({ kind: "gk", pid: r[0], sa: r[1], sv: r[2], ga: r[3], toi: r[4], dec: r[6], gs: r[1] ? (r[2] / r[1] - .9) * r[1] * .35 + (r[6] === "W" ? .4 : 0) : -1 }));
+  return [...sk, ...gk].sort((a, b) => b.gs - a.gs).slice(0, 3);
+}
+function gameStory(g) {
+  const T = scoreTrack(g), won = g.res === "W", margin = g.gf - g.ga, opp = g.oppName;
+  const maxLead = Math.max(...T.map(s => s.u - s.t)), maxDef = Math.max(...T.map(s => s.t - s.u));
+  const at40 = scoreAt(T, 39.99), lead3 = at40.u - at40.t;
+  const [a5u, a5t] = g.st.att5, share5 = a5u + a5t ? a5u / (a5u + a5t) : .5;
+  const [sogU, sogT] = g.st.sog;
+  const myG = g.gk.slice().sort((a, b) => b[4] - a[4])[0];
+  const myGsv = myG && myG[1] ? myG[2] / myG[1] : 0;
+  const oppG = g.oppGk[0];
+  const ppU = g.goals.filter(x => x[1] && x[7] === "PP").length, ppT = g.goals.filter(x => !x[1] && x[7] === "PP").length;
+  const extra = g.sfx === "OT" ? " in overtime" : g.sfx === "SO" ? " in a shootout" : "";
+  const topSk = starsOfGame(g).find(x => x.kind === "sk");
+  let head, kicker;
+  if (won && maxDef >= 2) { head = `${NAME} rally from ${word(maxDef)} down to beat the ${opp}${extra}`; kicker = "Comeback"; }
+  else if (!won && maxLead >= 2) { head = `${NAME} let a ${word(maxLead)}-goal lead slip against the ${opp}${extra}`; kicker = "Lead lost"; }
+  else if (won && g.ga === 0 && myG) { head = `${plast(myG[0])} blanks the ${opp}${extra}`; kicker = "Shutout"; }
+  else if (!won && g.gf === 0) { head = `${NAME} get shut out by the ${opp}`; kicker = "Shut out"; }
+  else if (won && sogT - sogU >= 8 && myGsv >= .925) { head = `${plast(myG[0])} steals one from the ${opp}`; kicker = "Goalie steal"; }
+  else if (!won && share5 >= .56) { head = `${NAME} carry the play but fall to the ${opp}${extra}`; kicker = "Outplayed, outscored"; }
+  else if (won && margin >= 4) { head = `${NAME} roll past the ${opp}`; kicker = "Blowout"; }
+  else if (!won && margin <= -4) { head = `The ${opp} run away from the ${NAME}`; kicker = "Blowout loss"; }
+  else if (won && lead3 < 0) { head = `A third-period push lifts the ${NAME} past the ${opp}${extra}`; kicker = "Late rally"; }
+  else if (!won && lead3 > 0) { head = `${NAME} fade late against the ${opp}`; kicker = "Late collapse"; }
+  else if (won && ppU >= 2 && ppU > ppT) { head = `The power play carries the ${NAME} past the ${opp}`; kicker = "Special teams"; }
+  else if (!won && ppT >= 2 && ppT > ppU) { head = `Penalties cost the ${NAME} against the ${opp}`; kicker = "Special teams"; }
+  else if (won && extra) { head = `${NAME} edge the ${opp}${extra}`; kicker = "Nail-biter"; }
+  else if (extra) { head = `${NAME} fall to the ${opp}${extra} but take a point`; kicker = "Nail-biter"; }
+  else if (won && share5 >= .56) { head = `${NAME} control the ${opp} from start to finish`; kicker = "Wire to wire"; }
+  else if (!won && oppG && oppG[1] >= 30 && oppG[2] / oppG[1] >= .935) { head = `${oppG[0].split(". ").pop()} stonewalls the ${NAME}`; kicker = "Hot goalie"; }
+  else if (won && myGsv >= .935 && sogT >= 30) { head = `${plast(myG[0])} stands tall as the ${NAME} beat the ${opp}`; kicker = "Big saves"; }
+  else if (won && topSk && topSk.gl + topSk.a >= 3) { head = `${plast(topSk.pid)}'s big night lifts the ${NAME} past the ${opp}`; kicker = "Star turn"; }
+  else if (!won && share5 <= .44) { head = `The ${opp} outwork the ${NAME}`; kicker = "Outplayed"; }
+  else if (won) { head = `${NAME} beat the ${opp}`; kicker = "Win"; }
+  else { head = `${NAME} fall to the ${opp}`; kicker = "Loss"; }
+
+  const top = starsOfGame(g)[0], bits = [];
+  if (top && top.kind === "sk" && top.gl + top.a > 0) bits.push(`${pname(top.pid)} led the way with ${lineText(top)}.`);
+  else if (top && top.kind === "sk" && oppG) bits.push(`${oppG[0]} stopped all ${oppG[1]} shots; ${pname(top.pid)} had the most looks, with ${plural(top.sog, "shot")}.`);
+  else if (top) bits.push(`${pname(top.pid)} made ${top.sv} saves on ${top.sa} shots.`);
+  if (kicker === "Goalie steal") bits.push(`The ${opp} outshot Dallas ${sogT}-${sogU}.`);
+  else if (kicker === "Outplayed, outscored" && oppG) bits.push(`Dallas took ${pct(share5)} of the 5-on-5 shot attempts, but ${oppG[0]} stopped ${oppG[2]} of ${oppG[1]}.`);
+  else if (ppU >= 2 || ppT >= 2) bits.push(`Power-play goals: ${US} ${ppU}, ${g.opp} ${ppT}.`);
+  else if (share5 >= .56) bits.push(`Dallas owned 5-on-5 play, taking ${pct(share5)} of the shot attempts.`);
+  else if (share5 <= .44) bits.push(`The ${opp} had the better of 5-on-5 play, taking ${pct(1 - share5)} of the shot attempts.`);
+  else if (myG && (!top || top.pid !== myG[0])) bits.push(`${pname(myG[0])} made ${myG[2]} saves.`);
+  return { head: `${head}, ${Math.max(g.gf, g.ga)}-${Math.min(g.gf, g.ga)}`, kicker, dek: bits.join(" ") };
+}
+function skaterTrend(s) {
+  const L = s.log, n = L.length, last = L.slice(-10);
+  const rate = s.gp ? sum(L.map(l => l.p)) / s.gp : 0;
+  const p10 = sum(last.map(l => l.p));
+  let streak = 0; for (let i = n - 1; i >= 0 && L[i].p > 0; i--) streak++;
+  let drought = 0; for (let i = n - 1; i >= 0 && L[i].gl === 0; i--) drought++;
+  const toi10 = mean(last.map(l => l.toi)) || 0, toiAll = s.toigp;
+  const sog10 = sum(last.map(l => l.sog)), g10 = sum(last.map(l => l.gl));
+  const sh10 = sog10 ? g10 / sog10 : null, shAll = s.sog ? s.gl / s.sog : null;
+  const exp10 = rate * last.length;
+  let status = "steady", label = "Steady", why = `${plural(p10, "point")} in the last ${last.length}`;
+  if (n < 5) { status = "new"; label = "New"; why = `${plural(n, "game")} played`; }
+  else if (streak >= 4) { status = "hot"; label = "Streak"; why = `points in ${word(streak)} straight`; }
+  else if (p10 >= Math.max(5, exp10 * 1.35)) { status = "hot"; label = "Hot"; why = `${p10} points in the last 10`; }
+  else if (drought >= 10 && s.gl / Math.max(1, s.gp) >= .25) { status = "cold"; label = "Drought"; why = `no goals in ${drought} games`; }
+  else if (rate >= .4 && p10 <= exp10 * .6) { status = "cold"; label = "Cold"; why = `${plural(p10, "point")} in the last 10`; }
+  return { rate, p10, streak, drought, toi10, toiAll, sh10, shAll, sog10, status, label, why, heat: n >= 5 ? p10 - exp10 : -99 };
+}
+function goalieTrend(s) {
+  const last = s.log.filter(l => l.sa >= 10).slice(-5);
+  const sa = sum(last.map(l => l.sa)), sv = sum(last.map(l => l.sv)), v = sa ? sv / sa : null;
+  const starts10 = G.slice(-10).filter(g => g.gk.some(r => r[0] == s.pid && r[5])).length;
+  let status = "steady", label = "Steady";
+  if (last.length < 3) { status = "new"; label = "Few starts"; }
+  else if (v - s.svp >= .012) { status = "hot"; label = "Locked in"; }
+  else if (s.svp - v >= .015) { status = "cold"; label = "Struggling"; }
+  return { v, n: last.length, starts10, status, label, why: last.length ? `${svp(v)} in the last ${plural(last.length, "game")}` : "" };
+}
+function teamTrend() {
+  const rec = arr => ({ w: arr.filter(g => g.res === "W").length, l: arr.filter(g => g.res === "L").length, o: arr.filter(g => g.res === "OTL").length });
+  const all = rec(G), pts = 2 * all.w + all.o, n = Math.min(10, N), last = G.slice(-n), before = G.slice(0, -n);
+  const r10 = rec(last), ptsPct = arr => { const r = rec(arr); return arr.length ? (2 * r.w + r.o) / (2 * arr.length) : null; };
+  const pp10 = ptsPct(last), ppB = ptsPct(before);
+  let ws = 0; for (let i = N - 1; i >= 0 && G[i].res === "W"; i--) ws++;
+  let ls = 0; for (let i = N - 1; i >= 0 && G[i].res === "L"; i--) ls++;
+  let ps = 0; for (let i = N - 1; i >= 0 && G[i].res !== "L"; i--) ps++;
+  const pace = N ? Math.round(pts / N * 82) : 0;
+  const gf10 = sum(last.map(g => g.gf)), ga10 = sum(last.map(g => g.ga));
+  const gshare10 = gf10 + ga10 ? gf10 / (gf10 + ga10) : .5;
+  const s10 = last.map(g => g.adv.sat).filter(v => v != null), sshare10 = s10.length ? mean(s10) : null;
+  const pd10 = last.map(g => g.adv.pdo).filter(v => v != null), pdo10 = pd10.length ? mean(pd10) : null;
+  const rs = `${r10.w}-${r10.l}-${r10.o}`;
+  let head, kicker;
+  if (ws >= 4) { head = `The ${NAME} have won ${word(ws)} straight`; kicker = "Winning streak"; }
+  else if (ls >= 4) { head = `The ${NAME} have lost ${word(ls)} straight`; kicker = "Losing streak"; }
+  else if (before.length >= 8 && pp10 - ppB >= .15) { head = `The ${NAME} are surging: ${rs} in their last ${n}`; kicker = "Trending up"; }
+  else if (before.length >= 8 && ppB - pp10 >= .15) { head = `The ${NAME} are sliding: ${rs} in their last ${n}`; kicker = "Trending down"; }
+  else if (ps >= 6) { head = `The ${NAME} have points in ${word(ps)} straight`; kicker = "Point streak"; }
+  else { head = `The ${NAME} are ${rs} in their last ${n}`; kicker = pp10 >= .6 ? "Rolling" : pp10 <= .45 ? "Scuffling" : "Holding steady"; }
+  let sus = "";
+  if (sshare10 != null && pdo10 != null && N >= 8) {
+    if (pdo10 >= 1.02 && gshare10 - sshare10 >= .05) sus = `Some of it is bounces: they've scored ${pct(gshare10)} of the goals lately but controlled only ${pct(sshare10)} of 5-on-5 shot attempts.`;
+    else if (pdo10 <= .98 && sshare10 - gshare10 >= .05) sus = `Better days may be coming: they're winning the shot battle (${pct(sshare10)}) but have scored only ${pct(gshare10)} of the goals.`;
+    else if (sshare10 >= .53) sus = `The underlying play backs it up, with ${pct(sshare10)} of 5-on-5 shot attempts over that stretch.`;
+    else if (sshare10 <= .47) sus = `The underlying play is a concern: only ${pct(sshare10)} of 5-on-5 shot attempts over that stretch.`;
+    else sus = `At 5-on-5 they've been close to even, with ${pct(sshare10)} of the shot attempts.`;
+  }
+  const where = pace >= 100 ? "comfortably above" : pace >= 93 ? "right around" : "below";
+  const dek = `${all.w}-${all.l}-${all.o} overall and on pace for ${pace} points, ${where} the usual playoff line. ${sus}`;
+  return { ...all, pts, pace, head, kicker, dek, r10, n, gshare10, sshare10, pdo10 };
+}
+
+/* ================= tooltip ================= */
+const tipEl = $("#tip");
+function showTip(html, x, y) {
+  tipEl.innerHTML = html; tipEl.hidden = false;
+  const r = tipEl.getBoundingClientRect(), W = window.innerWidth, H = window.innerHeight;
+  let left = x + 14, top = y - r.height - 12;
+  if (left + r.width > W - 8) left = x - r.width - 14;
+  if (left < 8) left = 8;
+  if (top < 8) top = y + 16;
+  if (top + r.height > H - 8) top = H - r.height - 8;
+  tipEl.style.left = left + "px"; tipEl.style.top = top + "px";
+}
+const hideTip = () => { tipEl.hidden = true; };
+window.addEventListener("scroll", hideTip, { passive: true });
+
+/* ================= chart engine ================= */
+const NS = "http://www.w3.org/2000/svg";
+let clipSeq = 0;
+function niceTicks(lo, hi, count = 4) {
+  if (lo === hi) { lo -= 1; hi += 1; }
+  const span = hi - lo, raw = span / count, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(s => span / s <= count + .5);
+  const t = [], top = Math.ceil(hi / step - 1e-9) * step;
+  for (let v = Math.ceil(lo / step - 1e-9) * step; v <= top + 1e-9; v += step) t.push(+v.toFixed(10));
+  return { ticks: t, lo: Math.min(lo, t[0]), hi: Math.max(hi, t[t.length - 1]) };
+}
+function monthTicks(ns) {
+  const out = []; let prev = null;
+  ns.forEach(n => { const g = byN.get(n); if (!g) return; const m = g.date.slice(0, 7); if (m !== prev) { out.push({ n, label: MONTHS[+m.slice(5) - 1] }); prev = m; } });
+  return out;
+}
+const add = (parent, tag, attrs, text) => {
+  const n = document.createElementNS(NS, tag);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (text != null) n.textContent = text;
+  parent.appendChild(n); return n;
+};
+function frame(el, h) {
+  el.innerHTML = "";
+  const W = Math.max(280, el.clientWidth || 600), H = h || (W < 520 ? 200 : 230);
+  const svg = document.createElementNS(NS, "svg");
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H);
+  el.appendChild(svg);
+  return { svg, W, H };
+}
+/* opts: xs, xDomain, series[{values, cls, step, stepTo, dots, dotCls, r, line, end}], area{values, step, stepTo}, bands[{x0,x1,cls,label}],
+   annots[{x,y,text,dy,dot}], refs[{y|line,label,labelX}], bars{values,clsOf,stack2,cls2}, xTicks, pLines, yFmt, yDomain, zeroBase, symmetric, zeroLine, tip(i), onClick(i), h */
+function chart(el, o) {
+  const { svg, W, H } = frame(el, o.h);
+  const m = { l: 40, r: o.endLabels === false ? 12 : 52, t: (o.bands || []).some(b => b.label) ? 24 : 12, b: 24 };
+  const xs = o.xs, x0 = o.xDomain ? o.xDomain[0] : Math.min(...xs) - .5, x1 = o.xDomain ? o.xDomain[1] : Math.max(...xs) + .5;
+  let vals = [];
+  (o.series || []).forEach(s => vals.push(...s.values.filter(v => v != null && !isNaN(v))));
+  if (o.area) vals.push(...o.area.values.filter(v => v != null), 0);
+  (o.refs || []).forEach(r => { if (r.line) vals.push(...r.line); else if (r.y != null && !isNaN(r.y)) vals.push(r.y); });
+  if (o.bars) { o.bars.values.forEach((v, i) => { if (v == null) return; vals.push(v, v + (o.bars.stack2 ? o.bars.stack2[i] || 0 : 0)); }); vals.push(0); }
+  if (!vals.length) vals = [0, 1];
+  let lo = o.yDomain ? o.yDomain[0] : Math.min(...vals), hi = o.yDomain ? o.yDomain[1] : Math.max(...vals);
+  if (!o.yDomain) {
+    const pad = (hi - lo) * .08 || 1; lo = o.bars || o.zeroBase ? Math.min(0, lo) : lo - pad; hi += pad;
+    if (o.symmetric) { const a = Math.max(Math.abs(lo), Math.abs(hi)); lo = -a; hi = a; }
+  }
+  const nt = niceTicks(lo, hi, o.ticks || 4); if (!o.yDomain) { lo = nt.lo; hi = nt.hi; }
+  const X = v => m.l + (v - x0) / (x1 - x0) * (W - m.l - m.r);
+  const Y = v => m.t + (1 - (v - lo) / (hi - lo)) * (H - m.t - m.b);
+  const back = add(svg, "g", {});
+  let lastBandLabel = -1e9;
+  (o.bands || []).slice().sort((a, b) => a.x0 - b.x0).forEach(b => {
+    add(back, "rect", { class: b.cls, x: X(b.x0), width: Math.max(2, X(b.x1) - X(b.x0)), y: m.t, height: H - m.t - m.b });
+    if (!b.label) return;
+    let cx = (X(b.x0) + X(b.x1)) / 2, anchor = "middle";
+    if (cx < m.l + 70) { cx = Math.max(m.l, X(b.x0)); anchor = "start"; } else if (cx > W - m.r - 70) { cx = Math.min(W - m.r, X(b.x1)); anchor = "end"; }
+    const y = cx - lastBandLabel < (W < 520 ? 190 : 150) ? m.t - 8 + 14 : m.t - 8; lastBandLabel = cx;
+    add(back, "text", { class: "annot", x: cx, y, "text-anchor": anchor }, b.label);
+  });
+  const gGrid = add(svg, "g", { class: "grid" }), gAx = add(svg, "g", { class: "axis" });
+  nt.ticks.filter(t => t >= lo - 1e-9 && t <= hi + 1e-9).forEach(t => {
+    add(gGrid, "line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t) });
+    add(gAx, "text", { x: m.l - 6, y: Y(t) + 4, "text-anchor": "end" }, (o.yFmt || (v => v))(t));
+  });
+  (o.pLines || []).forEach(v => add(gGrid, "line", { class: "pline", x1: X(v), x2: X(v), y1: m.t, y2: H - m.b }));
+  let lastTx = -1e9;
+  (o.xTicks || []).forEach(t => { const tx = X(t.n); if (tx - lastTx < 30) return; lastTx = tx; add(gAx, "text", { x: tx, y: H - 6, "text-anchor": "middle" }, t.label); });
+  const hlLayer = add(svg, "g", {}), ends = [];
+  const pathOf = (values, step) => { let d = "", pen = false;
+    values.forEach((v, i) => { if (v == null || isNaN(v)) { pen = false; return; } const px = X(xs[i]), py = Y(v);
+      if (!pen) { d += `M${px},${py}`; pen = true; } else d += step ? `H${px}V${py}` : `L${px},${py}`; });
+    return d; };
+  if (o.area) {
+    const vals_ = o.area.values, firstI = vals_.findIndex(v => v != null);
+    let lastI = vals_.length - 1; while (lastI > 0 && vals_[lastI] == null) lastI--;
+    const endX = o.area.stepTo != null ? X(o.area.stepTo) : X(xs[lastI]);
+    const full = pathOf(vals_, o.area.step) + (o.area.stepTo != null ? `H${endX}` : "") + `V${Y(0)}H${X(xs[firstI])}Z`;
+    const id = "clip" + (++clipSeq), defs = add(svg, "defs", {});
+    add(add(defs, "clipPath", { id: id + "p" }), "rect", { x: 0, y: 0, width: W, height: Math.max(0, Y(0)) });
+    add(add(defs, "clipPath", { id: id + "n" }), "rect", { x: 0, y: Y(0), width: W, height: Math.max(0, H - Y(0)) });
+    add(svg, "path", { class: "area-pos", d: full, "clip-path": `url(#${id}p)` });
+    add(svg, "path", { class: "area-neg", d: full, "clip-path": `url(#${id}n)` });
+  }
+  if (o.bars || o.zeroLine || (o.area && lo < 0 && hi > 0)) add(svg, "line", { class: "zero", x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0) });
+  if (o.bars) {
+    const bw = Math.max(1.5, (X(1) - X(0)) * .72);
+    o.bars.values.forEach((v, i) => {
+      if (v == null) return;
+      const cx = X(xs[i]), y0 = Y(0), y1 = Y(v);
+      if (v !== 0) add(svg, "rect", { class: o.bars.clsOf(i), x: cx - bw / 2, width: bw, y: Math.min(y0, y1), height: Math.max(1, Math.abs(y1 - y0)), rx: Math.min(2, bw / 3) });
+      const v2 = o.bars.stack2 && o.bars.stack2[i];
+      if (v2) { const ya = Y(v) - 1.5, yb = Y(v + v2); add(svg, "rect", { class: o.bars.cls2, x: cx - bw / 2, width: bw, y: yb, height: Math.max(1, ya - yb), rx: Math.min(2, bw / 3) }); }
+    });
+  }
+  (o.refs || []).forEach(r => {
+    let yv;
+    if (r.line) { add(svg, "path", { class: "ref", d: r.line.map((v, i) => `${i ? "L" : "M"}${X(xs[i])},${Y(v)}`).join("") }); yv = r.line[r.line.length - 1]; }
+    else if (r.y != null && !isNaN(r.y)) { add(svg, "line", { class: "ref", x1: m.l, x2: W - m.r, y1: Y(r.y), y2: Y(r.y) }); yv = r.y; }
+    else return;
+    if (r.label) { const t = add(svg, "text", { class: "lbl", x: r.labelX === "start" ? m.l + 4 : W - m.r + 4, y: Y(yv) + (r.labelX === "start" ? -5 : 4) }, r.label); if (r.labelX !== "start") ends.push(t); }
+  });
+  (o.series || []).forEach(s => {
+    if (s.line !== false) { const d = pathOf(s.values, s.step); if (d) add(svg, "path", { class: s.cls, d: d + (s.stepTo != null ? `H${X(s.stepTo)}` : "") }); }
+    if (s.dots) s.values.forEach((v, i) => { if (v != null && !isNaN(v)) add(svg, "circle", { class: s.dotCls || "dot-faint", cx: X(xs[i]), cy: Y(v), r: s.r || 3 }); });
+    if (s.end && o.endLabels !== false) {
+      let li = s.values.length - 1; while (li >= 0 && (s.values[li] == null || isNaN(s.values[li]))) li--;
+      if (li >= 0) ends.push(add(svg, "text", { class: "lbl end", x: (s.stepTo != null ? X(s.stepTo) : X(xs[li])) + 6, y: Y(s.values[li]) + 4 }, s.end(s.values[li])));
+    }
+  });
+  (o.annots || []).forEach(a => {
+    const ax = X(a.x), ay = Y(a.y);
+    if (a.dot) add(svg, "circle", { class: a.dot, cx: ax, cy: ay, r: 5.5 });
+    if (!a.text) return;
+    let anchor = "middle"; if (ax < m.l + 20) anchor = "start"; else if (ax > W - m.r - 20) anchor = "end";
+    add(svg, "text", { class: "annot", x: ax, y: ay + (a.dy ?? -10), "text-anchor": anchor }, a.text);
+  });
+  ends.sort((a, b) => +a.getAttribute("y") - +b.getAttribute("y"));
+  for (let k = 1; k < ends.length; k++) { const py = +ends[k - 1].getAttribute("y"), cy = +ends[k].getAttribute("y"); if (cy - py < 13) ends[k].setAttribute("y", py + 13); }
+  if (o.note) add(svg, "text", { class: "lbl", x: (m.l + W - m.r) / 2, y: m.t + 22, "text-anchor": "middle" }, o.note);
+  if (o.tip) {
+    const overlay = add(svg, "rect", { class: "hit", x: m.l, y: 0, width: W - m.l - m.r, height: H - m.b });
+    const cross = add(svg, "line", { class: "cross", y1: m.t, y2: H - m.b, visibility: "hidden" });
+    const idxAt = evt => {
+      const r = svg.getBoundingClientRect(), px = (evt.clientX - r.left) * (W / r.width);
+      const xv = x0 + (px - m.l) / (W - m.l - m.r) * (x1 - x0);
+      let best = 0, bd = Infinity; xs.forEach((v, i) => { const d = Math.abs(v - xv); if (d < bd) { bd = d; best = i; } });
+      return best;
+    };
+    let hl = null;
+    const move = evt => {
+      const i = idxAt(evt), html = o.tip(i);
+      if (!html) { hideTip(); cross.setAttribute("visibility", "hidden"); return; }
+      cross.setAttribute("x1", X(xs[i])); cross.setAttribute("x2", X(xs[i])); cross.setAttribute("visibility", o.bars ? "hidden" : "visible");
+      if (o.bars) { hl && hl.remove(); const bw = X(1) - X(0); hl = add(hlLayer, "rect", { class: "col-hl", x: X(xs[i]) - bw / 2, width: bw, y: m.t, height: H - m.t - m.b }); }
+      showTip(html, evt.clientX, evt.clientY);
+    };
+    overlay.addEventListener("pointermove", move);
+    overlay.addEventListener("pointerdown", move);
+    overlay.addEventListener("pointerleave", () => { hideTip(); cross.setAttribute("visibility", "hidden"); hl && hl.remove(); hl = null; });
+    if (o.onClick) { overlay.style.cursor = "pointer"; overlay.addEventListener("click", evt => o.onClick(idxAt(evt))); }
+  }
+}
+function rolling(vals, w, fn, warm = Math.min(5, w)) {
+  return vals.map((_, i) => {
+    const seg = vals.slice(Math.max(0, i - w + 1), i + 1).filter(v => v != null && !isNaN(v));
+    return seg.length >= warm ? fn(seg) : null;
+  });
+}
+/* ================= rink ================= */
+function star(cx, cy, R = 3.4, r = 1.45) {
+  let p = ""; for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? r : R; p += `${(cx + rr * Math.cos(a)).toFixed(2)},${(cy + rr * Math.sin(a)).toFixed(2)} `; }
+  return p.trim();
+}
+function rinkSVG(shots, opts = {}) {
+  const k = (opts.width || 800) < 520 ? 1.55 : 1;
+  const gy = 14.5 + Math.sqrt(28 * 28 - 17 * 17);
+  let s = `<svg class="rink" viewBox="-101 -44 202 88" role="img" aria-label="${esc(opts.label || "Shot map")}">`;
+  s += `<rect class="ice" x="-100" y="-42.5" width="200" height="85" rx="28" ry="28"/>`;
+  if (opts.slot !== "them") s += `<rect class="slot" x="69" y="-22" width="20" height="44"/>`;
+  if (opts.slot !== "us") s += `<rect class="slot" x="-89" y="-22" width="20" height="44"/>`;
+  s += `<line class="ln heavy" x1="0" y1="-42.5" x2="0" y2="42.5"/>`;
+  [-25, 25].forEach(x => s += `<line class="ln heavy" x1="${x}" y1="-42.5" x2="${x}" y2="42.5"/>`);
+  [-89, 89].forEach(x => s += `<line class="ln" x1="${x}" y1="${-gy}" x2="${x}" y2="${gy}"/>`);
+  s += `<path class="ln" d="M89,-6 A6,6 0 0 0 89,6"/><path class="ln" d="M-89,-6 A6,6 0 0 1 -89,6"/>`;
+  s += `<rect class="ln" x="89" y="-3" width="3.5" height="6"/><rect class="ln" x="-92.5" y="-3" width="3.5" height="6"/>`;
+  s += `<circle class="ln" cx="0" cy="0" r="15"/>`;
+  [[-69, -22], [-69, 22], [69, -22], [69, 22]].forEach(([x, y]) => s += `<circle class="ln" cx="${x}" cy="${y}" r="15"/><circle class="dot" cx="${x}" cy="${y}" r=".9"/>`);
+  [[-20, -22], [-20, 22], [20, -22], [20, 22]].forEach(([x, y]) => s += `<circle class="dot" cx="${x}" cy="${y}" r=".9"/>`);
+  const order = sh => sh.kind === 0 ? 2 : sh.kind === 1 ? 1 : 0;
+  shots.map((sh, i) => [sh, i]).sort((a, b) => order(a[0]) - order(b[0])).forEach(([sh, i]) => {
+    const side = sh.us ? "us" : "them", x = sh.x, y = -sh.y;
+    if (sh.kind === 0) s += `<polygon class="shot ${side} goal" data-i="${i}" points="${star(x, y, 3.4 * k, 1.45 * k)}"/>`;
+    else s += `<circle class="shot ${side} ${sh.kind === 1 ? "sog" : "miss"}" data-i="${i}" cx="${x}" cy="${y}" r="${((sh.kind === 1 ? 1.7 : 1.5) * k).toFixed(2)}"/>`;
+  });
+  return s + `</svg>`;
+}
+function mountRink(el, shots, opts) {
+  el.innerHTML = rinkSVG(shots, { ...opts, width: el.clientWidth });
+  const svg = el.querySelector("svg.rink"); let last = null;
+  const show = evt => {
+    const t = evt.target.closest(".shot");
+    if (last && last !== t) last.classList.remove("hl");
+    if (!t) { hideTip(); last = null; return; }
+    t.classList.add("hl"); last = t; showTip(shots[+t.dataset.i].tip, evt.clientX, evt.clientY);
+  };
+  svg.addEventListener("pointermove", show); svg.addEventListener("pointerdown", show);
+  svg.addEventListener("pointerleave", () => { hideTip(); last && last.classList.remove("hl"); last = null; });
+}
+const rinkLegend = (usLab, themLab) => `<div class="legend">
+  <span class="k"><svg width="14" height="14" viewBox="-4 -4 8 8"><polygon points="${star(0, 0, 3.6, 1.5)}" fill="var(--muted)" stroke="var(--ink)" stroke-width=".4"/></svg>Goal</span>
+  <span class="k"><svg width="10" height="10" viewBox="-2 -2 4 4"><circle r="1.7" fill="var(--muted)"/></svg>Shot on goal</span>
+  <span class="k"><svg width="10" height="10" viewBox="-2 -2 4 4"><circle r="1.4" fill="var(--ice)" stroke="var(--muted)" stroke-width=".6"/></svg>Missed</span>
+  <span class="k"><span class="kbox slot"></span>Slot</span>
+  ${usLab ? `<span class="k"><span class="kbox us"></span>${esc(usLab)}</span>` : ""}${themLab ? `<span class="k"><span class="kbox them"></span>${esc(themLab)}</span>` : ""}</div>`;
+const shotTip = (g, s) => {
+  const who = s[1] ? (s[5] ? pname(s[5]) : US) : (g ? g.opp : "Opponent");
+  return `<b>${esc(who)}</b><br>${KIND[s[2]]}${STR[s[6]] ? ` · ${STR[s[6]]}` : ""}${s[3] != null && inSlot(s[3], s[4], !!s[1]) ? " · from the slot" : ""}<br>${minClock(s[0])}${g ? ` · ${esc(vs(g))} ${fdate(g.date)}` : ""}`;
+};
+const mapShots = list => list.filter(e => e.s[2] !== 3 && e.s[3] != null).map(e => ({ x: e.s[3], y: e.s[4], us: !!e.s[1], kind: e.s[2], tip: shotTip(e.g, e.s) }));
+
+/* ================= state + tabs ================= */
+const state = { game: G.length ? G[G.length - 1].id : null };
+function render() { hideTip(); renderGame(); }
+function setTab() { render(); window.scrollTo({ top: 0 }); }
+const lede = (kicker, head, dek, extra) => `<div class="lede"><p class="kicker">${esc(kicker)}</p><h2 class="headline">${esc(head)}</h2>${dek ? `<p class="dek">${esc(dek)}</p>` : ""}${extra || ""}</div>`;
+const wire = root => root.querySelectorAll("[data-pid]").forEach(n => n.addEventListener("click", () => openPlayer(n.dataset.pid, n.dataset.gid ? +n.dataset.gid : null)));
+
+/* ================= GAME: player-first ================= */
+let quad = null;
+function renderGame() {
+  const root = $("#games");
+  if (!G.length) { root.innerHTML = `<div class="card"><h2>No games yet</h2><p class="cap">Run the builder again after the first game.</p></div>`; return; }
+  const g = byId.get(state.game) || G[G.length - 1], idx = G.indexOf(g);
+  const S = gameStory(g);
+  const chipScroll = root.querySelector(".chips")?.scrollLeft;
+  const rows = g.sk.map(r => { const s = skaters[r[0]]; return s ? { pid: r[0], s, grp: s.grp, l: s.log.find(x => x.g.id === g.id) } : null; }).filter(r => r && r.l);
+  const byScore = rows.slice().sort((a, b) => b.l.score - a.l.score);
+  const fw = byScore.filter(r => r.grp === "F"), dm = byScore.filter(r => r.grp === "D");
+  const best = byScore[0], bigUp = rows.slice().sort((a, b) => b.l.dScore - a.l.dScore)[0], bigDown = rows.slice().sort((a, b) => a.l.dScore - b.l.dScore)[0];
+  const above = rows.filter(r => r.l.dScore >= 0).length, below = rows.length - above;
+  let qHead = best ? `${plast(best.pid)} led the way with a ${Math.round(best.l.score)}` : "Player scores";
+  if (bigUp && best && bigUp.pid !== best.pid && bigUp.l.dScore >= 10) qHead += `; ${plast(bigUp.pid)} beat his norm by the most`;
+  let qCap = `${cap1(word(above))} ${above === 1 ? "skater" : "skaters"} played above ${above === 1 ? "his" : "their"} own season average and ${word(below)} below.`;
+  if (bigDown && bigDown.l.dScore <= -15 && bigDown.s.avgScore >= 55) qCap += ` A rough one for ${pname(bigDown.pid)}: ${Math.round(-bigDown.l.dScore)} under his usual ${Math.round(bigDown.s.avgScore)}.`;
+  const gk = g.gk.map(r => ({ pid: r[0], sa: r[1], sv: r[2], ga: r[3], toi: r[4], dec: r[6], s: goalies[r[0]] }));
+  root.innerHTML = `
+    <div class="picker">
+      <button class="step" id="prev" aria-label="Previous game" ${idx === 0 ? "disabled" : ""}>‹</button>
+      <div class="chips" role="group" aria-label="Pick a game">
+        ${G.map(x => `<button class="chip ${x.res}" data-id="${x.id}" aria-pressed="${x.id === g.id}"><span class="d">${fdate(x.date)}</span><span class="o">${esc(vs(x))}</span><span class="r">${resLabel(x)} ${scoreStr(x)}</span></button>`).join("")}
+      </div>
+      <button class="step" id="next" aria-label="Next game" ${idx === G.length - 1 ? "disabled" : ""}>›</button>
+    </div>
+    ${lede(`Game ${g.n} · ${S.kicker}`, S.head, "", `
+      <div class="score-strip"><span class="t"><span class="sw us"></span>${US}</span><span class="s num">${g.gf}</span><span class="s num" style="color:var(--muted)">–</span><span class="s num">${g.ga}</span><span class="t">${esc(g.opp)}<span class="sw them"></span></span><span class="st">Final${g.sfx ? " / " + g.sfx : ""}</span></div>
+      <div class="facts"><span>${fdate(g.date, true)}</span><span>${esc(g.venue)}</span><span>Shots <b>${g.st.sog[0]}-${g.st.sog[1]}</b></span>${g.st.pp ? `<span>Power play <b>${g.st.pp[0]}</b> vs <b>${g.st.pp[1]}</b></span>` : ""}</div>`)}
+    <div class="card">
+      <p class="chapter-label">Who played well, and who played above his norm</p>
+      <h2>${esc(qHead)}</h2>
+      <p class="cap">${esc(qCap)} Farther right is a better game for his position. Higher is better than his own season average.</p>
+      <div class="chart" id="quad"></div>
+      <div class="legend"><span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="5.5" class="dot-f"/></svg>Forward</span>
+        <span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><rect x="-5" y="-5" width="10" height="10" rx="2" class="dot-d"/></svg>Defenseman</span>
+        <span class="k">Tap a dot for his night</span></div>
+      ${howItWorks()}
+    </div>
+    ${fw.length ? `<div class="card"><p class="chapter-label">Forwards · ranked by player score</p>
+      <h2>${esc(plast(fw[0].pid))} tops the forwards at ${Math.round(fw[0].l.score)}</h2>
+      <p class="cap">The small number under each stat is the difference from his season average per game. Green is better than usual, red is worse, and shaded ones are far outside his normal range. Hover a number to see his season average.</p>
+      ${rankTable(fw, "F", g)}</div>` : ""}
+    ${dm.length ? `<div class="card"><p class="chapter-label">Defensemen · ranked by player score</p>
+      <h2>${esc(plast(dm[0].pid))} leads the blue line at ${Math.round(dm[0].l.score)}</h2>
+      ${rankTable(dm, "D", g)}</div>` : ""}
+    ${gk.length ? `<div class="card"><p class="chapter-label">In goal</p>
+      <h2>${esc(gk.map(x => `${plast(x.pid)}: ${x.sv} saves on ${x.sa}`).join(" · "))}</h2>
+      <div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Goalie</th><th class="l">Dec</th><th>SV%</th><th>Saves</th><th>Shots</th><th>GA</th><th>TOI</th></tr></thead><tbody>
+      ${gk.map(x => { const v = x.sa ? x.sv / x.sa : null, sv = x.s ? x.s.svp : null, d = v != null && sv != null ? v - sv : null;
+        const t = d == null || Math.abs(d) < .01 ? "flat" : (d > 0 ? "up" : "down") + (Math.abs(d) >= .03 ? " s2" : "");
+        const sa = x.s ? x.s.sa / x.s.gp : null, dsa = sa != null ? x.sa - sa : null;
+        return `<tr data-pid="${x.pid}" data-gid="${g.id}"><td class="nm"><button class="linkish"><span class="full">${esc(pname(x.pid))}</span><span class="short">${esc(plast(x.pid))}</span></button></td>
+          <td class="l">${x.dec ? `<span class="pill ${x.dec}">${x.dec}</span>` : "–"}</td>
+          <td title="Season average ${svp(sv)}"><span class="cv">${svp(v)}</span><span class="dv ${t}">${d == null ? "" : Math.abs(d) < .0005 ? "even" : (d > 0 ? "▲" : "▼") + Math.abs(d).toFixed(3).replace(/^0/, "")}</span></td>
+          <td><span class="cv">${x.sv}</span></td><td title="Season average ${sa == null ? "–" : sa.toFixed(1)}"><span class="cv">${x.sa}</span>${dsa == null ? "" : `<span class="dv flat">${dsa > 0 ? "▲" : dsa < 0 ? "▼" : ""}${sdDelta(dsa)}</span>`}</td>
+          <td><span class="cv">${x.ga}</span></td><td><span class="cv">${toi(x.toi)}</span></td></tr>`; }).join("")}
+      </tbody></table></div></div>` : ""}`;
+  const chips = root.querySelector(".chips");
+  chips.style.scrollBehavior = "auto";
+  if (chipScroll != null) chips.scrollLeft = chipScroll;
+  const sel = chips.querySelector('[aria-pressed="true"]'), cr = chips.getBoundingClientRect(), sr = sel.getBoundingClientRect();
+  if (sr.left < cr.left || sr.right > cr.right) chips.scrollLeft += sr.left - cr.left - cr.width / 2 + sr.width / 2;
+  chips.style.scrollBehavior = "";
+  chips.addEventListener("click", e => { const c = e.target.closest(".chip"); if (c) { state.game = +c.dataset.id; renderGame(); } });
+  $("#prev").onclick = () => { state.game = G[idx - 1].id; renderGame(); };
+  $("#next").onclick = () => { state.game = G[idx + 1].id; renderGame(); };
+  quad = quadChart($("#quad"), rows, g);
+  root.querySelectorAll("tr[data-pid]").forEach(tr => {
+    tr.addEventListener("mouseenter", () => quad && quad.highlight(tr.dataset.pid));
+    tr.addEventListener("mouseleave", () => quad && quad.highlight(null));
+  });
+  wire(root);
+}
+/* ================= SEASON STORY ================= */
+/* ================= PLAYERS ================= */
+/* ================= PLAYER SHEET ================= */
+let sheet = null;
+function openPlayer(pid, gameId = null) {
+  pid = String(pid);
+  const lastFocus = document.activeElement;
+  const isG = !!goalies[pid] && !skaters[pid], agg = isG ? goalies[pid] : skaters[pid];
+  if (!agg) return;
+  const info = P[pid] || {};
+  const meta = [POS[info.pos] || info.pos, info.shoots ? (isG ? "Catches " : "Shoots ") + info.shoots : "", info.age ? `Age ${info.age}` : "",
+    info.ht ? `${Math.floor(info.ht / 12)}′${info.ht % 12}″` : "", info.home].filter(Boolean).join(" · ");
+  const games = agg.log.map(l => l.g);
+  let scope = gameId && games.some(g => g.id === gameId) ? gameId : null;
+  const root = $("#sheet-root");
+  root.innerHTML = `<div class="backdrop" id="backdrop"><div class="sheet" role="dialog" aria-modal="true" aria-labelledby="pname">
+    <div class="sheet-head"><span class="bignum">${info.num ?? ""}</span><h2 class="pname" id="pname">${esc(pname(pid))}</h2>
+      <button class="close" id="close" aria-label="Close player card">✕</button><span class="pmeta">${esc(meta)}</span>
+      <div class="scope"><div class="seg" id="scopeseg"><button data-k="season">His season</button><button data-k="game">One game</button></div>
+        <select id="gamesel" aria-label="Pick a game">${games.slice().reverse().map(g => `<option value="${g.id}">${fdate(g.date)} ${esc(vs(g))} · ${resLabel(g)} ${scoreStr(g)}</option>`).join("")}</select></div>
+    </div><div class="sheet-body" id="sheet-body"></div></div></div>`;
+  document.body.style.overflow = "hidden";
+  const close = () => { root.innerHTML = ""; document.body.style.overflow = ""; hideTip(); sheet = null; lastFocus && lastFocus.focus && lastFocus.focus(); };
+  $("#close").onclick = close;
+  $("#backdrop").addEventListener("click", e => { if (e.target.id === "backdrop") close(); });
+  const sel = $("#gamesel");
+  const draw = () => {
+    root.querySelectorAll("#scopeseg button").forEach(b => b.setAttribute("aria-pressed", (b.dataset.k === "game") === !!scope));
+    sel.hidden = !scope; if (scope) sel.value = scope;
+    const body = $("#sheet-body");
+    if (isG) scope ? goalieGame(body, pid, agg, byId.get(scope)) : goalieSeason(body, pid, agg);
+    else scope ? skaterGame(body, pid, agg, byId.get(scope)) : skaterSeason(body, pid, agg);
+    body.querySelectorAll("[data-game]").forEach(n => n.addEventListener("click", () => { scope = +n.dataset.game; draw(); $("#backdrop").scrollTop = 0; }));
+    body.querySelectorAll("[data-open-game]").forEach(n => n.addEventListener("click", () => { state.game = +n.dataset.openGame; close(); setTab("games"); }));
+  };
+  $("#scopeseg").onclick = e => { const b = e.target.closest("button"); if (!b) return; scope = b.dataset.k === "game" ? (scope || games[games.length - 1].id) : null; draw(); };
+  sel.onchange = () => { scope = +sel.value; draw(); };
+  sheet = { draw, close, open: s => { scope = s; draw(); } };
+  draw(); $("#close").focus();
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape" && sheet) sheet.close(); });
+
+function vsRows(rows) {
+  return `<div class="vs">${rows.map(([lab, v, avg, fmt, max]) => {
+    const mx = Math.max(max, v, avg, 1e-9), f = fmt || (x => x);
+    return `<div class="vs-row"><span class="lab">${lab}</span><span class="track" aria-hidden="true"><span class="fill ${v < avg ? "below" : ""}" style="width:${v / mx * 100}%"></span><span class="avg" style="left:calc(${avg / mx * 100}% - 1px)"></span></span>
+      <span class="val"><b>${f(v)}</b> vs ${f(avg)}</span></div>`; }).join("")}</div>`;
+}
+function skaterGame(body, pid, s, g) {
+  const l = s.log.find(x => x.g.id === g.id), last = plast(pid), opp = g.oppName;
+  const ours = g.goals.filter(x => x[1]);
+  const gwg = g.res === "W" && !g.sfx.includes("SO") && ours[g.ga] && ours[g.ga][4] == pid;
+  const att = s.shots.filter(x => x.g.id === g.id);
+  const rank = s.log.slice().sort((a, b) => b.gs - a.gs).indexOf(l) + 1;
+  const li = s.log.indexOf(l); let since = null; for (let i = li - 1; i >= 0; i--) if (s.log[i].gs >= l.gs) { since = s.log[i]; break; }
+  let head;
+  if (l.gl >= 4) head = `${last} scores ${word(l.gl)} goals against the ${opp}`;
+  else if (l.gl === 3) head = `${last} records a hat trick against the ${opp}`;
+  else if (l.p >= 3) head = `${last} piles up ${word(l.p)} points against the ${opp}`;
+  else if (gwg) head = `${last} scores the winner against the ${opp}`;
+  else if (l.gl === 2) head = `${last} scores twice against the ${opp}`;
+  else if (l.p >= 1) head = `${last} chips in ${lineText(l)} against the ${opp}`;
+  else if (l.sog >= 5) head = `${last} fires ${word(l.sog)} shots but can't break through`;
+  else if (l.toi - s.toigp >= 120) head = `${last} logs heavy minutes against the ${opp}`;
+  else head = `A quiet night for ${last} against the ${opp}`;
+  const diff = l.toi - s.toigp;
+  let dek = `Player score ${Math.round(l.score)}, ${Math.abs(Math.round(l.dScore))} ${l.dScore >= 0 ? "above" : "below"} his season average. ${cap1(lineText(l))} in ${toi(l.toi)} of ice time, ${toi(Math.abs(diff))} ${diff >= 0 ? "more" : "less"} than usual.`;
+  if (s.gp >= 8 && rank === 1) dek += " By our game score, his best game of the season.";
+  else if (s.gp >= 8 && rank <= 3) dek += ` By our game score, his ${ord(rank)}-best game of the season.`;
+  else if (since && li - s.log.indexOf(since) >= 8) dek += ` His best game since ${fdate(since.g.date)}.`;
+  const maxOf = k => Math.max(...s.log.map(x => x[k]));
+  const inv = [];
+  ours.forEach(x => { if (x[4] == pid) inv.push({ m: x[0], kind: "goal", x }); else if ((x[8] || []).includes(Number(pid))) inv.push({ m: x[0], kind: "assist", x }); });
+  const unb = att.filter(x => x.s[2] !== 3 && x.s[3] != null), slotN = unb.filter(x => inSlot(x.s[3], x.s[4], true)).length;
+  const above = l.gs >= mean(s.log.map(x => x.gs));
+  body.innerHTML = lede(`${fdate(g.date)} ${vs(g)} · ${resLabel(g)} ${scoreStr(g)}`, head, dek)
+    + `<div class="card"><p class="chapter-label">1 · Compared with his normal</p><h2>${l.dScore >= 0 ? "An above-average night for him" : "A below-average night for him"}</h2>
+      <p class="cap">Bars are this game; green beats his average, gray falls short. The black tick is his season average per game.</p>
+      ${vsRows([["Player score", Math.round(l.score), s.avgScore, v => Math.round(v), 100], ["Points", l.p, s.p / s.gp, v => +v.toFixed(2), maxOf("p")], ["Shots", l.sog, s.sog / s.gp, v => +v.toFixed(1), maxOf("sog")],
+        ["Ice time", l.toi, s.toigp, toi, maxOf("toi")], ["Hits", l.hits, s.hits / s.gp, v => +v.toFixed(1), maxOf("hits")], ["Blocks", l.blk, s.blk / s.gp, v => +v.toFixed(1), maxOf("blk")]])}</div>
+    <div class="card"><p class="chapter-label">2 · When he showed up</p><h2>${inv.length ? `${plural(inv.length, "point")} and ${plural(att.length, "shot attempt")}` : `${plural(att.length, "shot attempt")}, no points`}</h2>
+      <p class="cap">Every shot attempt and point from his night, on the game clock. Tap one for details.</p><div class="chart" id="tl"></div>
+      <div class="legend"><span class="k"><svg width="14" height="14" viewBox="-4 -4 8 8"><polygon points="${star(0, 0, 3.6, 1.5)}" fill="var(--accent)" stroke="var(--ink)" stroke-width=".4"/></svg>Goal</span>
+        <span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><rect x="-4" y="-4" width="8" height="8" transform="rotate(45)" fill="var(--accent-soft)" stroke="var(--accent)" stroke-width="1.5"/></svg>Assist</span>
+        <span class="k"><svg width="10" height="10" viewBox="-5 -5 10 10"><circle r="4" fill="var(--accent)"/></svg>Shot on goal</span>
+        <span class="k"><svg width="10" height="10" viewBox="-5 -5 10 10"><circle r="3.5" fill="none" stroke="var(--accent)" stroke-width="1.5"/></svg>Missed or blocked</span>
+        <span class="k"><svg width="4" height="10"><rect width="2" height="10" fill="var(--muted)"/></svg>Team goals</span></div></div>
+    <div class="card"><p class="chapter-label">3 · Where he shot from</p><h2>${unb.length ? `${slotN} of his ${plural(unb.length, "unblocked attempt")} came from the slot` : "No unblocked attempts"}</h2>
+      <div id="pmap"></div>${rinkLegend()}</div>
+    <div class="card"><button class="linkish" data-open-game="${g.id}">Back to the game rankings →</button></div>`;
+  timeline($("#tl"), g, att.filter(x => x.s[2] !== 0).map(x => ({ m: x.s[0], kind: x.s[2] === 1 ? "sog" : "miss", tip: shotTip(null, x.s) }))
+    .concat(inv.map(e => ({ m: e.m, kind: e.kind, tip: `<b>${e.kind === "goal" ? "Goal" : "Assist"}</b>${e.kind === "assist" ? ` on ${esc(pname(e.x[4]))}'s goal` : ""}<br>${minClock(e.m)}` }))));
+  mountRink($("#pmap"), mapShots(att), { label: `${pname(pid)} shots`, slot: "us" });
+}
+function timeline(el, g, events) {
+  el.innerHTML = "";
+  const end = Math.max(60, ...g.goals.map(x => x[0]), ...g.shots.map(s => s[0])) > 60 ? 65 : 60;
+  const W = Math.max(280, el.clientWidth), H = 92, l = 14, r = 14, X = m => l + m / end * (W - l - r), yA = 52;
+  const svg = document.createElementNS(NS, "svg"); svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H); el.appendChild(svg);
+  [20, 40, 60].filter(v => v < end).forEach(v => add(svg, "line", { class: "pline", x1: X(v), x2: X(v), y1: 8, y2: yA + 16 }));
+  add(svg, "line", { class: "tl-axis", x1: X(0), x2: X(end), y1: yA, y2: yA });
+  [[10, "1st"], [30, "2nd"], [50, "3rd"]].concat(end > 60 ? [[62.5, "OT"]] : []).forEach(([v, t]) => add(svg, "text", { class: "lbl", x: X(v), y: H - 4, "text-anchor": "middle" }, t));
+  g.goals.forEach(x => add(svg, "rect", { x: X(x[0]) - 1, y: yA + 7, width: 2, height: 9, fill: x[1] ? "var(--accent)" : "var(--opp)" }));
+  const order = { miss: 0, sog: 1, assist: 2, goal: 3 };
+  events.sort((a, b) => order[a.kind] - order[b.kind]).forEach(e => {
+    const x = X(e.m); let n;
+    if (e.kind === "goal") n = add(svg, "polygon", { class: "ev", points: star(x, yA - 24, 10, 4.3), fill: "var(--accent)", stroke: "var(--ink)", "stroke-width": 1 });
+    else if (e.kind === "assist") n = add(svg, "rect", { class: "ev", x: x - 6, y: yA - 30, width: 12, height: 12, transform: `rotate(45 ${x} ${yA - 24})`, fill: "var(--accent-soft)", stroke: "var(--accent)", "stroke-width": 2 });
+    else if (e.kind === "sog") n = add(svg, "circle", { class: "ev", cx: x, cy: yA, r: 5.5, fill: "var(--accent)", stroke: "var(--surface)", "stroke-width": 1.5 });
+    else n = add(svg, "circle", { class: "ev", cx: x, cy: yA, r: 4.5, fill: "var(--surface)", stroke: "var(--accent)", "stroke-width": 1.8 });
+    const show = ev => showTip(e.tip, ev.clientX, ev.clientY);
+    n.addEventListener("pointermove", show); n.addEventListener("pointerdown", show); n.addEventListener("pointerleave", hideTip);
+  });
+}
+function skaterSeason(body, pid, s) {
+  const t = s.trend, last = plast(pid), xs = G.map(g => g.n), xt = monthTicks(xs);
+  const logBy = new Map(s.log.map(l => [l.g.n, l]));
+  let head, kicker = t.label;
+  if (s.gp < 5) head = `${last} has ${plural(s.p, "point")} in ${plural(s.gp, "game")}`;
+  else if (t.label === "Streak") head = `${last} has points in ${word(t.streak)} straight games`;
+  else if (t.label === "Hot") head = `${last} is heating up: ${t.p10} points in his last 10`;
+  else if (t.label === "Drought") head = `${last} hasn't scored in ${t.drought} games`;
+  else if (t.label === "Cold") head = `${last} has cooled off: ${plural(t.p10, "point")} in his last 10`;
+  else if (t.toi10 - t.toiAll >= 90) { head = `${last}'s ice time is climbing`; kicker = "More minutes"; }
+  else if (t.toiAll - t.toi10 >= 90) { head = `${last}'s ice time is shrinking`; kicker = "Fewer minutes"; }
+  else head = `${last} is producing at his usual pace`;
+  const rP = rankOf(pid, "p"), rG = rankOf(pid, "gl");
+  let dek = `${plural(s.gl, "goal")} and ${plural(s.a, "assist")} in ${s.gp} games${rP <= 5 ? `, ${ord(rP)} on the team in points` : ""}${rG <= 3 && s.gl ? ` and ${ord(rG)} in goals` : ""}.`;
+  if (t.sh10 != null && t.shAll != null && t.sog10 >= 15) {
+    if (t.sh10 - t.shAll >= .06) dek += ` He's shooting ${pct(t.sh10)} over his last 10, well above his ${pct(t.shAll)} season rate, so some of that should cool.`;
+    else if (t.shAll - t.sh10 >= .06) dek += ` He's shooting just ${pct(t.sh10)} over his last 10 against ${pct(t.shAll)} on the season. The shots are there; the goals should follow.`;
+  }
+  const r10 = rolling(xs.map(n => logBy.has(n) ? logBy.get(n).p : null), 10, mean);
+  const toiR = rolling(xs.map(n => logBy.has(n) ? logBy.get(n).toi / 60 : null), 5, mean, 3);
+  const unb = s.shots.filter(x => x.s[2] !== 3 && x.s[3] != null);
+  const slotN = unb.filter(x => inSlot(x.s[3], x.s[4], true)).length, slotGoals = unb.filter(x => x.s[2] === 0 && inSlot(x.s[3], x.s[4], true)).length;
+  const bands = [];
+  if (t.streak >= 3) bands.push({ x0: s.log[s.log.length - t.streak].g.n - .5, x1: s.log[s.log.length - 1].g.n + .5, cls: "band-hot", label: `${t.streak}-game point streak` });
+  if (t.label === "Drought") bands.push({ x0: s.log[s.log.length - t.drought].g.n - .5, x1: s.log[s.log.length - 1].g.n + .5, cls: "band-cold", label: `${t.drought} games without a goal` });
+  let peakI = -1; r10.forEach((v, i) => { if (v != null && (peakI < 0 || v > r10[peakI])) peakI = i; });
+  const multi = s.log.filter(l => l.p >= 2).length;
+  const prodHead = s.gp < 5 ? "Early days" : t.p10 >= t.rate * 10 * 1.2 ? "Scoring above his usual rate" : t.p10 <= t.rate * 10 * .8 ? "Scoring below his usual rate" : "Scoring right at his usual rate";
+  const grpName = s.grp === "D" ? "defensemen" : "forwards";
+  const peers = Object.values(skaters).filter(x => x.grp === s.grp && x.gp >= Math.min(10, Math.ceil(N / 4))).sort((a, b) => b.avgScore - a.avgScore);
+  const sRank = peers.findIndex(x => x.pid == s.pid) + 1;
+  const scs = xs.map(n => logBy.has(n) ? logBy.get(n).score : null), scR = rolling(scs, 10, mean);
+  const sc10 = mean(s.log.slice(-10).map(l => l.score));
+  body.innerHTML = lede(`${M.seasonLabel} · ${kicker}`, head, dek)
+    + `<div class="card"><p class="chapter-label">1 · Player score</p><h2>Averaging ${Math.round(s.avgScore)}${sRank ? `, ${ord(sRank)} among Stars ${grpName}` : ""}</h2>
+      <p class="cap">Each dot is one game; the line is his 10-game average, now at ${Math.round(sc10)}. The gray line at 50 is a typical game for a Stars ${grpName.slice(0, -1)}. Tap a dot to see that night.</p>
+      <div class="chart" id="pc0"></div><div class="legend"><span class="k"><span class="kbox us"></span>10-game average</span><span class="k"><span class="kbox otl"></span>Single game</span><span class="k"><span class="kbox ref"></span>Typical game (50)</span></div></div>`
+    + `<div class="card"><p class="chapter-label">2 · Production</p><h2>${prodHead}</h2>
+      <p class="cap">His points per game over a rolling 10-game window, against his season rate of ${t.rate.toFixed(2)}.${peakI >= 0 && s.gp >= 15 ? (peakI >= N - 3 ? " He's in his hottest stretch of the season right now." : ` His hottest stretch peaked at ${r10[peakI].toFixed(2)} a game around ${fdate(G[peakI].date)}.`) : ""}</p>
+      <div class="chart" id="pc1"></div><div class="legend"><span class="k"><span class="kbox us"></span>10-game average</span><span class="k"><span class="kbox ref"></span>Season rate</span></div></div>
+    <div class="card"><p class="chapter-label">3 · Game by game</p><h2>${t.streak >= 3 ? `On a ${t.streak}-game point streak` : t.label === "Drought" ? `${t.drought} games since his last goal` : `${plural(multi, "multi-point game")} this season`}</h2>
+      <p class="cap">Every game he played. Tap a bar to see that night.</p><div class="chart" id="pc2"></div>
+      <div class="legend"><span class="k"><span class="kbox us"></span>Goals</span><span class="k"><span class="kbox them"></span>Assists</span><span class="k">No bar means no points or didn't play</span></div></div>
+    <div class="card"><p class="chapter-label">4 · Role</p><h2>${t.toi10 - t.toiAll >= 60 ? "The coaches are leaning on him more" : t.toiAll - t.toi10 >= 60 ? "His minutes are trending down" : "A steady role"}</h2>
+      <p class="cap">Ice time, 5-game average. Over his last 10 games he's averaging ${toi(t.toi10)} a night, against ${toi(t.toiAll)} for the season.</p><div class="chart" id="pc3"></div></div>
+    <div class="card"><p class="chapter-label">5 · Shot profile</p><h2>${unb.length ? `${pct(slotN / unb.length)} of his attempts come from the slot` : "No shots yet"}</h2>
+      <p class="cap">${plural(slotGoals, "goal")} of his ${s.gl} came from the shaded slot. Tap any shot for the game and time.</p><div id="pmap"></div>${rinkLegend()}</div>
+    <details class="more"><summary>Game log</summary>${skaterLog(s)}</details>`;
+  chart($("#pc0"), { xs, xTicks: xt, yDomain: [0, 100], refs: [{ y: 50, label: "50" }], yFmt: v => v,
+    series: [{ values: scs, line: false, dots: true, dotCls: "dot-faint", r: 3 }, { values: scR, cls: "ln-us", end: v => Math.round(v) }],
+    tip: i => { const l = logBy.get(xs[i]), g = byN.get(xs[i]); return l ? `<b>${fdate(g.date)} ${esc(vs(g))}</b> · ${resLabel(g)} ${scoreStr(g)}<br>Player score ${Math.round(l.score)} · ${l.gl}G ${l.a}A` : null; },
+    onClick: i => logBy.get(xs[i]) && sheet.open(byN.get(xs[i]).id) });
+  chart($("#pc1"), { xs, xTicks: xt, zeroBase: true, refs: [{ y: t.rate, label: t.rate.toFixed(2) }], series: [{ values: r10, cls: "ln-us", end: v => v.toFixed(2) }], yFmt: v => v.toFixed(1),
+    tip: i => r10[i] == null ? null : `<b>Through ${fdate(G[i].date)}</b><br>${r10[i].toFixed(2)} points per game over the last 10 team games he played in` });
+  chart($("#pc2"), { xs, xTicks: xt, zeroBase: true, endLabels: false, ticks: 3, bands,
+    bars: { values: xs.map(n => logBy.get(n)?.gl ?? null), stack2: xs.map(n => logBy.get(n)?.a ?? 0), clsOf: () => "bar-us", cls2: "bar-them" },
+    tip: i => { const l = logBy.get(xs[i]), g = byN.get(xs[i]); return l ? `<b>${fdate(g.date)} ${esc(vs(g))}</b> · ${resLabel(g)} ${scoreStr(g)}<br>${l.gl} G, ${l.a} A · ${toi(l.toi)}` : `<b>${fdate(g.date)} ${esc(vs(g))}</b><br>Did not play`; },
+    onClick: i => logBy.get(xs[i]) && sheet.open(byN.get(xs[i]).id) });
+  chart($("#pc3"), { xs, xTicks: xt, refs: [{ y: s.toigp / 60, label: toi(s.toigp) }], series: [{ values: toiR, cls: "ln-us", end: v => toi(v * 60) }], yFmt: v => v.toFixed(0), h: 180,
+    tip: i => { const l = logBy.get(xs[i]), g = byN.get(xs[i]); return `<b>${fdate(g.date)} ${esc(vs(g))}</b><br>${l ? toi(l.toi) + " this game" : "Did not play"}${toiR[i] != null ? `<br>5-game avg ${toi(toiR[i] * 60)}` : ""}`; } });
+  mountRink($("#pmap"), mapShots(s.shots), { label: `Season shot map, ${pname(pid)}`, slot: "us" });
+}
+function skaterLog(s) {
+  return `<div class="tbl-wrap"><table><thead><tr><th class="l">Date</th><th class="l">Opp</th><th class="l">Result</th><th>G</th><th>A</th><th>P</th><th>+/-</th><th>SOG</th><th>HIT</th><th>BLK</th><th>TOI</th></tr></thead><tbody>
+    ${s.log.slice().reverse().map(l => `<tr data-game="${l.g.id}"><td class="l">${fdate(l.g.date)}</td><td class="l">${esc(vs(l.g))}</td><td class="l"><span class="pill ${l.g.res}">${resLabel(l.g)}</span> ${scoreStr(l.g)}</td>
+      <td class="${l.gl ? "hot" : ""}">${l.gl}</td><td class="${l.a ? "hot" : ""}">${l.a}</td><td class="${l.p ? "hot" : ""}">${l.p}</td><td>${pm(l.pm)}</td><td>${l.sog}</td><td>${l.hits}</td><td>${l.blk}</td><td>${toi(l.toi)}</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+function goalieSeason(body, pid, s) {
+  const t = s.trend, last = plast(pid), xs = G.map(g => g.n), xt = monthTicks(xs), logBy = new Map(s.log.map(l => [l.g.n, l]));
+  const head = t.status === "hot" ? `${last} is locked in: ${svp(t.v)} over his last ${plural(t.n, "game")}` : t.status === "cold" ? `${last} is struggling: ${svp(t.v)} over his last ${plural(t.n, "game")}`
+    : t.status === "new" ? `${last} has ${plural(s.gp, "appearance")}` : `${last} is holding steady at ${svp(s.svp)}`;
+  const dek = `${s.w}-${s.l}-${s.otl} with a ${svp(s.svp)} save percentage and a ${s.gaa == null ? "–" : s.gaa.toFixed(2)} goals-against average${s.so ? `, plus ${plural(s.so, "shutout")}` : ""}. He has started ${t.starts10} of the team's last 10 games.`;
+  const v = xs.map(n => { const l = logBy.get(n); return l && l.sa ? l.sv / l.sa : null; });
+  const r5 = rolling(v, 5, mean, 3), lo = Math.min(.85, ...v.filter(x => x != null));
+  const faced = G.filter(g => g.gk.some(r => r[0] == pid)).flatMap(g => g.shots.filter(x => !x[1] && x[3] != null && x[2] <= 1).map(x => ({ g, s: x })));
+  const slot = faced.filter(e => inSlot(e.s[3], e.s[4], false)), slotGa = slot.filter(e => e.s[2] === 0).length;
+  body.innerHTML = lede(`${M.seasonLabel} · ${t.label}`, head, dek)
+    + `<div class="card"><p class="chapter-label">1 · Form</p><h2>${t.status === "hot" ? "Trending well above his season mark" : t.status === "cold" ? "Trending below his season mark" : "Close to his season mark"}</h2>
+      <p class="cap">Dots are single games. The green line is his 5-game average; the gray line is his season save percentage. Tap a dot to open that game.</p><div class="chart" id="gc1"></div></div>
+    <div class="card"><p class="chapter-label">2 · The hard ones</p><h2>${slot.length ? `${svp((slot.length - slotGa) / slot.length)} on shots from the slot` : "Shots faced"}</h2>
+      <p class="cap">Every shot on goal he faced this season, with shooters coming from the left. He stopped ${slot.length - slotGa} of ${slot.length} from the shaded slot.</p><div id="pmap"></div>${rinkLegend(null, "Opponents")}</div>
+    <details class="more"><summary>Game log</summary><div class="tbl-wrap"><table><thead><tr><th class="l">Date</th><th class="l">Opp</th><th class="l">Dec</th><th>SA</th><th>SV</th><th>GA</th><th>SV%</th><th>TOI</th></tr></thead><tbody>
+       ${s.log.slice().reverse().map(l => `<tr data-game="${l.g.id}"><td class="l">${fdate(l.g.date)}</td><td class="l">${esc(vs(l.g))}</td><td class="l">${l.dec ? `<span class="pill ${l.dec}">${l.dec}</span>` : "–"}</td>
+         <td>${l.sa}</td><td>${l.sv}</td><td>${l.ga}</td><td>${svp(l.sa ? l.sv / l.sa : null)}</td><td>${toi(l.toi)}</td></tr>`).join("")}</tbody></table></div></details>`;
+  chart($("#gc1"), { xs, xTicks: xt, yDomain: [Math.floor(lo * 20) / 20, 1], yFmt: svp, refs: [{ y: s.svp, label: svp(s.svp) }],
+    series: [{ values: v, line: false, dots: true, dotCls: "dot-faint", r: 3 }, { values: r5, cls: "ln-us", end: svp }],
+    tip: i => { const l = logBy.get(xs[i]), g = byN.get(xs[i]); return l ? `<b>${fdate(g.date)} ${esc(vs(g))}</b> · ${l.dec || "no decision"}<br>${l.sv}/${l.sa} · ${svp(l.sa ? l.sv / l.sa : null)}` : null; },
+    onClick: i => logBy.get(xs[i]) && sheet.open(byN.get(xs[i]).id) });
+  mountRink($("#pmap"), mapShots(faced), { label: `Shots faced, ${pname(pid)}`, slot: "them" });
+}
+function goalieGame(body, pid, s, g) {
+  const l = s.log.find(x => x.g.id === g.id), last = plast(pid), opp = g.oppName, sv = l.sa ? l.sv / l.sa : null;
+  const faced = g.shots.filter(x => !x[1] && x[2] <= 1 && x[3] != null);
+  const slot = faced.filter(x => inSlot(x[3], x[4], false)), slotGa = slot.filter(x => x[2] === 0).length;
+  let head;
+  if (l.ga === 0 && l.toi >= 3480) head = `${last} shuts out the ${opp}`;
+  else if (sv >= .95 && l.sa >= 25) head = `${last} stands tall with ${l.sv} saves`;
+  else if (sv != null && sv < .87) head = `A rough night for ${last}: ${l.ga} goals on ${l.sa} shots`;
+  else head = `${last} makes ${l.sv} saves in a ${g.res === "W" ? "win" : "loss"}`;
+  const dek = `${l.sv} of ${l.sa} for ${svp(sv)}, against his ${svp(s.svp)} season mark. He faced ${plural(slot.length, "shot")} on goal from the slot and allowed ${slotGa}.`;
+  body.innerHTML = lede(`${fdate(g.date)} ${vs(g)} · ${resLabel(g)} ${scoreStr(g)}`, head, dek)
+    + `<div class="card"><p class="chapter-label">1 · Compared with his normal</p><h2>${sv >= s.svp ? "Better than his average night" : "Below his average night"}</h2><p class="cap">Bars are this game. The black tick is his season average.</p>
+      ${vsRows([["Save %", sv ?? 0, s.svp, svp, 1], ["Shots faced", l.sa, s.sa / s.gp, v => +v.toFixed(1), Math.max(...s.log.map(x => x.sa))], ["Goals allowed", l.ga, s.ga / s.gp, v => +v.toFixed(1), Math.max(...s.log.map(x => x.ga))]])}</div>
+    <div class="card"><p class="chapter-label">2 · What he faced</p><h2>${plural(slot.length, "shot")} from the slot, ${plural(slotGa, "goal")}</h2><p class="cap">The ${esc(opp)} shoot from the left. Tap any shot for who and when.</p>
+      <div id="pmap"></div>${rinkLegend(null, g.opp)}</div>
+    <div class="card"><button class="linkish" data-open-game="${g.id}">Back to the game rankings →</button></div>`;
+  mountRink($("#pmap"), mapShots(faced.map(x => ({ g, s: x }))), { label: `Shots faced, ${fdate(g.date)}`, slot: "them" });
+}
+
+/* ================= boot ================= */
+const TTb = teamTrend();
+$("#team-name").textContent = NAME;
+$("#season").textContent = M.seasonLabel;
+$("#rec").textContent = G.length ? `${TTb.w}-${TTb.l}-${TTb.o}` : "";
+if (M.sample) { const b = $("#banner"); b.hidden = false; b.textContent = "Sample data for preview: player names are real, every number and story is made up."; }
+$("#footer").innerHTML = `<span>Data: NHL.com public API</span><span>Updated ${esc(M.built)}</span>${M.credit ? `<span>${esc(M.credit)}</span>` : ""}`;
+let lastW = window.innerWidth;
+window.addEventListener("resize", () => { clearTimeout(window.__rz); window.__rz = setTimeout(() => {
+  if (Math.abs(window.innerWidth - lastW) < 8) return; lastW = window.innerWidth; render(); sheet && sheet.draw(); }, 150); });
+render();
+})();
+</script>
+</body>
+</html>

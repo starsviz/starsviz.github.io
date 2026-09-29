@@ -1,0 +1,94 @@
+# Rebuilds the player-rankings page from the NHL API and publishes it to GitHub Pages.
+#
+# When it runs (GitHub's clock is UTC; Dallas is UTC-5 in season, UTC-6 from November to March):
+#   - every night at 08:30 UTC (3:30 am Central in daylight time, 2:30 am in standard time)
+#   - every 30 minutes from 02:00 to 06:00 UTC, so a finished game shows up the same night
+#   - whenever you press "Run workflow" on the Actions tab
+#
+# If anything fails (NHL API down, a data change, a failed test), nothing is published:
+# the last good page stays live and GitHub emails you that the run failed.
+name: Publish player rankings
+
+on:
+  schedule:
+    - cron: "30 8 * * *"
+    - cron: "0,30 2-6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+  actions: write   # only for the keep-alive step at the end
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install
+        run: |
+          pip install -r requirements-dev.txt
+          python -m playwright install --with-deps chromium
+
+      # Finished games never change, so keep the downloaded NHL data between runs.
+      # Each run saves a fresh copy; the newest one is restored next time.
+      - name: Restore NHL data
+        uses: actions/cache@v4
+        with:
+          path: .nhl_cache
+          key: nhl-cache-${{ github.run_id }}
+          restore-keys: nhl-cache-
+
+      - name: Test the code (offline, on the fake sample season)
+        run: python -m pytest -q
+
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build the page from the live NHL API
+        env:
+          CREDIT: ${{ vars.CREDIT }}
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+        run: |
+          python build_dashboard.py --credit "$CREDIT" --site-url "$SITE_URL/" --out _site/index.html
+          python tools/make_share_image.py _site/index.html _site/og-image.png
+
+      - name: Smoke-test the real page
+        run: python -m pytest -q tests/test_browser.py --page _site/index.html -k "loads_and_draws or player_card"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4
+
+      # GitHub pauses scheduled workflows in repos with no activity for 60 days.
+      # Re-enabling the workflow through the API counts as activity and keeps the schedule alive.
+      - name: Keep the nightly schedule alive
+        if: github.event_name == 'schedule'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/publish.yml/enable"
