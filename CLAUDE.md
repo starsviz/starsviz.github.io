@@ -111,7 +111,7 @@ Steps 1-6 were done in Sep 2026 (see Status). Notes from doing them:
 - GitHub pauses scheduled workflows after 60 days without repo activity; the workflow re-enables itself via the API after each scheduled deploy.
 
 Season changeover (checked Sep 29, 2026):
-- `club-schedule-season/DAL/now` is a 307 redirect to the current season (requests follows it). It already reports 20262027; the builder falls back to `previousSeason` until the first *regular-season* game is final (preseason games are ignored). 2026-27 opens Fri Oct 2 vs STL and has **84 games**, not 82 (the static trend PNG in `stars_viz.py` still paces to 82 points games; the page doesn't show pace).
+- `club-schedule-season/DAL/now` is a 307 redirect to the current season (requests follows it). It already reports 20262027; the builder falls back to `previousSeason` until the first *regular-season* game is final (preseason games are ignored). 2026-27 opens Fri Oct 2 vs STL and has **84 games**, not 82 (the static trend PNG in `stars_viz.py` still uses an 82-game points pace; the page doesn't show pace).
 - The page shows one season at a time: when 2026-27 starts, 2025-26 disappears from the page (its data stays in `.nhl_cache/`).
 - Game 1 of a season: every player's score equals his season average, so the quadrant's y values are all 0 and every table delta reads "even". Deltas become meaningful from game 2 and settle after ~10 games. The owner hasn't asked to change this.
 - Games are cached for good only at gameState `OFF` (official), not `FINAL` (just ended), so post-game stat corrections are picked up.
