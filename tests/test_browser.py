@@ -117,3 +117,78 @@ def test_every_player_card_opens(browser, sample_page, tmp_path, n):
         page.keyboard.press("Escape")
         assert errors == [], (n, pid, errors)
     page.close()
+
+
+DOTS_JS = """() => [...document.querySelectorAll('#quad .qd')].map(n => ({
+  x: +(n.getAttribute('cx') ?? +n.getAttribute('x') + 6), y: +(n.getAttribute('cy') ?? +n.getAttribute('y') + 6),
+  size: +(n.getAttribute('r') ?? n.getAttribute('width')) }))"""
+
+
+def median_gap(dots):
+    import math
+    import statistics
+    return statistics.median(min(math.hypot(a["x"] - b["x"], a["y"] - b["y"]) for b in dots if b is not a) for a in dots)
+
+
+def test_quadrant_zoom_buttons_and_trackpad(browser, built_page):
+    """Zooming spreads the dots apart but keeps them the same size; Reset restores the original chart."""
+    page, errors = open_page(browser, built_page)
+    page.locator("#quad").scroll_into_view_if_needed()
+    start = page.evaluate(DOTS_JS)
+    assert page.locator('[data-z="out"]').is_disabled() and not page.locator('[data-z="reset"]').is_visible()
+    page.click('[data-z="in"]')
+    page.click('[data-z="in"]')
+    zoomed = page.evaluate(DOTS_JS)
+    assert {d["size"] for d in zoomed} == {d["size"] for d in start}, "dots keep their size"
+    assert median_gap(zoomed) > 2 * median_gap(start), "crowded dots spread apart"
+    page.click('[data-z="reset"]')
+    assert page.evaluate(DOTS_JS) == start
+    box = page.locator("#quad svg").bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.wheel(0, 200)  # plain scrolling is left to the page
+    page.wait_for_timeout(100)
+    assert page.evaluate(DOTS_JS) == start
+    page.locator("#quad").scroll_into_view_if_needed()  # the wheel scrolled the page; aim at the chart again
+    box = page.locator("#quad svg").bounding_box()
+    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.keyboard.down("Control")  # a trackpad pinch arrives as ctrl+wheel
+    page.mouse.wheel(0, -60)
+    page.keyboard.up("Control")
+    page.wait_for_timeout(100)
+    assert median_gap(page.evaluate(DOTS_JS)) > median_gap(start)
+    assert errors == []
+    page.close()
+
+
+def test_quadrant_pinch_on_phone(browser, built_page):
+    """A two-finger pinch zooms the chart, not the page, and a tap afterwards still opens a player card."""
+    ctx = browser.new_context(viewport={"width": 390, "height": 844}, has_touch=True, is_mobile=True)
+    page = ctx.new_page()
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.route("**/*", lambda r: r.continue_() if r.request.url.startswith("file:") else r.abort())
+    page.goto(built_page.as_uri())
+    page.wait_for_selector("#quad svg")
+    page.locator("#quad").scroll_into_view_if_needed()
+    start = page.evaluate(DOTS_JS)
+    box = page.locator("#quad svg").bounding_box()
+    cx, cy = box["x"] + box["width"] * .55, box["y"] + box["height"] * .5
+    cdp = ctx.new_cdp_session(page)
+
+    def touch(kind, pts):
+        cdp.send("Input.dispatchTouchEvent", {"type": kind, "touchPoints": [{"x": x, "y": y, "id": i} for i, (x, y) in enumerate(pts)]})
+
+    touch("touchStart", [(cx - 30, cy), (cx + 30, cy)])
+    for k in range(1, 9):
+        touch("touchMove", [(cx - 30 - 5 * k, cy), (cx + 30 + 5 * k, cy)])
+        page.wait_for_timeout(15)
+    touch("touchEnd", [])
+    page.wait_for_timeout(150)
+    assert page.evaluate("visualViewport.scale") == 1, "the page itself didn't zoom"
+    assert median_gap(page.evaluate(DOTS_JS)) > 1.5 * median_gap(start)
+    assert page.locator(".sheet").count() == 0 and page.locator('[data-z="reset"]').is_visible()
+    dot = page.locator("#quad .qd").first.bounding_box()
+    page.touchscreen.tap(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2)
+    page.wait_for_selector(".sheet")
+    assert errors == []
+    ctx.close()

@@ -239,6 +239,14 @@ td.hot { font-weight: 700; }
 .qlab { fill: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; font-family: var(--font-body); }
 .axt { fill: var(--ink-2); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); }
 .dlab { fill: var(--ink); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+/* chart zoom: the chart takes two-finger pinches; one finger still scrolls the page */
+svg.zoomable { touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+svg.zoomable.zoomed { cursor: grab; } svg.zoomable.zoomed:active { cursor: grabbing; }
+.zoom { margin-left: auto; display: inline-flex; gap: 4px; }
+.zoom button { min-width: 30px; height: 30px; padding: 0 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); cursor: pointer; font-size: 17px; line-height: 1; }
+.zoom button.zr { font-size: 12.5px; font-weight: 600; }
+.zoom button:disabled { opacity: .4; cursor: default; }
+.zoom button:not(:disabled):hover { border-color: var(--accent); color: var(--ink); }
 details.how { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 8px; }
 details.how > summary { cursor: pointer; font-weight: 600; font-size: 13.5px; color: var(--ink-2); }
 details.how p { color: var(--ink-2); font-size: 13.5px; max-width: 70ch; }
@@ -452,64 +460,170 @@ const howItWorks = () => `<details class="how"><summary>How the player score wor
     `<li><span>${esc(name)}</span><span class="wbar" aria-hidden="true"><i style="width:${Math.abs(w) / .24 * 100}%" class="${w < 0 ? "neg" : ""}"></i></span><b class="num">${Math.round(Math.abs(w) * 100)}%</b></li>`).join("")}</ul></div>`).join("")}</div>
   <p class="note">The y-axis compares the game with the player's own season average score, so a depth player's strong night and a star's quiet one both stand out.</p></details>`;
 
-function quadChart(el, rows, g) {
+function quadChart(el, rows, g, zoomUi) {
+  // Zoomable: pinch (touch or trackpad), mouse-drag to pan, or the -/+/Reset buttons. Zooming changes the
+  // axes, not the picture, so crowded dots spread apart while staying the same size.
   el.innerHTML = "";
   const W = Math.max(300, el.clientWidth || 600), narrow = W < 560, H = narrow ? 360 : 440;
-  const m = { l: 46, r: 14, t: 12, b: 40 };
+  const m = { l: 46, r: 14, t: 12, b: 40 }, pw = W - m.l - m.r, ph = H - m.t - m.b;
   const maxAbs = Math.max(15, ...rows.map(r => Math.abs(r.l.dScore)));
   const yl = Math.ceil((maxAbs + 6) / 10) * 10;
-  const X = v => m.l + v / 100 * (W - m.l - m.r), Y = v => m.t + (yl - v) / (2 * yl) * (H - m.t - m.b);
+  const FULL = { x0: 0, x1: 100, y0: -yl, y1: yl }, MIN_FRAC = .12;  // up to about 8x
+  let v = { ...FULL }, hlPid = null, pts = [];
+  const dots = new Map();
+  const X = x => m.l + (x - v.x0) / (v.x1 - v.x0) * pw, Y = y => m.t + (v.y1 - y) / (v.y1 - v.y0) * ph;
   const svg = document.createElementNS(NS, "svg");
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.setAttribute("height", H); svg.setAttribute("role", "img");
   svg.setAttribute("aria-label", "Player score for this game against each player's season average");
+  svg.classList.add("zoomable");
   el.appendChild(svg);
-  add(svg, "rect", { class: "q-good", x: X(50), y: Y(yl), width: X(100) - X(50), height: Y(0) - Y(yl) });
-  add(svg, "rect", { class: "q-bad", x: X(0), y: Y(0), width: X(50) - X(0), height: Y(-yl) - Y(0) });
-  const gGrid = add(svg, "g", { class: "grid" }), gAx = add(svg, "g", { class: "axis" });
-  [0, 25, 50, 75, 100].forEach(v => { add(gGrid, "line", { x1: X(v), x2: X(v), y1: m.t, y2: H - m.b }); add(gAx, "text", { x: X(v), y: H - m.b + 15, "text-anchor": "middle" }, v); });
-  const step = yl > 30 ? 20 : 10;
-  for (let v = -yl; v <= yl; v += step) { add(gGrid, "line", { x1: m.l, x2: W - m.r, y1: Y(v), y2: Y(v) }); add(gAx, "text", { x: m.l - 6, y: Y(v) + 4, "text-anchor": "end" }, pm(v)); }
-  add(svg, "line", { class: "qline", x1: X(50), x2: X(50), y1: m.t, y2: H - m.b });
-  add(svg, "line", { class: "qline", x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0) });
-  add(svg, "text", { class: "axt", x: (m.l + W - m.r) / 2, y: H - 5, "text-anchor": "middle" }, "Player score this game →");
-  const midY = (m.t + H - m.b) / 2;
-  add(svg, "text", { class: "axt", x: 11, y: midY, "text-anchor": "middle", transform: `rotate(-90 11 ${midY})` }, "vs. his season average →");
-  const boxes = [];
-  [[X(100) - 7, m.t + 15, "end", "Big night"], [X(0) + 7, m.t + 15, "start", "Better than usual"],
-   [X(100) - 7, H - m.b - 8, "end", "Below his usual"], [X(0) + 7, H - m.b - 8, "start", "Off night"]].forEach(([x, y, a, t]) => {
-    add(svg, "text", { class: "qlab", x, y, "text-anchor": a }, t.toUpperCase());
-    const w = t.length * 7.4; boxes.push({ x: a === "end" ? x - w : x, y: y - 11, w, h: 14 });
-  });
-  const pts = rows.map(r => ({ r, x: X(r.l.score), y: Y(r.l.dScore) }));
-  pts.forEach(p => boxes.push({ x: p.x - 7, y: p.y - 7, w: 14, h: 14 }));
-  const dots = new Map(), gDots = add(svg, "g", {});
-  pts.slice().sort((a, b) => a.r.grp < b.r.grp ? -1 : 1).forEach(p => {
-    const n = p.r.grp === "D" ? add(gDots, "rect", { class: "qd dot-d", x: p.x - 6, y: p.y - 6, width: 12, height: 12, rx: 2 })
-      : add(gDots, "circle", { class: "qd dot-f", cx: p.x, cy: p.y, r: 6.5 });
-    dots.set(String(p.r.pid), n);
-  });
-  const inside = b => b.x >= m.l + 2 && b.x + b.w <= W - m.r - 2 && b.y >= m.t + 2 && b.y + b.h <= H - m.b - 2;
-  const hit = b => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
-  const cw = narrow ? 6.1 : 6.5;
-  pts.slice().sort((a, b) => (Math.abs(b.r.l.dScore) + Math.abs(b.r.l.score - 50)) - (Math.abs(a.r.l.dScore) + Math.abs(a.r.l.score - 50))).forEach(p => {
-    const t = plast(p.r.pid), w = t.length * cw + 2, h = 13;
-    const cands = [[p.x + 9, p.y - 7, "start", p.x + 10, p.y + 4], [p.x - 9 - w, p.y - 7, "end", p.x - 10, p.y + 4],
-                   [p.x - w / 2, p.y - 22, "middle", p.x, p.y - 11], [p.x - w / 2, p.y + 9, "middle", p.x, p.y + 20]];
-    for (const [bx, by, a, tx, ty] of cands) {
-      const b = { x: bx, y: by, w, h };
-      if (inside(b) && !hit(b)) { boxes.push(b); add(svg, "text", { class: "dlab", x: tx, y: ty, "text-anchor": a }, t); return; }
+  const clipId = "qclip" + (++clipSeq);
+  const setHl = pid => { hlPid = pid; dots.forEach((n, k) => n.classList.toggle("hl", k === String(pid))); };
+  const isFull = () => v.x0 === FULL.x0 && v.x1 === FULL.x1 && v.y0 === FULL.y0 && v.y1 === FULL.y1;
+
+  function draw() {
+    svg.textContent = ""; dots.clear();
+    // zoomed in, keep dots and gridlines inside the plot area (no clipping at full view, where nothing spills)
+    add(add(add(svg, "defs", {}), "clipPath", { id: clipId }), "rect", { x: m.l, y: m.t, width: pw, height: ph });
+    const clip = isFull() ? {} : { "clip-path": `url(#${clipId})` };
+    const plot = add(svg, "g", clip);
+    add(plot, "rect", { class: "q-good", x: X(50), y: Y(yl), width: X(100) - X(50), height: Y(0) - Y(yl) });
+    add(plot, "rect", { class: "q-bad", x: X(0), y: Y(0), width: X(50) - X(0), height: Y(-yl) - Y(0) });
+    const gGrid = add(plot, "g", { class: "grid" }), gAx = add(svg, "g", { class: "axis" });
+    const within = (t, a, b) => t >= a - 1e-9 && t <= b + 1e-9;
+    const xt = niceTicks(v.x0, v.x1, 4).ticks.filter(t => within(t, v.x0, v.x1));
+    xt.forEach(t => { add(gGrid, "line", { x1: X(t), x2: X(t), y1: m.t, y2: H - m.b }); add(gAx, "text", { x: X(t), y: H - m.b + 15, "text-anchor": "middle" }, +t.toFixed(1)); });
+    let yt;
+    if (isFull()) { const step = yl > 30 ? 20 : 10; yt = []; for (let t = -yl; t <= yl; t += step) yt.push(t); }
+    else yt = niceTicks(v.y0, v.y1, 4).ticks.filter(t => within(t, v.y0, v.y1));
+    yt.forEach(t => { add(gGrid, "line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t) }); add(gAx, "text", { x: m.l - 6, y: Y(t) + 4, "text-anchor": "end" }, pm(+t.toFixed(1))); });
+    add(plot, "line", { class: "qline", x1: X(50), x2: X(50), y1: m.t, y2: H - m.b });
+    add(plot, "line", { class: "qline", x1: m.l, x2: W - m.r, y1: Y(0), y2: Y(0) });
+    add(svg, "text", { class: "axt", x: (m.l + W - m.r) / 2, y: H - 5, "text-anchor": "middle" }, "Player score this game →");
+    const midY = (m.t + H - m.b) / 2;
+    add(svg, "text", { class: "axt", x: 11, y: midY, "text-anchor": "middle", transform: `rotate(-90 11 ${midY})` }, "vs. his season average →");
+    // each quadrant's name sits in the outer corner of whatever part of that quadrant is on screen
+    const boxes = [];
+    [[50, 100, 0, yl, "end", "top", "Big night"], [0, 50, 0, yl, "start", "top", "Better than usual"],
+     [50, 100, -yl, 0, "end", "bottom", "Below his usual"], [0, 50, -yl, 0, "start", "bottom", "Off night"]].forEach(([a0, a1, b0, b1, a, vert, t]) => {
+      const qx0 = Math.max(X(a0), m.l), qx1 = Math.min(X(a1), W - m.r), qy0 = Math.max(Y(b1), m.t), qy1 = Math.min(Y(b0), H - m.b);
+      const w = t.length * 7.4;
+      if (qx1 - qx0 < 60 || qy1 - qy0 < 30) return;  // hide once its quadrant is mostly off screen
+      const x = a === "end" ? qx1 - 7 : qx0 + 7, y = vert === "top" ? qy0 + 15 : qy1 - 8;
+      add(svg, "text", { class: "qlab", x, y, "text-anchor": a }, t.toUpperCase());
+      boxes.push({ x: a === "end" ? x - w : x, y: y - 11, w, h: 14 });
+    });
+    pts = rows.map(r => ({ r, x: X(r.l.score), y: Y(r.l.dScore) }))
+      .filter(p => p.x >= m.l - 7 && p.x <= W - m.r + 7 && p.y >= m.t - 7 && p.y <= H - m.b + 7);
+    pts.forEach(p => boxes.push({ x: p.x - 7, y: p.y - 7, w: 14, h: 14 }));
+    const gDots = add(svg, "g", clip);  // above the corner labels, as before
+    pts.slice().sort((a, b) => a.r.grp < b.r.grp ? -1 : 1).forEach(p => {
+      const n = p.r.grp === "D" ? add(gDots, "rect", { class: "qd dot-d", x: p.x - 6, y: p.y - 6, width: 12, height: 12, rx: 2 })
+        : add(gDots, "circle", { class: "qd dot-f", cx: p.x, cy: p.y, r: 6.5 });
+      dots.set(String(p.r.pid), n);
+    });
+    const inside = b => b.x >= m.l + 2 && b.x + b.w <= W - m.r - 2 && b.y >= m.t + 2 && b.y + b.h <= H - m.b - 2;
+    const hit = b => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
+    const cw = narrow ? 6.1 : 6.5;
+    const shown = p => p.x >= m.l && p.x <= W - m.r && p.y >= m.t && p.y <= H - m.b;  // no name for a dot mostly off screen
+    pts.filter(shown).sort((a, b) => (Math.abs(b.r.l.dScore) + Math.abs(b.r.l.score - 50)) - (Math.abs(a.r.l.dScore) + Math.abs(a.r.l.score - 50))).forEach(p => {
+      const t = plast(p.r.pid), w = t.length * cw + 2, h = 13;
+      const cands = [[p.x + 9, p.y - 7, "start", p.x + 10, p.y + 4], [p.x - 9 - w, p.y - 7, "end", p.x - 10, p.y + 4],
+                     [p.x - w / 2, p.y - 22, "middle", p.x, p.y - 11], [p.x - w / 2, p.y + 9, "middle", p.x, p.y + 20]];
+      for (const [bx, by, a, tx, ty] of cands) {
+        const b = { x: bx, y: by, w, h };
+        if (inside(b) && !hit(b)) { boxes.push(b); add(svg, "text", { class: "dlab", x: tx, y: ty, "text-anchor": a }, t); return; }
+      }
+    });
+    setHl(hlPid);
+    svg.classList.toggle("zoomed", !isFull());
+    if (zoomUi) { zoomUi.querySelector('[data-z="reset"]').hidden = isFull(); zoomUi.querySelector('[data-z="out"]').disabled = isFull();
+      zoomUi.querySelector('[data-z="in"]').disabled = v.x1 - v.x0 <= (FULL.x1 - FULL.x0) * MIN_FRAC + 1e-6; }
+  }
+
+  /* ---- zoom + pan (all in chart pixels; the view is kept inside the full chart) ---- */
+  let frame = 0;
+  const redraw = () => { if (!frame) frame = requestAnimationFrame(() => { frame = 0; draw(); }); };
+  const clampView = n => {
+    const fx = FULL.x1 - FULL.x0, fy = FULL.y1 - FULL.y0;
+    let sx = Math.min(fx, Math.max(fx * MIN_FRAC, n.x1 - n.x0)), sy = Math.min(fy, Math.max(fy * MIN_FRAC, n.y1 - n.y0));
+    const cx = Math.min(FULL.x1 - sx / 2, Math.max(FULL.x0 + sx / 2, (n.x0 + n.x1) / 2));
+    const cy = Math.min(FULL.y1 - sy / 2, Math.max(FULL.y0 + sy / 2, (n.y0 + n.y1) / 2));
+    const out = { x0: cx - sx / 2, x1: cx + sx / 2, y0: cy - sy / 2, y1: cy + sy / 2 };
+    return Math.abs(sx - fx) < 1e-6 && Math.abs(sy - fy) < 1e-6 ? { ...FULL } : out;
+  };
+  // the view that results from zooming `from` by factor k about chart pixel (px, py), then shifting by (dx, dy) pixels
+  const zoomed = (from, k, px, py, dx = 0, dy = 0) => {
+    const fx = (Math.min(Math.max(px, m.l), W - m.r) - m.l) / pw, fy = (Math.min(Math.max(py, m.t), H - m.b) - m.t) / ph;
+    const ax = from.x0 + fx * (from.x1 - from.x0), ay = from.y1 - fy * (from.y1 - from.y0);
+    const sx = (from.x1 - from.x0) / k, sy = (from.y1 - from.y0) / k;
+    const x0 = ax - fx * sx - dx / pw * sx, y1 = ay + fy * sy + dy / ph * sy;
+    return clampView({ x0, x1: x0 + sx, y0: y1 - sy, y1 });
+  };
+  const toChart = evt => { const r = svg.getBoundingClientRect(); return { x: (evt.clientX - r.left) * (W / r.width), y: (evt.clientY - r.top) * (H / r.height) }; };
+  const ptrs = new Map();
+  let pinch = null, drag = null, gestured = false;
+  svg.addEventListener("pointerdown", evt => {
+    ptrs.set(evt.pointerId, toChart(evt));
+    if (ptrs.size === 1) gestured = false;  // a fresh touch: a pinch that ended without a click shouldn't eat this tap
+    if (ptrs.size === 2) {
+      const [a, b] = [...ptrs.values()];
+      pinch = { from: { ...v }, d: Math.hypot(a.x - b.x, a.y - b.y) || 1, mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2 };
+      drag = null; gestured = true; hideTip();
+    } else if (evt.pointerType === "mouse" && evt.button === 0 && !isFull()) {
+      drag = { from: { ...v }, x: ptrs.get(evt.pointerId).x, y: ptrs.get(evt.pointerId).y, moved: false };
     }
   });
-  const setHl = pid => dots.forEach((n, k) => n.classList.toggle("hl", k === String(pid)));
+  svg.addEventListener("pointermove", evt => {
+    if (ptrs.has(evt.pointerId)) ptrs.set(evt.pointerId, toChart(evt));
+    if (pinch && ptrs.size >= 2) {
+      const [a, b] = [...ptrs.values()], d = Math.hypot(a.x - b.x, a.y - b.y), mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+      v = zoomed(pinch.from, d / pinch.d, pinch.mx, pinch.my, mx - pinch.mx, my - pinch.my); redraw(); return;
+    }
+    if (drag && evt.buttons & 1) {
+      const p = ptrs.get(evt.pointerId), dx = p.x - drag.x, dy = p.y - drag.y;
+      if (Math.hypot(dx, dy) > 3) { drag.moved = gestured = true; hideTip(); }
+      if (drag.moved) { v = zoomed(drag.from, 1, m.l, m.t, dx, dy); redraw(); return; }
+    }
+    hover(evt);
+  });
+  const lift = evt => { ptrs.delete(evt.pointerId); if (ptrs.size < 2) pinch = null; if (!ptrs.size) drag = null; };
+  ["pointerup", "pointercancel"].forEach(t => svg.addEventListener(t, lift));
+  svg.addEventListener("pointerleave", evt => { lift(evt); hideTip(); setHl(null); });
+  // trackpad pinch arrives as ctrl+wheel in Chrome, Edge and Firefox; plain scrolling still scrolls the page
+  svg.addEventListener("wheel", evt => {
+    if (!evt.ctrlKey) return;
+    evt.preventDefault(); hideTip();
+    const p = toChart(evt); v = zoomed(v, Math.exp(-evt.deltaY * .01), p.x, p.y); redraw();
+  }, { passive: false });
+  // Safari: trackpad pinch on Mac, and blocks the page zoom that iOS would otherwise do for a pinch on the chart
+  let g0 = null;
+  svg.addEventListener("gesturestart", evt => { evt.preventDefault(); g0 = { ...v }; });
+  svg.addEventListener("gesturechange", evt => {
+    evt.preventDefault();
+    if (!g0 || ptrs.size >= 2) return;  // touch pinch is handled by the pointer events above
+    const p = toChart(evt); v = zoomed(g0, evt.scale, p.x, p.y); redraw();
+  });
+  svg.addEventListener("gestureend", evt => { evt.preventDefault(); g0 = null; });
+  if (zoomUi) zoomUi.onclick = evt => {
+    const b = evt.target.closest("button[data-z]"); if (!b) return;
+    const cx = X((v.x0 + v.x1) / 2), cy = Y((v.y0 + v.y1) / 2);
+    v = b.dataset.z === "reset" ? { ...FULL } : zoomed(v, b.dataset.z === "in" ? 1.6 : 1 / 1.6, cx, cy);
+    hideTip(); draw();
+  };
+
   const pick = evt => {
-    const r = svg.getBoundingClientRect(), px = (evt.clientX - r.left) * (W / r.width), py = (evt.clientY - r.top) * (H / r.height);
-    let best = null, bd = 22; pts.forEach(p => { const d = Math.hypot(p.x - px, p.y - py); if (d < bd) { bd = d; best = p; } }); return best;
+    const c = toChart(evt);
+    let best = null, bd = 22; pts.forEach(p => { const d = Math.hypot(p.x - c.x, p.y - c.y); if (d < bd) { bd = d; best = p; } }); return best;
   };
   const tip = r => `<b>${esc(pname(r.pid))}</b> · ${r.grp === "D" ? "Defense" : "Forward"}<br>Score ${Math.round(r.l.score)} · ${pm(Math.round(r.l.dScore))} vs his average (${Math.round(r.s.avgScore)})<br>${r.l.gl}G ${r.l.a}A · ${r.l.sog} SOG · ${toi(r.l.toi)}<br><i>Tap for his night</i>`;
-  const move = evt => { const p = pick(evt); svg.style.cursor = p ? "pointer" : ""; if (!p) { hideTip(); setHl(null); return; } setHl(p.r.pid); showTip(tip(p.r), evt.clientX, evt.clientY); };
-  svg.addEventListener("pointermove", move); svg.addEventListener("pointerdown", move);
-  svg.addEventListener("pointerleave", () => { hideTip(); setHl(null); });
-  svg.addEventListener("click", evt => { const p = pick(evt); if (p) { hideTip(); openPlayer(p.r.pid, g.id); } });
+  const hover = evt => { if (pinch || drag?.moved) return; const p = pick(evt); svg.style.cursor = p ? "pointer" : ""; if (!p) { hideTip(); setHl(null); return; } setHl(p.r.pid); showTip(tip(p.r), evt.clientX, evt.clientY); };
+  svg.addEventListener("pointerdown", evt => { if (ptrs.size === 1 && !drag) hover(evt); });
+  svg.addEventListener("click", evt => {
+    if (gestured) { gestured = false; return; }  // the end of a pinch or drag isn't a tap
+    const p = pick(evt); if (p) { hideTip(); openPlayer(p.r.pid, g.id); }
+  });
+  draw();
   return { highlight: setHl };
 }
 
@@ -901,7 +1015,8 @@ function renderGame() {
       <div class="chart" id="quad"></div>
       <div class="legend"><span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="5.5" class="dot-f"/></svg>Forward</span>
         <span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><rect x="-5" y="-5" width="10" height="10" rx="2" class="dot-d"/></svg>Defenseman</span>
-        <span class="k">Tap a dot for his night</span></div>
+        <span class="k">Tap a dot for his night</span>
+        <span class="zoom" id="quadzoom" role="group" aria-label="Zoom the chart"><button data-z="out" aria-label="Zoom out" title="Zoom out">−</button><button data-z="in" aria-label="Zoom in" title="Zoom in (or pinch the chart)">+</button><button data-z="reset" class="zr" hidden>Reset</button></span></div>
       ${howItWorks()}
     </div>
     ${fw.length ? `<div class="card"><p class="chapter-label">Forwards · ranked by player score</p>
@@ -932,7 +1047,7 @@ function renderGame() {
   chips.addEventListener("click", e => { const c = e.target.closest(".chip"); if (c) { state.game = +c.dataset.id; renderGame(); } });
   $("#prev").onclick = () => { state.game = G[idx - 1].id; renderGame(); };
   $("#next").onclick = () => { state.game = G[idx + 1].id; renderGame(); };
-  quad = quadChart($("#quad"), rows, g);
+  quad = quadChart($("#quad"), rows, g, $("#quadzoom"));
   root.querySelectorAll("tr[data-pid]").forEach(tr => {
     tr.addEventListener("mouseenter", () => quad && quad.highlight(tr.dataset.pid));
     tr.addEventListener("mouseleave", () => quad && quad.highlight(null));
