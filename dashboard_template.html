@@ -1351,10 +1351,12 @@ function goalieGame(body, pid, s, g) {
 /* ================= share cards ================= */
 // 1200x675 images for X, Reddit and Substack. Each card is one self-contained SVG (fonts embedded), turned into a
 // 2x PNG in the reader's browser. The share dialog then opens the phone's share sheet, copies, or downloads it.
-const CW = 1200, CH = 675, CP = 48, CFOOT = 612;
+const CW = 1200, CH = 675, CP = 56, CFOOT = 604, CBOT = 584;
+// Cards are usually seen shrunk to ~350px wide (a text message, a feed), about 0.3x. So: one idea per card,
+// nothing meant to be read under ~24px here, key numbers 60-150px, and only the few names that matter.
 const CARD_THEMES = {
-  light: { bg: "#ffffff", panel: "#f1f5f6", ink: "#0e171b", ink2: "#41515a", muted: "#66767e", line: "#dde5e8", accent: "#00754a", defc: "#2a78d6", opp: "#88949a", good: "#13733c", goodSoft: "#dcf1e3", bad: "#b42318", badSoft: "#fbe4e1" },
-  dark: { bg: "#131b1f", panel: "#1c272d", ink: "#e8eff1", ink2: "#a7b6bd", muted: "#8b9aa1", line: "#2a3840", accent: "#20a36b", defc: "#3987e5", opp: "#6b777d", good: "#5cc98f", goodSoft: "#15321f", bad: "#f2837a", badSoft: "#3d1c19" },
+  light: { bg: "#ffffff", panel: "#f1f5f6", ink: "#0e171b", ink2: "#41515a", muted: "#5f6f77", line: "#dde5e8", accent: "#00754a", defc: "#2a78d6", opp: "#88949a", good: "#13733c", goodSoft: "#dcf1e3", bad: "#b42318", badSoft: "#fbe4e1" },
+  dark: { bg: "#131b1f", panel: "#1f2a30", ink: "#eef3f5", ink2: "#b3c1c7", muted: "#93a2a9", line: "#2c3a42", accent: "#20a36b", defc: "#3f8ee8", opp: "#6b777d", good: "#5cc98f", goodSoft: "#15321f", bad: "#f2837a", badSoft: "#3d1c19" },
 };
 if (M.color && M.color.toLowerCase() !== "#00754a") CARD_THEMES.light.accent = M.color;
 const FD = "'Barlow Condensed', 'Arial Narrow', sans-serif", FB = "Figtree, 'Helvetica Neue', Arial, sans-serif";
@@ -1362,15 +1364,15 @@ const mctx = document.createElement("canvas").getContext("2d");
 const r1 = v => Math.round(v * 10) / 10;
 const textW = (t, size, w = 400, fam = FB, ls = 0) => { mctx.font = `${w} ${size}px ${fam}`; return mctx.measureText(String(t)).width + ls * String(t).length; };
 function T(x, y, text, o = {}) {
-  let a = `x="${r1(x)}" y="${r1(y)}" font-family="${o.fam || FB}" font-size="${o.size || 16}" font-weight="${o.w || 400}" fill="${o.fill}"`;
+  let a = `x="${r1(x)}" y="${r1(y)}" font-family="${o.fam || FB}" font-size="${o.size || 24}" font-weight="${o.w || 400}" fill="${o.fill}"`;
   if (o.anchor) a += ` text-anchor="${o.anchor}"`;
   if (o.ls) a += ` letter-spacing="${o.ls}"`;
-  if (o.halo) a += ` stroke="${o.halo}" stroke-width="5" stroke-linejoin="round" paint-order="stroke"`;
+  if (o.halo) a += ` stroke="${o.halo}" stroke-width="7" stroke-linejoin="round" paint-order="stroke"`;
   if (o.extra) a += " " + o.extra;
   return `<text ${a}>${esc(text)}</text>`;
 }
 const L = (x1, y1, x2, y2, stroke, w = 1, extra = "") => `<line x1="${r1(x1)}" y1="${r1(y1)}" x2="${r1(x2)}" y2="${r1(y2)}" stroke="${stroke}" stroke-width="${w}" ${extra}/>`;
-const label = (C, x, y, t, color, anchor) => T(x, y, t.toUpperCase(), { size: 13, w: 700, fill: color || C.muted, ls: 1.3, anchor });
+const label = (C, x, y, t, color, anchor) => T(x, y, t.toUpperCase(), { size: 20, w: 700, fill: color || C.muted, ls: 1.4, anchor });
 const tierColor = (C, tier) => tier === "up" ? C.good : tier === "down" ? C.bad : C.muted;
 const aan = n => (/^8/.test(String(n)) || n === 11 || n === 18 ? "an " : "a ") + n;  // "an 88", "a 75"
 function wrapText(text, maxW, size, w, fam) {
@@ -1379,7 +1381,7 @@ function wrapText(text, maxW, size, w, fam) {
   if (cur) out.push(cur);
   return out;
 }
-function fitText(text, maxW, { fam = FD, w = 700, max = 52, min = 34, lines = 2, balance = false } = {}) {
+function fitText(text, maxW, { fam = FD, w = 700, max = 68, min = 50, lines = 2, balance = false } = {}) {
   for (let size = max; size >= min; size -= 2) {
     let out = wrapText(text, maxW, size, w, fam);
     if (out.length > lines) continue;
@@ -1395,11 +1397,12 @@ function fitText(text, maxW, { fam = FD, w = 700, max = 52, min = 34, lines = 2,
   out[lines - 1] = last + "…";
   return { size: min, lines: out };
 }
-// a delta like "▲63%" with an optional tinted background when it's a big one
-function deltaMark(C, x, y, text, tier, strong, size = 15, anchor = "start") {
-  const w = textW(text, size, 700), x0 = anchor === "end" ? x - w : x;
-  const bg = strong && tier !== "flat" ? `<rect x="${r1(x0 - 5)}" y="${r1(y - size * .95)}" width="${r1(w + 10)}" height="${r1(size * 1.3)}" rx="5" fill="${tier === "up" ? C.goodSoft : C.badSoft}"/>` : "";
-  return bg + T(x, y, text, { size, w: 700, fill: tierColor(C, tier), anchor });
+// "▲63%" in a tinted pill (or plain gray when it's close to even)
+function deltaPill(C, x, y, text, tier, size, anchor = "start") {
+  const w = textW(text, size, 700), x0 = anchor === "end" ? x - w : x, pad = size * .32;
+  const bg = tier === "flat" ? C.panel : tier === "up" ? C.goodSoft : C.badSoft;
+  return `<rect x="${r1(x0 - pad)}" y="${r1(y - size * .92)}" width="${r1(w + 2 * pad)}" height="${r1(size * 1.28)}" rx="${r1(size * .3)}" fill="${bg}"/>`
+    + T(x, y, text, { size, w: 700, fill: tierColor(C, tier), anchor });
 }
 function siteHost() {
   const u = M.siteUrl || (/^https?:$/.test(location.protocol) ? location.origin + location.pathname : "");
@@ -1407,306 +1410,236 @@ function siteHost() {
 }
 function cardHead(C, kicker, title) {
   const t = fitText(title, CW - 2 * CP, { balance: true });
-  let s = `<rect width="${CW}" height="${CH}" fill="${C.bg}"/><rect width="${CW}" height="8" fill="${C.accent}"/>`;
-  s += T(CP, 60, kicker.toUpperCase(), { size: 15, w: 700, fill: C.accent, ls: 1.5 });
-  let y = 60 + 12 + t.size * .92;
-  t.lines.forEach((ln, i) => { s += T(CP, y, ln, { fam: FD, size: t.size, w: 700, fill: C.ink }); if (i < t.lines.length - 1) y += t.size * 1.02; });
-  return { s, top: y + 30 };
+  let s = `<rect width="${CW}" height="${CH}" fill="${C.bg}"/><rect width="${CW}" height="10" fill="${C.accent}"/>`;
+  s += T(CP, 70, kicker.toUpperCase(), { size: 24, w: 700, fill: C.accent, ls: 1.5 });
+  let y = 70 + 14 + t.size * .9;
+  t.lines.forEach((ln, i) => { s += T(CP, y, ln, { fam: FD, size: t.size, w: 700, fill: C.ink }); if (i < t.lines.length - 1) y += t.size * 1.0; });
+  return { s, top: y + 36 };
 }
-function cardFoot(C) {
-  const y = CFOOT + 36, host = siteHost(), brand = host || `${NAME} player rankings`;
-  let s = L(CP, CFOOT, CW - CP, CFOOT, C.line, 1.5), x = CP;
-  s += `<rect x="${x}" y="${y - 20}" width="26" height="26" rx="6" fill="${C.accent}"/><polygon points="${star(x + 13, y - 6.5, 9, 3.8)}" fill="#fff"/>`;
-  x += 36; s += T(x, y, brand, { size: 18, w: 700, fill: C.ink });
-  x += textW(brand, 18, 700) + 16; s += T(x, y, "Data: NHL.com", { size: 15, w: 500, fill: C.muted });
-  s += T(CW - CP, y, M.credit || `${M.seasonLabel} season`, { size: 15, w: 500, fill: C.muted, anchor: "end" });
+function cardFoot(C, note) {
+  const y = CFOOT + 46, host = siteHost(), brand = host || `${NAME} player rankings`;
+  let s = L(CP, CFOOT, CW - CP, CFOOT, C.line, 2), x = CP;
+  s += `<rect x="${x}" y="${y - 26}" width="34" height="34" rx="8" fill="${C.accent}"/><polygon points="${star(x + 17, y - 8.5, 12, 5)}" fill="#fff"/>`;
+  x += 46; s += T(x, y, brand, { size: 26, w: 700, fill: C.ink });
+  s += T(CW - CP, y, note || M.credit || "Data: NHL.com", { size: 22, w: 500, fill: C.muted, anchor: "end" });
   return s;
 }
-const gameKicker = g => `${fdate(g.date, true)} · ${vs(g)} · Final${g.sfx ? " / " + g.sfx : ""}`;
-const lineShort = l => `${l.gl}G ${l.a}A · ${plural(l.sog, "shot")} · ${toi(l.toi)}`;
-function identity(C, pid, x, y, maxW) {
+const shortKicker = g => `${fdate(g.date)} · ${vs(g)} · ${resLabel(g)} ${scoreStr(g)}`;
+function identity(C, pid, x, y, maxW, numSize = 118) {
   const info = P[pid] || {}, num = info.num ?? "";
-  let s = T(x, y + 82, num, { fam: FD, size: 100, w: 700, fill: C.accent });
-  const nx = x + (num === "" ? 0 : textW(num, 100, 700, FD) + 18), nm = fitText(pname(pid).toUpperCase(), maxW - (nx - x), { max: 38, min: 26, lines: 2 });
-  let ny = y + 34 + (nm.lines.length === 1 ? 10 : 0);
-  nm.lines.forEach(ln => { s += T(nx, ny, ln, { fam: FD, size: nm.size, w: 700, fill: C.ink }); ny += nm.size; });
-  s += T(nx, ny + 4, [POS[info.pos] || info.pos, NAME].filter(Boolean).join(" · "), { size: 16, w: 500, fill: C.muted });
-  return { s, y: Math.max(y + 112, ny + 30) };
+  let s = T(x, y + numSize * .78, num, { fam: FD, size: numSize, w: 700, fill: C.accent });
+  const nx = x + (num === "" ? 0 : textW(num, numSize, 700, FD) + 20), nm = fitText(pname(pid).toUpperCase(), maxW - (nx - x), { max: 46, min: 34, lines: 2 });
+  let ny = y + nm.size * .82 + (nm.lines.length === 1 ? 14 : 0);
+  nm.lines.forEach(ln => { s += T(nx, ny, ln, { fam: FD, size: nm.size, w: 700, fill: C.ink }); ny += nm.size * .96; });
+  s += T(nx, ny + 6, POS[info.pos] || info.pos || "", { size: 24, w: 600, fill: C.muted });
+  return { s, y: Math.max(y + numSize * .8, ny + 10) };
 }
-function tile(C, x, y, w, h, lab, value, delta) {
-  let s = `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="10" fill="${C.panel}"/>`;
-  s += label(C, x + 14, y + 25, lab);
-  s += T(x + 14, h >= 100 ? y + 72 : y + h - 16, value, { fam: FD, size: 44, w: 700, fill: C.ink });
-  if (delta) s += deltaMark(C, x + 14, y + h - 12, delta.text, delta.tier, false, 14);
-  return s;
-}
-// small line/dot chart used by the player cards
-function cardChart(C, bx, by, bw, bh, o) {
-  const m = { l: 44, r: o.endLabel ? 70 : 14, t: 10, b: 28 };
-  const X = v => bx + m.l + (v - o.x0) / ((o.x1 - o.x0) || 1) * (bw - m.l - m.r), Y = v => by + m.t + (o.y1 - v) / (o.y1 - o.y0) * (bh - m.t - m.b);
-  let s = "";
-  o.yTicks.forEach(t => { s += L(X(o.x0), Y(t), X(o.x1), Y(t), C.line); s += T(bx + m.l - 9, Y(t) + 4.5, o.yFmt(t), { size: 13, fill: C.muted, anchor: "end" }); });
-  let lastX = -1e9;
-  (o.xTicks || []).forEach(t => { if (X(t.x) - lastX < 46) return; lastX = X(t.x); s += T(X(t.x), by + bh - 4, t.label, { size: 13, fill: C.muted, anchor: "middle" }); });
-  if (o.ref) {
-    s += L(X(o.x0), Y(o.ref.y), X(o.x1), Y(o.ref.y), C.muted, 1.5, `stroke-dasharray="6 5"`);
-  }
-  const clampY = v => Math.max(o.y0, Math.min(o.y1, v));  // e.g. a rare .500 night sits on the chart's floor
-  (o.dots || []).forEach(([x, y]) => { s += `<circle cx="${r1(X(x))}" cy="${r1(Y(clampY(y)))}" r="${o.dotR || 4.5}" fill="${C.opp}" fill-opacity=".5"/>`; });
-  if (o.line) {
-    let d = "", pen = false;
-    o.line.forEach(p => { if (!p) { pen = false; return; } d += `${pen ? "L" : "M"}${r1(X(p[0]))},${r1(Y(clampY(p[1])))}`; pen = true; });
-    if (d) s += `<path d="${d}" fill="none" stroke="${C.accent}" stroke-width="3.5" stroke-linejoin="round" stroke-linecap="round"/>`;
-    const last = o.line.filter(Boolean).pop();
-    if (last && o.endLabel) s += T(X(last[0]) + 10, Y(last[1]) + 5, o.endLabel, { size: 15, w: 700, fill: C.ink });
-  }
-  if (o.hi) {
-    const hx = X(o.hi[0]), hy = Y(clampY(o.hi[1]));
-    s += `<circle cx="${r1(hx)}" cy="${r1(hy)}" r="9" fill="${C.accent}" stroke="${C.bg}" stroke-width="3"/>`;
-    if (o.hiLabel) { const right = hx < bx + bw - 150; s += T(hx + (right ? 14 : -14), hy - 12, o.hiLabel, { size: 14, w: 700, fill: C.ink, anchor: right ? "start" : "end", halo: C.bg }); }
-  }
-  return s;
+function bigTile(C, x, y, w, h, lab, value) {
+  const size = h >= 140 ? 80 : 64;
+  return `<rect x="${r1(x)}" y="${r1(y)}" width="${r1(w)}" height="${r1(h)}" rx="14" fill="${C.panel}"/>`
+    + label(C, x + 20, y + 36, lab) + T(x + 20, y + h - 22, value, { fam: FD, size, w: 700, fill: C.ink });
 }
 
-/* ---- card: the game (headline, quadrant, top performers) ---- */
+/* ---- card: the game (headline, quadrant with the names that matter, top three) ---- */
 function cardQuad(C, rows, bx, by, bw, bh) {
-  const m = { l: 46, r: 6, t: 4, b: 38 }, pw = bw - m.l - m.r, ph = bh - m.t - m.b;
+  const m = { l: 34, r: 8, t: 6, b: 34 }, pw = bw - m.l - m.r, ph = bh - m.t - m.b;
   const maxAbs = Math.max(15, ...rows.map(r => Math.abs(r.l.dScore))), yl = Math.ceil((maxAbs + 6) / 10) * 10;
   const X = v => bx + m.l + v / 100 * pw, Y = v => by + m.t + (yl - v) / (2 * yl) * ph;
-  let s = `<rect x="${r1(X(50))}" y="${r1(Y(yl))}" width="${r1(X(100) - X(50))}" height="${r1(Y(0) - Y(yl))}" fill="${C.accent}" fill-opacity=".09"/>`;
-  s += `<rect x="${r1(X(0))}" y="${r1(Y(0))}" width="${r1(X(50) - X(0))}" height="${r1(Y(-yl) - Y(0))}" fill="${C.opp}" fill-opacity=".14"/>`;
-  [0, 25, 50, 75, 100].forEach(v => { s += L(X(v), Y(yl), X(v), Y(-yl), C.line); s += T(X(v), Y(-yl) + 18, v, { size: 13, fill: C.muted, anchor: "middle" }); });
-  const step = yl > 30 ? 20 : 10;
-  for (let v = -yl; v <= yl; v += step) { s += L(X(0), Y(v), X(100), Y(v), C.line); s += T(X(0) - 8, Y(v) + 4.5, pm(v), { size: 13, fill: C.muted, anchor: "end" }); }
-  s += L(X(50), Y(yl), X(50), Y(-yl), C.ink2, 1.5) + L(X(0), Y(0), X(100), Y(0), C.ink2, 1.5);
-  s += T((X(0) + X(100)) / 2, by + bh - 2, "Player score this game →", { size: 14, w: 600, fill: C.ink2, anchor: "middle" });
+  let s = `<rect x="${r1(X(0))}" y="${r1(Y(yl))}" width="${r1(pw)}" height="${r1(ph)}" rx="10" fill="${C.panel}" fill-opacity=".55"/>`;
+  s += `<rect x="${r1(X(50))}" y="${r1(Y(yl))}" width="${r1(X(100) - X(50))}" height="${r1(Y(0) - Y(yl))}" fill="${C.accent}" fill-opacity=".12"/>`;
+  s += `<rect x="${r1(X(0))}" y="${r1(Y(0))}" width="${r1(X(50) - X(0))}" height="${r1(Y(-yl) - Y(0))}" fill="${C.opp}" fill-opacity=".16"/>`;
+  s += L(X(50), Y(yl), X(50), Y(-yl), C.ink2, 2) + L(X(0), Y(0), X(100), Y(0), C.ink2, 2);
+  s += T((X(0) + X(100)) / 2, by + bh - 2, "Better game →", { size: 22, w: 700, fill: C.ink2, anchor: "middle" });
   const my = (Y(yl) + Y(-yl)) / 2;
-  s += T(bx + 12, my, "vs. his season average →", { size: 14, w: 600, fill: C.ink2, anchor: "middle", extra: `transform="rotate(-90 ${r1(bx + 12)} ${r1(my)})"` });
+  s += T(bx + 16, my, "Better than his usual →", { size: 22, w: 700, fill: C.ink2, anchor: "middle", extra: `transform="rotate(-90 ${r1(bx + 16)} ${r1(my)})"` });
   const boxes = [];
-  [[X(100) - 10, Y(yl) + 22, "end", "Big night"], [X(0) + 10, Y(yl) + 22, "start", "Better than usual"],
-   [X(100) - 10, Y(-yl) - 11, "end", "Below his usual"], [X(0) + 10, Y(-yl) - 11, "start", "Off night"]].forEach(([x, y, a, t]) => {
-    const w = textW(t.toUpperCase(), 13, 700, FB, 1.3);
-    s += label(C, x, y, t, C.muted, a);
-    boxes.push({ x: a === "end" ? x - w : x, y: y - 13, w, h: 17 });
-  });
   const pts = rows.map(r => ({ r, x: X(r.l.score), y: Y(r.l.dScore) }));
-  pts.forEach(p => boxes.push({ x: p.x - 10, y: p.y - 10, w: 20, h: 20 }));
+  pts.forEach(p => boxes.push({ x: p.x - 14, y: p.y - 14, w: 28, h: 28 }));
   pts.slice().sort((a, b) => a.r.grp < b.r.grp ? -1 : 1).forEach(p => {
-    s += p.r.grp === "D" ? `<rect x="${r1(p.x - 8)}" y="${r1(p.y - 8)}" width="16" height="16" rx="3" fill="${C.defc}" stroke="${C.bg}" stroke-width="2.5"/>`
-      : `<circle cx="${r1(p.x)}" cy="${r1(p.y)}" r="9" fill="${C.accent}" stroke="${C.bg}" stroke-width="2.5"/>`;
+    s += p.r.grp === "D" ? `<rect x="${r1(p.x - 11)}" y="${r1(p.y - 11)}" width="22" height="22" rx="4" fill="${C.defc}" stroke="${C.bg}" stroke-width="3"/>`
+      : `<circle cx="${r1(p.x)}" cy="${r1(p.y)}" r="12.5" fill="${C.accent}" stroke="${C.bg}" stroke-width="3"/>`;
   });
-  const inside = b => b.x >= X(0) + 2 && b.x + b.w <= X(100) - 2 && b.y >= Y(yl) + 2 && b.y + b.h <= Y(-yl) - 2;
+  // names only for the players the story is about: the top three, the biggest surprise each way
+  const byScore = rows.slice().sort((a, b) => b.l.score - a.l.score), named = new Set(byScore.slice(0, 3));
+  const up = rows.slice().sort((a, b) => b.l.dScore - a.l.dScore)[0], down = rows.slice().sort((a, b) => a.l.dScore - b.l.dScore)[0];
+  if (up && up.l.dScore >= 10) named.add(up);
+  if (down && down.l.dScore <= -10) named.add(down);
+  const inside = b => b.x >= X(0) + 4 && b.x + b.w <= X(100) - 4 && b.y >= Y(yl) + 4 && b.y + b.h <= Y(-yl) - 4;
   const hit = b => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
-  const top3 = new Set(rows.slice().sort((a, b) => b.l.score - a.l.score).slice(0, 3));
-  const prio = p => (top3.has(p.r) ? 1000 : 0) + Math.abs(p.r.l.dScore) + Math.abs(p.r.l.score - 50);
-  pts.slice().sort((a, b) => prio(b) - prio(a)).forEach(p => {
-    const t = plast(p.r.pid), w = textW(t, 15, 600) + 2, h = 17;
-    const cands = [[p.x + 13, p.y - 9, "start", p.x + 13, p.y + 5], [p.x - 13 - w, p.y - 9, "end", p.x - 13, p.y + 5],
-                   [p.x - w / 2, p.y - 30, "middle", p.x, p.y - 16], [p.x - w / 2, p.y + 13, "middle", p.x, p.y + 27],
-                   [p.x - 10 - w, p.y + 6, "end", p.x - 10, p.y + 20], [p.x + 10, p.y + 6, "start", p.x + 10, p.y + 20],
-                   [p.x - 10 - w, p.y - 25, "end", p.x - 10, p.y - 11], [p.x + 10, p.y - 25, "start", p.x + 10, p.y - 11]];
+  pts.filter(p => named.has(p.r)).sort((a, b) => b.r.l.score - a.r.l.score).forEach(p => {
+    const t = plast(p.r.pid), w = textW(t, 26, 700) + 4, h = 28;
+    const cands = [[p.x + 18, p.y - 14, "start", p.x + 18, p.y + 9], [p.x - 18 - w, p.y - 14, "end", p.x - 18, p.y + 9],
+                   [p.x - w / 2, p.y - 46, "middle", p.x, p.y - 22], [p.x - w / 2, p.y + 18, "middle", p.x, p.y + 41],
+                   [p.x - 14 - w, p.y + 8, "end", p.x - 14, p.y + 31], [p.x + 14, p.y + 8, "start", p.x + 14, p.y + 31],
+                   [p.x - 14 - w, p.y - 38, "end", p.x - 14, p.y - 15], [p.x + 14, p.y - 38, "start", p.x + 14, p.y - 15]];
     for (const [bx_, by_, a, tx, ty] of cands) {
       const b = { x: bx_, y: by_, w, h };
-      if (inside(b) && !hit(b)) { boxes.push(b); s += T(tx, ty, t, { size: 15, w: 600, fill: C.ink, anchor: a, halo: C.bg }); return; }
+      if (inside(b) && !hit(b)) { boxes.push(b); s += T(tx, ty, t, { size: 26, w: 700, fill: C.ink, anchor: a, halo: C.bg }); return; }
+    }
+  });
+  const free = b => !boxes.some(o => b.x - 8 < o.x + o.w && b.x + b.w + 8 > o.x && b.y - 6 < o.y + o.h && b.y + b.h + 6 > o.y);  // with a little air
+  // each quadrant name takes the first of its quadrant's four corners that no dot is sitting on
+  [["Big night", C.accent, X(50), X(100), Y(yl), Y(0)], ["Off night", C.muted, X(0), X(50), Y(0), Y(-yl)]].forEach(([t, col, qx0, qx1, qy0, qy1]) => {
+    const up = t.toUpperCase(), w = textW(up, 22, 700, FB, 1.4);
+    const spots = t === "Big night" ? [[qx1 - 14, qy0 + 32, "end"], [qx0 + 14, qy0 + 32, "start"], [qx1 - 14, qy1 - 14, "end"], [qx0 + 14, qy1 - 14, "start"]]
+      : [[qx0 + 14, qy1 - 16, "start"], [qx1 - 14, qy1 - 16, "end"], [qx0 + 14, qy0 + 30, "start"], [qx1 - 14, qy0 + 30, "end"]];
+    for (const [x, y, a] of spots) {
+      const b = { x: a === "end" ? x - w : x, y: y - 20, w, h: 24 };
+      if (free(b)) { s += T(x, y, up, { size: 22, w: 700, fill: col, ls: 1.4, anchor: a }); boxes.push(b); return; }
     }
   });
   return s;
 }
-function performerRow(C, x, y, w, rank, r) {
-  const sc = Math.round(r.l.score), d = scoreDelta(r.l.score, r.s.avgScore);
-  let s = T(x, y + 21, rank, { fam: FD, size: 24, w: 700, fill: C.muted });
-  const nx = x + 28, nameMax = w - 28 - 78;
-  const nm = textW(pname(r.pid), 19, 700) <= nameMax ? pname(r.pid) : plast(r.pid);
-  s += T(nx, y + 19, nm, { size: 19, w: 700, fill: C.ink });
-  s += T(nx, y + 42, `${r.grp === "D" ? "D" : "F"} · ${lineShort(r.l)}`, { size: 14, w: 500, fill: C.muted });
-  s += T(x + w, y + 26, sc, { fam: FD, size: 40, w: 700, fill: r.grp === "D" ? C.defc : C.accent, anchor: "end" });
-  s += deltaMark(C, x + w, y + 46, d.text, d.tier, d.strong, 14, "end");
-  return s;
-}
 function cardGame(C, g, rows) {
-  const S = gameStory(g), { s: head, top } = cardHead(C, gameKicker(g), S.head);
+  const S = gameStory(g), { s: head, top } = cardHead(C, shortKicker(g), S.head);
   let s = head;
-  const chartW = 700, legY = CFOOT - 20;
-  s += cardQuad(C, rows, CP - 8, top, chartW, legY - 26 - top);
-  let lx = CP;
-  s += `<circle cx="${lx + 7}" cy="${legY - 5}" r="7" fill="${C.accent}"/>`; s += T(lx + 20, legY, "Forward", { size: 14, w: 600, fill: C.ink2 }); lx += 20 + textW("Forward", 14, 600) + 20;
-  s += `<rect x="${lx}" y="${legY - 12}" width="13" height="13" rx="2.5" fill="${C.defc}"/>`; s += T(lx + 20, legY, "Defenseman", { size: 14, w: 600, fill: C.ink2 }); lx += 20 + textW("Defenseman", 14, 600) + 22;
-  s += T(lx, legY, "Right = better game · Up = better than his usual", { size: 14, w: 500, fill: C.muted });
-  // right column: score, best three, one rough night, the goalie
-  const px = CP + chartW + 28, pw = CW - CP - px, bottom = CFOOT - 14;
-  let y = top + 4;
-  const board = `${US} ${g.gf}  –  ${g.ga} ${g.opp}`;
-  s += T(px, y + 38, board, { fam: FD, size: 46, w: 700, fill: C.ink });
-  y += 70;
-  const byScore = rows.slice().sort((a, b) => b.l.score - a.l.score), best = byScore.slice(0, 3);
-  s += label(C, px, y, "Top performers", C.accent); y += 14;
-  best.forEach((r, i) => { s += performerRow(C, px, y, pw, i + 1, r); y += 62; });
-  const rough = rows.filter(r => !best.includes(r) && r.l.dScore <= -10).sort((a, b) => a.l.dScore - b.l.dScore)[0];
-  const gk = g.gk.slice().sort((a, b) => b[4] - a[4])[0];
-  const need = (rough ? 90 : 0) + (gk ? 58 : 0);
-  if (rough && y + need <= bottom + 4) { y += 8; s += label(C, px, y, "Below his usual"); y += 14; s += performerRow(C, px, y, pw, "", rough); y += 62; }
-  if (gk && y + 50 <= bottom + 4) {
-    y += 8; s += label(C, px, y, "In goal"); y += 24;
-    s += T(px, y, plast(gk[0]), { size: 19, w: 700, fill: C.ink });
-    s += T(px + textW(plast(gk[0]), 19, 700) + 10, y, `${gk[2]} saves on ${gk[1]} · ${svp(gk[1] ? gk[2] / gk[1] : null)}`, { size: 16, w: 500, fill: C.ink2 });
-  }
-  return s + cardFoot(C);
+  const chartW = 640;
+  s += cardQuad(C, rows, CP - 10, top, chartW, CBOT - top);
+  const px = CP + chartW + 34, pw = CW - CP - px;
+  let y = top;
+  s += T(px, y + 52, `${US} ${g.gf}–${g.ga} ${g.opp}`, { fam: FD, size: 64, w: 700, fill: C.ink });
+  y += 76;
+  s += label(C, px, y + 18, "Top performers", C.accent);
+  y += 28;
+  const best = rows.slice().sort((a, b) => b.l.score - a.l.score).slice(0, 3), rowH = Math.min(96, (CBOT - y) / 3);
+  best.forEach((r, i) => {
+    const sc = Math.round(r.l.score), d = scoreDelta(r.l.score, r.s.avgScore), ry = y + i * rowH;
+    s += T(px, ry + 40, plast(r.pid), { size: 32, w: 700, fill: C.ink });
+    s += T(px, ry + 72, `${r.l.gl}G ${r.l.a}A`, { size: 24, w: 600, fill: C.muted });
+    s += T(px + textW(`${r.l.gl}G ${r.l.a}A`, 24, 600) + 14, ry + 72, d.text, { size: 24, w: 700, fill: tierColor(C, d.tier) });
+    s += T(px + pw, ry + 62, sc, { fam: FD, size: 64, w: 700, fill: r.grp === "D" ? C.defc : C.accent, anchor: "end" });
+  });
+  return s + cardFoot(C, "Player score: 50 = a typical game");
 }
 
-/* ---- card: every skater ranked ---- */
-function rankRow(C, x, y, w, h, rank, r, color) {
-  const sc = Math.round(r.l.score), d = scoreDelta(r.l.score, r.s.avgScore), mid = y + h / 2;
-  const nameW = 186, barX = x + 26 + nameW, scoreX = x + w - 64, barW = scoreX - 44 - barX;
-  let s = T(x, mid + 5, rank, { size: 14, w: 700, fill: C.muted });
-  const nm = textW(pname(r.pid), 17, 600) <= nameW - 8 ? pname(r.pid) : plast(r.pid);
-  s += T(x + 26, mid + 6, nm, { size: 17, w: 600, fill: C.ink });
-  s += `<rect x="${r1(barX)}" y="${r1(mid - 6)}" width="${r1(barW)}" height="12" rx="6" fill="${C.panel}"/>`;
-  s += `<rect x="${r1(barX)}" y="${r1(mid - 6)}" width="${r1(Math.max(6, barW * sc / 100))}" height="12" rx="6" fill="${color}"/>`;
-  s += T(scoreX, mid + 8, sc, { fam: FD, size: 26, w: 700, fill: C.ink, anchor: "end" });
-  s += deltaMark(C, x + w, mid + 6, d.text, d.tier, d.strong, 14, "end");
-  return s;
-}
-function rankTitle(g) {
-  const kind = g.sfx === "OT" ? "overtime " : g.sfx === "SO" ? "shootout " : "";
-  return `How every Star rated in the ${Math.max(g.gf, g.ga)}-${Math.min(g.gf, g.ga)} ${kind}${g.res === "W" ? "win over" : "loss to"} the ${g.oppName}`;
-}
+/* ---- card: every skater, ranked ---- */
+const rankTitle = g => `How every Star rated ${g.res === "W" ? "in the win over" : "in the loss to"} the ${g.oppName}`;
 function cardRank(C, g, rows) {
-  const { s: head, top } = cardHead(C, gameKicker(g), rankTitle(g));
+  const { s: head, top } = cardHead(C, shortKicker(g), rankTitle(g));
   let s = head;
   const byScore = rows.slice().sort((a, b) => b.l.score - a.l.score), fw = byScore.filter(r => r.grp === "F"), dm = byScore.filter(r => r.grp === "D");
-  const colW = (CW - 2 * CP - 40) / 2, bottom = CFOOT - 16, rowsTop = top + 16;
-  const h = Math.min(36, (bottom - rowsTop) / Math.max(fw.length, 1));
-  s += label(C, CP, top + 2, "Forwards", C.accent);
-  fw.forEach((r, i) => { s += rankRow(C, CP, rowsTop + i * h, colW, h, i + 1, r, C.accent); });
-  const rx = CP + colW + 40;
-  s += label(C, rx, top + 2, "Defensemen", C.defc);
-  dm.forEach((r, i) => { s += rankRow(C, rx, rowsTop + i * h, colW, h, i + 1, r, C.defc); });
-  let y = rowsTop + dm.length * h + 30;
-  const gk = g.gk.slice().sort((a, b) => b[4] - a[4])[0];
-  if (gk && y + 30 <= bottom) {
-    s += label(C, rx, y, "In goal"); y += 26;
-    s += T(rx, y, `${pname(gk[0])}: ${gk[2]} saves on ${gk[1]} · ${svp(gk[1] ? gk[2] / gk[1] : null)}`, { size: 17, w: 600, fill: C.ink }); y += 34;
-  }
-  const note = "Player score: 50 is a typical game for a Stars skater at his position. The arrow compares this game with his own season average.";
-  const lines = wrapText(note, colW, 15, 500, FB);
-  if (y + lines.length * 21 <= bottom + 6) lines.forEach(ln => { s += T(rx, y, ln, { size: 15, w: 500, fill: C.muted }); y += 21; });
-  return s + cardFoot(C);
+  const half = Math.ceil(fw.length / 2), cols = [fw.slice(0, half), fw.slice(half), dm], gap = 36;
+  const colW = (CW - 2 * CP - 2 * gap) / 3, rowsTop = top + 20, n = Math.max(half, dm.length, 1), rowH = Math.min(64, (CBOT - rowsTop) / n);
+  s += label(C, CP, top, "Forwards", C.accent);
+  s += label(C, CP + 2 * (colW + gap), top, "Defensemen", C.defc);
+  cols.forEach((col, ci) => {
+    const x = CP + ci * (colW + gap), color = ci === 2 ? C.defc : C.accent, base = ci === 1 ? half : 0;
+    col.forEach((r, i) => {
+      const y = rowsTop + i * rowH, sc = Math.round(r.l.score), d = scoreDelta(r.l.score, r.s.avgScore);
+      s += T(x, y + 32, `${base + i + 1}`, { size: 22, w: 700, fill: C.muted });
+      const nx = x + 34, nm = plast(r.pid);
+      s += T(nx, y + 32, nm, { size: 28, w: 700, fill: C.ink });
+      if (d.tier !== "flat") s += T(nx + textW(nm, 28, 700) + 8, y + 30, d.pc > 0 ? "▲" : "▼", { size: 20, w: 700, fill: tierColor(C, d.tier) });
+      s += T(x + colW, y + 34, sc, { fam: FD, size: 40, w: 700, fill: C.ink, anchor: "end" });
+      const bw = colW - 34 - 60;
+      s += `<rect x="${r1(nx)}" y="${r1(y + 42)}" width="${r1(bw)}" height="10" rx="5" fill="${C.panel}"/>`;
+      s += `<rect x="${r1(nx)}" y="${r1(y + 42)}" width="${r1(Math.max(8, bw * sc / 100))}" height="10" rx="5" fill="${color}"/>`;
+    });
+  });
+  return s + cardFoot(C, "50 = a typical game · ▲▼ vs. his own average");
 }
 
-// bottom of a save-percentage axis: low enough for most nights, never below .700 (one blowout shouldn't flatten the chart)
-const svFloor = vals => Math.max(.7, Math.floor(Math.min(.85, ...vals) * 20) / 20);
-
 /* ---- card: one player, one game ---- */
-const TILE_STATS = { F: ["gl", "a", "sog", "toi", "pm", "hits"], D: ["gl", "a", "blk", "toi", "pm", "sog"] };
-const TILE_NAMES = { gl: "Goals", a: "Assists", sog: "Shots on goal", toi: "Ice time", pm: "Plus-minus", hits: "Hits", blk: "Blocked shots" };
+const TILE4 = { F: ["gl", "a", "sog", "toi"], D: ["gl", "a", "blk", "toi"] };
+const TILE_NAMES = { gl: "Goals", a: "Assists", sog: "Shots", toi: "Ice time", blk: "Blocks" };
+function scoreBlock(C, x, y, lab, value, pill, sub) {
+  let s = label(C, x, y + 20, lab);
+  s += T(x, y + 150, value, { fam: FD, size: 150, w: 700, fill: C.ink });
+  const dx = x + textW(value, 150, 700, FD) + 28;
+  if (pill) s += deltaPill(C, dx, y + 96, pill.text, pill.tier, 46);
+  if (sub) s += T(dx, y + 142, sub, { size: 26, w: 600, fill: C.muted });
+  return s;
+}
 function cardPlayerGame(C, pid, g) {
   const isG = !!goalies[pid] && !skaters[pid];
-  const kick = `${fdate(g.date, true)} · ${vs(g)} · ${resLabel(g)} ${scoreStr(g)}`;
   const st = isG ? goalieGameStory(pid, goalies[pid], g) : skaterGameStory(pid, skaters[pid], g);
-  const { s: head, top } = cardHead(C, kick, st.head);
+  const { s: head, top } = cardHead(C, shortKicker(g), st.head);
   let s = head;
-  const leftW = 390, id = identity(C, pid, CP, top - 8, leftW);
-  s += id.s;
-  const rx = CP + leftW + 40, rw = CW - CP - rx, bottom = CFOOT - 16;
-  let y = id.y + 8;
+  const rightX = 610, tilesY = Math.min(CBOT - 116, top + 196), tileH = Math.min(150, CBOT - tilesY);
+  s += identity(C, pid, CP, top - 6, rightX - CP - 30).s;
+  const tw = (CW - 2 * CP - 3 * 18) / 4;
   if (!isG) {
-    const sk = skaters[pid], l = st.l, sc = Math.round(l.score), d = scoreDelta(l.score, sk.avgScore);
-    s += label(C, CP, y + 10, "Player score");
-    s += T(CP, y + 104, sc, { fam: FD, size: 110, w: 700, fill: C.ink });
-    const dx = CP + textW(sc, 110, 700, FD) + 20;
-    s += deltaMark(C, dx, y + 68, d.text, d.tier, true, 28);
-    s += T(dx, y + 98, `vs. his average of ${Math.round(sk.avgScore)}`, { size: 16, w: 500, fill: C.muted });
-    s += T(CP, y + 138, `50 is a typical game for a Stars ${sk.grp === "D" ? "defenseman" : "forward"}`, { size: 15, w: 500, fill: C.muted });
-    const rank = seasonRank(sk);
-    s += label(C, CP, y + 184, "His season");
-    s += T(CP, y + 212, `${plural(sk.gp, "game")} · ${plural(sk.gl, "goal")} · ${plural(sk.a, "assist")}`, { size: 18, w: 600, fill: C.ink });
-    if (rank) s += T(CP, y + 238, `${ord(rank)} among Stars ${sk.grp === "D" ? "defensemen" : "forwards"} by average score`, { size: 16, w: 500, fill: C.ink2 });
-    // stat tiles vs. his average
-    const tw = (rw - 2 * 14) / 3, th = 104;
-    TILE_STATS[sk.grp].forEach((k, i) => {
-      const c = STATCOLS.find(x => x.k === k), v = l[k], avg = sk.avg[k], dd = statDelta(v, avg, GSTATS[sk.grp][k]?.sd, c);
-      const delta = dd && { text: dd.txt === "even" ? "same as his average" : `${dd.txt} vs. his average`, tier: dd.tier };
-      s += tile(C, rx + (i % 3) * (tw + 14), top + Math.floor(i / 3) * (th + 14), tw, th, TILE_NAMES[k], (c.fmt || (x => x))(v), delta);
+    const sk = skaters[pid], l = st.l, d = scoreDelta(l.score, sk.avgScore);
+    s += scoreBlock(C, rightX, top - 10, "Player score", String(Math.round(l.score)), { text: d.text, tier: d.tier }, `vs. his average (${Math.round(sk.avgScore)})`);
+    TILE4[sk.grp].forEach((k, i) => {
+      const c = STATCOLS.find(x => x.k === k);
+      s += bigTile(C, CP + i * (tw + 18), tilesY, tw, tileH, TILE_NAMES[k], (c.fmt || (x => x))(l[k]));
     });
-    const cy = top + 2 * (th + 14) + 18;
-    s += label(C, rx, cy, "His player score, game by game");
-    s += T(CW - CP, cy, "Dashed line: a typical game (50)", { size: 13, w: 500, fill: C.muted, anchor: "end" });
-    s += cardChart(C, rx - 8, cy + 8, rw + 8, bottom - cy - 8, { x0: 1, x1: Math.max(N, 2), y0: 0, y1: 100, yTicks: [0, 50, 100], yFmt: v => v,
-      xTicks: monthTicks(G.map(x => x.n)).map(t => ({ x: t.n, label: t.label })), ref: { y: 50 },
-      dots: sk.log.filter(x => x !== l).map(x => [x.g.n, x.score]), hi: [g.n, l.score], hiLabel: `This game: ${sc}` });
-  } else {
-    const gs = goalies[pid], l = st.l, sv = st.sv, d = sv != null && gs.svp != null ? sv - gs.svp : null;
-    const tier = d == null || Math.abs(d) < .01 ? "flat" : d > 0 ? "up" : "down";
-    s += label(C, CP, y + 10, "Save percentage");
-    s += T(CP, y + 104, svp(sv), { fam: FD, size: 110, w: 700, fill: C.ink });
-    const dx = CP + textW(svp(sv), 110, 700, FD) + 20;
-    if (d != null) s += deltaMark(C, dx, y + 68, Math.abs(d) < .0005 ? "even" : (d > 0 ? "▲" : "▼") + Math.abs(d).toFixed(3).replace(/^0/, ""), tier, true, 28);
-    s += T(dx, y + 98, `vs. his season ${svp(gs.svp)}`, { size: 16, w: 500, fill: C.muted });
-    s += label(C, CP, y + 184, "His season");
-    s += T(CP, y + 212, `${plural(gs.gp, "game")} · ${gs.w}-${gs.l}-${gs.otl} record`, { size: 18, w: 600, fill: C.ink });
-    s += T(CP, y + 238, `${gs.gaa == null ? "–" : gs.gaa.toFixed(2)} goals-against average · ${plural(gs.so, "shutout")}`, { size: 16, w: 500, fill: C.ink2 });
-    const tw = (rw - 2 * 14) / 3, th = 104, avgSa = gs.sa / gs.gp, avgGa = gs.ga / gs.gp;
-    // shots faced is neither good nor bad for him, so it stays gray; fewer goals against is better
-    const dl = (v, avg, better) => { const dd = v - avg, tr = !better || Math.abs(dd) < .5 ? "flat" : (dd > 0) === (better === "more") ? "up" : "down"; return { text: `${dd > 0 ? "▲" : dd < 0 ? "▼" : ""}${Math.abs(dd).toFixed(1)} vs. his average`, tier: tr }; };
-    [["Saves", l.sv], ["Shots faced", l.sa, dl(l.sa, avgSa, null)], ["Goals against", l.ga, dl(l.ga, avgGa, "fewer")],
-     ["Ice time", toi(l.toi)], ["Decision", l.dec || "–"], ["Season record", `${gs.w}-${gs.l}-${gs.otl}`]].forEach(([lab, v, delta], i) => {
-      s += tile(C, rx + (i % 3) * (tw + 14), top + Math.floor(i / 3) * (th + 14), tw, th, lab, v, delta);
-    });
-    const cy = top + 2 * (th + 14) + 18;
-    s += label(C, rx, cy, "His save percentage, game by game");
-    if (gs.svp != null) s += T(CW - CP, cy, `Dashed line: season ${svp(gs.svp)}`, { size: 13, w: 500, fill: C.muted, anchor: "end" });
-    const pts = gs.log.filter(x => x.sa).map(x => [x.g.n, x.sv / x.sa]), lo = svFloor(pts.map(p => p[1]));
-    s += cardChart(C, rx - 8, cy + 8, rw + 8, bottom - cy - 8, { x0: 1, x1: Math.max(N, 2), y0: lo, y1: 1, yTicks: [lo, (lo + 1) / 2, 1], yFmt: svp,
-      xTicks: monthTicks(G.map(x => x.n)).map(t => ({ x: t.n, label: t.label })), ref: gs.svp != null ? { y: gs.svp } : null,
-      dots: pts.filter(p => p[0] !== g.n), hi: sv != null ? [g.n, sv] : null, hiLabel: `This game: ${svp(sv)}` });
+    return s + cardFoot(C, `50 = a typical game for a Stars ${sk.grp === "D" ? "defenseman" : "forward"}`);
   }
+  const gs = goalies[pid], l = st.l, sv = st.sv, d = sv != null && gs.svp != null ? sv - gs.svp : null;
+  const tier = d == null || Math.abs(d) < .01 ? "flat" : d > 0 ? "up" : "down";
+  s += scoreBlock(C, rightX, top - 10, "Save percentage", svp(sv), d == null ? null : { text: (d > 0 ? "▲" : d < 0 ? "▼" : "") + Math.abs(d).toFixed(3).replace(/^0/, ""), tier }, `vs. his season (${svp(gs.svp)})`);
+  [["Saves", l.sv], ["Shots faced", l.sa], ["Goals against", l.ga], ["Decision", l.dec || "–"]].forEach(([lab, v], i) => {
+    s += bigTile(C, CP + i * (tw + 18), tilesY, tw, tileH, lab, v);
+  });
   return s + cardFoot(C);
 }
 
 /* ---- card: one player's season ---- */
+// bottom of a save-percentage axis: low enough for most nights, never below .700 (one blowout shouldn't flatten the chart)
+const svFloor = vals => Math.max(.7, Math.floor(Math.min(.85, ...vals) * 20) / 20);
+function trendChart(C, bx, by, bw, bh, o) {
+  // o: { y0, y1, ref, refLabel, line: [[x, y]|null], fmt, step }: the y range hugs the data (and the reference line)
+  const vals = o.line.filter(Boolean).map(p => p[1]).concat([o.ref]);
+  if (vals.length > 1) {
+    const st = o.step, pad = st / 2;
+    o = { ...o, y0: Math.max(o.y0, Math.floor((Math.min(...vals) - pad) / st) * st), y1: Math.min(o.y1, Math.ceil((Math.max(...vals) + pad) / st) * st) };
+  }
+  const m = { l: 8, r: 96, t: 16, b: 38 }, x0 = 1, x1 = Math.max(N, 2);
+  const X = v => bx + m.l + (v - x0) / (x1 - x0) * (bw - m.l - m.r), Y = v => by + m.t + (o.y1 - Math.max(o.y0, Math.min(o.y1, v))) / (o.y1 - o.y0) * (bh - m.t - m.b);
+  let s = `<rect x="${r1(bx)}" y="${r1(by)}" width="${r1(bw)}" height="${r1(bh - m.b + 10)}" rx="12" fill="${C.panel}" fill-opacity=".6"/>`;
+  s += L(X(x0), Y(o.ref), X(x1), Y(o.ref), C.muted, 2.5, `stroke-dasharray="10 8"`);
+  const kw = textW(o.refLabel, 20, 600);  // key in the heading row: "- - - 50 = typical game"
+  s += L(bx + bw - kw - 58, by - 22, bx + bw - kw - 12, by - 22, C.muted, 2.5, `stroke-dasharray="8 6"`) + T(bx + bw, by - 15, o.refLabel, { size: 20, w: 600, fill: C.muted, anchor: "end" });
+  let lastX = -1e9;
+  monthTicks(G.map(x => x.n)).forEach(t => { const tx = X(t.n); if (tx - lastX < 90 || tx > X(x1) - 20) return; lastX = tx; s += T(tx, by + bh - 4, t.label, { size: 22, w: 600, fill: C.muted, anchor: "middle" }); });
+  let d = "", pen = false;
+  o.line.forEach(p => { if (!p) { pen = false; return; } d += `${pen ? "L" : "M"}${r1(X(p[0]))},${r1(Y(p[1]))}`; pen = true; });
+  if (d) s += `<path d="${d}" fill="none" stroke="${C.accent}" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/>`;
+  const last = o.line.filter(Boolean).pop();
+  if (last) {
+    s += `<circle cx="${r1(X(last[0]))}" cy="${r1(Y(last[1]))}" r="10" fill="${C.accent}" stroke="${C.bg}" stroke-width="3"/>`;
+    s += T(X(last[0]) + 16, Y(last[1]) + 15, o.fmt(last[1]), { fam: FD, size: 44, w: 700, fill: C.ink });
+  }
+  return s;
+}
 function cardPlayerSeason(C, pid) {
   const isG = !!goalies[pid] && !skaters[pid];
-  const kick = `${M.seasonLabel} season · through ${fdate(G[N - 1].date)}`;
   const st = isG ? goalieSeasonStory(pid, goalies[pid]) : skaterSeasonStory(pid, skaters[pid]);
-  const { s: head, top } = cardHead(C, kick, st.head);
+  const { s: head, top } = cardHead(C, `${M.seasonLabel} season · through ${fdate(G[N - 1].date)}`, st.head);
   let s = head;
-  const leftW = 390, id = identity(C, pid, CP, top - 8, leftW);
+  const leftW = 500, rx = CP + leftW + 36, rw = CW - CP - rx;
+  const id = identity(C, pid, CP, top - 6, leftW, 104);
   s += id.s;
-  const rx = CP + leftW + 40, rw = CW - CP - rx, bottom = CFOOT - 16, xs = G.map(x => x.n);
-  const xTicks = monthTicks(xs).map(t => ({ x: t.n, label: t.label }));
-  let y = id.y + 8;
-  const tiles = (list) => { const tw = (leftW - 12) / 2, th = 78; list.forEach(([lab, v], i) => { s += tile(C, CP + (i % 2) * (tw + 12), y + Math.floor(i / 2) * (th + 12), tw, th, lab, v); }); };
+  const y = Math.max(id.y + 22, top + 104);
   if (!isG) {
-    const sk = skaters[pid], rank = seasonRank(sk), grpName = sk.grp === "D" ? "defensemen" : "forwards";
-    s += label(C, CP, y + 10, "Average player score");
-    s += T(CP, y + 96, Math.round(sk.avgScore), { fam: FD, size: 100, w: 700, fill: C.ink });
-    const dx = CP + textW(Math.round(sk.avgScore), 100, 700, FD) + 20;
-    s += T(dx, y + 64, rank ? `${ord(rank)} among` : `${plural(sk.gp, "game")}`, { size: 19, w: 700, fill: C.ink });
-    s += T(dx, y + 88, rank ? `Stars ${grpName}` : "played so far", { size: 19, w: 700, fill: C.ink });
-    y += 124;
-    tiles([["Games", sk.gp], ["Goals", sk.gl], ["Assists", sk.a], ["Points", sk.p]]);
+    const sk = skaters[pid], rank = seasonRank(sk), grp = sk.grp === "D" ? "defensemen" : "forwards";
+    s += label(C, CP, y + 18, "Average player score");
+    s += T(CP, y + 138, Math.round(sk.avgScore), { fam: FD, size: 130, w: 700, fill: C.ink });
+    const dx = CP + textW(Math.round(sk.avgScore), 130, 700, FD) + 24;
+    s += T(dx, y + 88, rank ? `${ord(rank)} among` : plural(sk.gp, "game"), { size: 30, w: 700, fill: C.ink });
+    s += T(dx, y + 124, rank ? `Stars ${grp}` : "so far", { size: 30, w: 700, fill: C.ink });
+    s += T(CP, Math.min(CBOT - 4, y + 196), `${sk.gp} GP · ${sk.gl} G · ${sk.a} A · ${sk.p} P`, { size: 30, w: 700, fill: C.ink2 });
     const roll = rolling(sk.log.map(l => l.score), 10, mean);
-    s += label(C, rx, top + 2, "Player score, game by game");
-    s += cardChart(C, rx - 8, top + 12, rw + 8, bottom - top - 12, { x0: 1, x1: Math.max(N, 2), y0: 0, y1: 100, yTicks: [0, 25, 50, 75, 100], yFmt: v => v, xTicks,
-      ref: { y: 50 }, dots: sk.log.map(l => [l.g.n, l.score]),
-      line: roll.map((v, i) => v == null ? null : [sk.log[i].g.n, v]), endLabel: roll.some(v => v != null) ? `${Math.round(roll.filter(v => v != null).pop())} avg` : "" });
-    s += T(CW - CP, top + 2, "Dots: games · Line: 10-game avg · Dashed: typical game (50)", { size: 13, w: 500, fill: C.muted, anchor: "end" });
-  } else {
-    const gs = goalies[pid];
-    s += label(C, CP, y + 10, "Save percentage");
-    s += T(CP, y + 96, svp(gs.svp), { fam: FD, size: 100, w: 700, fill: C.ink });
-    const dx = CP + textW(svp(gs.svp), 100, 700, FD) + 20;
-    s += T(dx, y + 64, `${gs.w}-${gs.l}-${gs.otl}`, { size: 19, w: 700, fill: C.ink });
-    s += T(dx, y + 88, "record", { size: 19, w: 700, fill: C.ink });
-    y += 124;
-    tiles([["Games", gs.gp], ["Goals-against avg", gs.gaa == null ? "–" : gs.gaa.toFixed(2)], ["Shots faced", gs.sa], ["Shutouts", gs.so]]);
-    const played = gs.log.filter(l => l.sa), v = played.map(l => l.sv / l.sa), roll = rolling(v, 5, mean, 3), lo = svFloor(v);
-    s += label(C, rx, top + 2, "Save percentage, game by game");
-    s += cardChart(C, rx - 8, top + 12, rw + 8, bottom - top - 12, { x0: 1, x1: Math.max(N, 2), y0: lo, y1: 1, yTicks: [lo, (lo + 1) / 2, 1], yFmt: svp, xTicks,
-      ref: gs.svp != null ? { y: gs.svp } : null, dots: played.map((l, i) => [l.g.n, v[i]]),
-      line: roll.map((x, i) => x == null ? null : [played[i].g.n, x]) });  // no end label: the headline's recent save % is counted differently
-    s += T(CW - CP, top + 2, `Dots: games · Line: 5-game avg · Dashed: season ${svp(gs.svp)}`, { size: 13, w: 500, fill: C.muted, anchor: "end" });
+    s += label(C, rx, top + 14, "10-game avg score");
+    s += trendChart(C, rx, top + 30, rw, CBOT - top - 26, { y0: 0, y1: 100, step: 10, ref: 50, refLabel: "typical game (50)", fmt: v => Math.round(v),
+      line: roll.map((v, i) => v == null ? null : [sk.log[i].g.n, v]) });
+    return s + cardFoot(C, "Player score: 50 = a typical game");
   }
+  const gs = goalies[pid];
+  s += label(C, CP, y + 18, "Save percentage");
+  s += T(CP, y + 138, svp(gs.svp), { fam: FD, size: 130, w: 700, fill: C.ink });
+  const dx = CP + textW(svp(gs.svp), 130, 700, FD) + 24;
+  s += T(dx, y + 88, `${gs.w}-${gs.l}-${gs.otl}`, { size: 30, w: 700, fill: C.ink });
+  s += T(dx, y + 124, "record", { size: 30, w: 700, fill: C.ink });
+  s += T(CP, Math.min(CBOT - 4, y + 196), `${gs.gp} GP · ${gs.gaa == null ? "–" : gs.gaa.toFixed(2)} GAA · ${plural(gs.so, "shutout")}`, { size: 30, w: 700, fill: C.ink2 });
+  // same yardstick as the headline (goalieTrend): saves / shots over his last 5 games with 10+ shots
+  const played = gs.log.filter(l => l.sa >= 10), lo = svFloor(played.map(l => l.sv / l.sa));
+  const roll = played.map((_, i) => { if (i < 2) return null; const w = played.slice(Math.max(0, i - 4), i + 1); return sum(w.map(l => l.sv)) / sum(w.map(l => l.sa)); });
+  s += label(C, rx, top + 14, "5-game save %");
+  s += trendChart(C, rx, top + 30, rw, CBOT - top - 26, { y0: lo, y1: 1, step: .025, ref: gs.svp ?? .9, refLabel: `season ${svp(gs.svp)}`, fmt: svp,
+    line: roll.map((x, i) => x == null ? null : [played[i].g.n, x]) });
   return s + cardFoot(C);
 }
 

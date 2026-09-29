@@ -132,6 +132,7 @@ Original checklist:
 He's not a developer. Explain what you did in plain words, ask before big changes to what the page shows, and keep the visual story first. The tables support the chart; they don't replace it.
 
 Share-image notes (Sep 2026):
+- **Design rule: cards are judged at thumbnail size** (~350px wide, i.e. ~0.3x, how a text message or feed shows them). The owner rejected the first, detailed version as unreadable there. Nothing meant to be read under ~24px at 1200x675; key numbers 60-150px; one idea per card; name only the players the story is about. Check changes by shrinking the PNGs to 350px, not just at full size.
 - Tested in Chromium and WebKit (Safari's engine) via Playwright; `test_share_cards_in_safari_engine` runs in CI. A real iPhone hasn't been tested. Web Share can't be exercised headlessly, so the "Share…" button only appears where `navigator.canShare({files})` is true.
 - Tests block the network but must allow `blob:`/`data:` URLs (the `offline` route helper), or WebKit blocks the preview image.
 - The preview sets `aria-busy` while drawing; wait for `.share-prev[aria-busy=false]` before reading it.
