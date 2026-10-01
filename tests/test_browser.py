@@ -90,6 +90,25 @@ def test_header_logo_matches_theme(browser, built_page, scheme, shown):
     page.close()
 
 
+@pytest.mark.parametrize("width,label", [(1280, "Subscribe to Stick Language on Substack"), (700, "Subscribe on Substack"),
+                                         (390, "Subscribe on Substack"), (360, "Subscribe on Substack"), (320, "Subscribe on Substack")])
+def test_subscribe_button(browser, built_page, built_data, width, label):
+    """The header's Subscribe button leads to the Substack's subscribe page and fits beside the logo, even on a small phone."""
+    page, errors = open_page(browser, built_page, width=width)
+    brand = built_data["meta"]["brandUrl"]
+    btn = page.locator("#subscribe")
+    assert btn.is_visible() and btn.inner_text().strip() == label
+    assert btn.get_attribute("href") == brand + "/subscribe" and btn.get_attribute("target") == "_blank"
+    assert page.locator("#brand-link").get_attribute("href") == brand
+    logo, b = page.locator(".brand h1").bounding_box(), btn.bounding_box()
+    assert b["y"] < logo["y"] + logo["height"], "the button sits on the logo's row, not wrapped below it"
+    assert logo["x"] + logo["width"] <= b["x"], "the logo and STATS pill are fully showing, clear of the button"
+    assert page.locator("header.bar").bounding_box()["height"] < 70, "the sticky header is still one row"
+    assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 0
+    assert errors == []
+    page.close()
+
+
 def test_game_picker_and_player_card(browser, built_page):
     page, errors = open_page(browser, built_page)
     page.locator(".chip").first.click()

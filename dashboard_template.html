@@ -74,14 +74,27 @@ button:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:fo
 /* ---------- top bar ---------- */
 .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
 .bar-in { max-width: 980px; margin: 0 auto; padding: 10px 16px 0; display: flex; flex-wrap: wrap; align-items: end; gap: 6px 20px; }
-.brand { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; min-width: 0; }
+/* One row only (the bar is sticky). The brand gives way to the Subscribe button: what doesn't fit beside the logo
+   (the season, then the record) wraps onto a second line, which is cut off. */
+.brand { display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; gap: 30px 12px; height: 42px; overflow: hidden; margin-bottom: 10px; flex: 1 1 0; min-width: 0; }
+.brand > * { height: 42px; display: flex; align-items: center; }
 .brand h1 { display: flex; align-items: center; gap: 7px; margin: 0; line-height: 1; }
 .brand h1 img { height: 42px; width: auto; }
 .brand h1 img.l { display: var(--logo-l); } .brand h1 img.d { display: var(--logo-d); }
 .brand .tag { font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; line-height: 1;
   background: var(--accent); color: var(--surface); border-radius: 999px; padding: 3px 6px 3px 7px; }
-@media (max-width: 480px) { .brand { gap: 9px; } .brand h1 img { height: 36px; } }
+@media (max-width: 480px) { .brand h1 img { height: 36px; } }
 .brand .season { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--muted); letter-spacing: .04em; }
+.brand h1 a { display: flex; border-radius: 4px; }
+.subscribe { display: inline-flex; flex: none; align-items: center; align-self: center; margin: 0 0 10px auto; padding: 7px 12px; border-radius: 8px; white-space: nowrap;
+  background: var(--accent); color: var(--surface); font-weight: 700; font-size: 13.5px; line-height: 1.2; text-decoration: none; }
+.subscribe:hover { filter: brightness(1.08); } .subscribe[hidden] { display: none; }
+.subscribe:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.brand h1 a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }  /* inside: the brand row clips what sticks out */
+.subscribe .short { display: none; }
+@media (max-width: 720px) { .subscribe .long { display: none; } .subscribe .short { display: inline; } }
+@media (max-width: 480px) { .bar-in { column-gap: 10px; } .brand { gap: 30px 9px; height: 36px; } .brand > * { height: 36px; } .subscribe { padding: 6px 9px; font-size: 12.5px; }
+  .brand .season { display: none; } }  /* on a phone the record gets the room, when there is any */
 .brand .rec { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--accent); }
 
 
@@ -312,6 +325,7 @@ ul.wts b { text-align: right; color: var(--ink); }
 .scorecell { display: grid; grid-template-columns: 2.1em auto; gap: 8px; align-items: center; }
 .scv { font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1; }
 .scorecell .dv { margin-top: 0; justify-self: start; }
+footer a { color: inherit; }
 footer { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 0 28px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
 @media (prefers-reduced-motion: reduce) { .chips { scroll-behavior: auto; } }
 </style>
@@ -322,7 +336,8 @@ footer { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 
 
 <header class="bar">
   <div class="bar-in">
-    <div class="brand"><h1><img class="l" src="__DASHBOARD_LOGO_LIGHT__" alt="Stick Language"><img class="d" src="__DASHBOARD_LOGO_DARK__" alt="Stick Language"><span class="tag">Stats</span></h1><span class="season" id="season"></span><span class="rec" id="rec"></span></div>
+    <div class="brand"><h1><a id="brand-link"><img class="l" src="__DASHBOARD_LOGO_LIGHT__" alt="Stick Language"><img class="d" src="__DASHBOARD_LOGO_DARK__" alt="Stick Language"></a><span class="tag">Stats</span></h1><span class="season" id="season"></span><span class="rec" id="rec"></span></div>
+    <a class="subscribe" id="subscribe" target="_blank" rel="noopener" title="Stick Language, a Dallas Stars Substack" hidden><span class="long">Subscribe to Stick Language on Substack</span><span class="short">Subscribe on Substack</span></a>
   </div>
 </header>
 
@@ -1892,7 +1907,11 @@ const TTb = teamTrend();
 $("#season").textContent = `${NAME} ${M.seasonLabel}`;
 $("#rec").textContent = G.length ? `${TTb.w}-${TTb.l}-${TTb.o}` : "";
 if (M.sample) { const b = $("#banner"); b.hidden = false; b.textContent = "Sample data for preview: player names are real, every number and story is made up."; }
-$("#footer").innerHTML = `<span>Data: NHL.com public API</span><span>Updated ${esc(M.built)}</span>${M.credit ? `<span>${esc(M.credit)}</span>` : ""}`;
+if (M.brandUrl) {  // the owner's Substack: the logo opens it, the button opens its subscribe page
+  Object.assign($("#brand-link"), { href: M.brandUrl, target: "_blank", rel: "noopener" });
+  Object.assign($("#subscribe"), { href: M.brandUrl + "/subscribe", hidden: false });
+}
+$("#footer").innerHTML = `${M.brandUrl ? `<span><a href="${esc(M.brandUrl)}" target="_blank" rel="noopener">Stick Language</a>, a Dallas Stars Substack</span>` : ""}<span>Data: NHL.com public API</span><span>Updated ${esc(M.built)}</span>${M.credit ? `<span>${esc(M.credit)}</span>` : ""}`;
 let lastW = window.innerWidth;
 window.addEventListener("resize", () => { clearTimeout(window.__rz); window.__rz = setTimeout(() => {
   if (Math.abs(window.innerWidth - lastW) < 8) return; lastW = window.innerWidth; render(); sheet && sheet.draw(); }, 150); });

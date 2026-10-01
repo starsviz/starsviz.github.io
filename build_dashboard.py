@@ -187,6 +187,7 @@ def clean(o):
     return o
 
 
+BRAND_URL = "https://sticklanguage.substack.com"   # the owner's Substack: the header logo and Subscribe button go here
 SHARE_IMAGE = "og-image.png"      # made by tools/make_share_image.py after the build
 TOUCH_ICON = "apple-touch-icon.png"
 
@@ -269,6 +270,7 @@ def main(argv=None):
     ap.add_argument("--out", default="dashboard.html")
     ap.add_argument("--site-url", default="", help="where the page is published, e.g. https://you.github.io/stars/ "
                                                    "(turns on the share preview image for Substack and X)")
+    ap.add_argument("--brand-url", default=BRAND_URL, help='where the logo and the Subscribe button lead ("" hides the button)')
     ap.add_argument("--template", default=str(HERE / "dashboard_template.html"))
     ap.add_argument("--cache", default=".nhl_cache")
     ap.add_argument("--offline", action="store_true", help="use cached data only")
@@ -278,6 +280,7 @@ def main(argv=None):
 
     api = sv.Api(Path(args.cache), offline=args.offline)
     data = build_data(api, args.team.upper(), args.season, args.color, args.credit, sample=args.sample)
+    data["meta"]["brandUrl"] = args.brand_url.rstrip("/")
     data["meta"]["siteUrl"] = args.site_url.rstrip("/") + "/" if args.site_url else ""  # printed on share images
     out = render(data, Path(args.template), Path(args.out), fragment=args.fragment, site_url=args.site_url)
     kb = out.stat().st_size / 1024
