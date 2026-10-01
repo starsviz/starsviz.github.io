@@ -1060,14 +1060,11 @@ function renderGame() {
       ${howItWorks()}
     </div>
     ${fw.length ? `<div class="card"><p class="chapter-label">Forwards · ranked by player score</p>
-      <h2>${esc(plast(fw[0].pid))} tops the forwards at ${Math.round(fw[0].l.score)}</h2>
-      <p class="cap">The small number under each stat is the difference from his season average per game. Green is better than usual, red is worse, and shaded ones are far outside his normal range. Hover a number to see his season average.</p>
+      <p class="cap">The percentage next to the player score is how this game's score compares to that player's season average player score. The small number under each stat is the difference from his season average per game.</p>
       ${rankTable(fw, "F", g)}</div>` : ""}
     ${dm.length ? `<div class="card"><p class="chapter-label">Defensemen · ranked by player score</p>
-      <h2>${esc(plast(dm[0].pid))} leads the blue line at ${Math.round(dm[0].l.score)}</h2>
       ${rankTable(dm, "D", g)}</div>` : ""}
     ${gk.length ? `<div class="card"><p class="chapter-label">In goal</p>
-      <h2>${esc(gk.map(x => `${plast(x.pid)}: ${x.sv} saves on ${x.sa}`).join(" · "))}</h2>
       <div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Goalie</th><th class="l">Dec</th><th>SV%</th><th>Saves</th><th>Shots</th><th>GA</th><th>TOI</th></tr></thead><tbody>
       ${gk.map(x => { const v = x.sa ? x.sv / x.sa : null, sv = x.s ? x.s.svp : null, d = v != null && sv != null ? v - sv : null;
         const t = d == null || Math.abs(d) < .01 ? "flat" : (d > 0 ? "up" : "down") + (Math.abs(d) >= .03 ? " s2" : "");
