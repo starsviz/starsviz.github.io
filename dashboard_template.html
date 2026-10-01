@@ -95,6 +95,8 @@ button:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:fo
 @media (max-width: 720px) { .subscribe .long { display: none; } .subscribe .short { display: inline; } }
 @media (max-width: 480px) { .bar-in { column-gap: 10px; } .brand { gap: 30px 9px; height: 36px; } .brand > * { height: 36px; } .subscribe { padding: 6px 9px; font-size: 12.5px; }
   .brand .season { display: none; } }  /* on a phone the record gets the room, when there is any */
+/* The narrowest phones, with a wide fallback font (when the web fonts don't load): the logo alone beside the button. */
+@media (max-width: 350px) { .brand .tag { display: none; } }
 .brand .rec { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--accent); }
 
 

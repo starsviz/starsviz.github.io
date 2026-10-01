@@ -90,11 +90,21 @@ def test_header_logo_matches_theme(browser, built_page, scheme, shown):
     page.close()
 
 
-@pytest.mark.parametrize("width,label", [(1280, "Subscribe to Stick Language on Substack"), (700, "Subscribe on Substack"),
-                                         (390, "Subscribe on Substack"), (360, "Subscribe on Substack"), (320, "Subscribe on Substack")])
-def test_subscribe_button(browser, built_page, built_data, width, label):
-    """The header's Subscribe button leads to the Substack's subscribe page and fits beside the logo, even on a small phone."""
+# A wide font stands in for the worst case: the web fonts fail to load and the fallback is a wide one. That is what
+# GitHub's Linux runners use for these tests (they block the network), and it's wider than a Mac's fallback.
+WIDE_FONT = "* { font-family: Verdana, 'DejaVu Sans', sans-serif !important; }"
+
+
+@pytest.mark.parametrize("wide", [False, True], ids=["usual font", "wide fallback font"])
+@pytest.mark.parametrize("width,label", [(1280, "Subscribe to Stick Language on Substack"), (721, "Subscribe to Stick Language on Substack"),
+                                         (700, "Subscribe on Substack"), (390, "Subscribe on Substack"), (360, "Subscribe on Substack"),
+                                         (351, "Subscribe on Substack"), (320, "Subscribe on Substack")])
+def test_subscribe_button(browser, built_page, built_data, width, label, wide):
+    """The header's Subscribe button leads to the Substack's subscribe page and fits beside the logo on one row,
+    down to the smallest phones and whatever font the text ends up in."""
     page, errors = open_page(browser, built_page, width=width)
+    if wide:
+        page.add_style_tag(content=WIDE_FONT)
     brand = built_data["meta"]["brandUrl"]
     btn = page.locator("#subscribe")
     assert btn.is_visible() and btn.inner_text().strip() == label
@@ -102,7 +112,8 @@ def test_subscribe_button(browser, built_page, built_data, width, label):
     assert page.locator("#brand-link").get_attribute("href") == brand
     logo, b = page.locator(".brand h1").bounding_box(), btn.bounding_box()
     assert b["y"] < logo["y"] + logo["height"], "the button sits on the logo's row, not wrapped below it"
-    assert logo["x"] + logo["width"] <= b["x"], "the logo and STATS pill are fully showing, clear of the button"
+    assert logo["x"] + logo["width"] <= b["x"], "the logo (and the STATS pill, where it shows) is clear of the button"
+    assert page.locator(".brand .tag").is_visible() == (width > 350), "the STATS pill shows except on the narrowest phones"
     assert page.locator("header.bar").bounding_box()["height"] < 70, "the sticky header is still one row"
     assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 0
     assert errors == []
