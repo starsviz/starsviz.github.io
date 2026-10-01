@@ -7,7 +7,7 @@
 <meta name="description" content="__DASHBOARD_DESCRIPTION__">
 <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#131b1f" media="(prefers-color-scheme: dark)">
-<link rel="icon" href="data:image/svg+xml,__DASHBOARD_FAVICON__">
+<link rel="icon" href="__DASHBOARD_FAVICON__">
 <!--share-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -45,13 +45,14 @@
   --font-display: "Barlow Condensed", "Arial Narrow", "Roboto Condensed", sans-serif;
   --font-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   --radius: 10px;
+  --logo-l: block; --logo-d: none;  /* which header logo shows: dark letters on the light theme, white on the dark */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --bg: #0b1114; --surface: #131b1f; --surface-2: #182227; --ink: #e8eff1; --ink-2: #a7b6bd; --muted: #7b8a91;
     --line: #243038; --rink: #34444c; --ice: #151e22; --slot: #17302a; --accent: #20a36b; --accent-soft: #13302a;
     --opp: #5f6a70; --opp-soft: #1d272c; --otl: #37434a; --hot: #ef8a5c; --hot-soft: #3a2218; --cold: #6fb0e8; --cold-soft: #162a3b; --defc: #3987e5; --good: #5cc98f; --good-soft: #15321f; --bad: #f2837a; --bad-soft: #3d1c19;
-    --tip-bg: #e8eff1; --tip-fg: #0e171b; --shadow: 0 1px 2px rgba(0,0,0,.3);
+    --tip-bg: #e8eff1; --tip-fg: #0e171b; --shadow: 0 1px 2px rgba(0,0,0,.3); --logo-l: none; --logo-d: block;
     color-scheme: dark;
   }
 }
@@ -59,7 +60,7 @@
   --bg: #0b1114; --surface: #131b1f; --surface-2: #182227; --ink: #e8eff1; --ink-2: #a7b6bd; --muted: #7b8a91;
   --line: #243038; --rink: #34444c; --ice: #151e22; --slot: #17302a; --accent: #20a36b; --accent-soft: #13302a;
   --opp: #5f6a70; --opp-soft: #1d272c; --otl: #37434a; --hot: #ef8a5c; --hot-soft: #3a2218; --cold: #6fb0e8; --cold-soft: #162a3b; --defc: #3987e5; --good: #5cc98f; --good-soft: #15321f; --bad: #f2837a; --bad-soft: #3d1c19;
-  --tip-bg: #e8eff1; --tip-fg: #0e171b; --shadow: 0 1px 2px rgba(0,0,0,.3);
+  --tip-bg: #e8eff1; --tip-fg: #0e171b; --shadow: 0 1px 2px rgba(0,0,0,.3); --logo-l: none; --logo-d: block;
   color-scheme: dark;
 }
 
@@ -73,8 +74,13 @@ button:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:fo
 /* ---------- top bar ---------- */
 .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
 .bar-in { max-width: 980px; margin: 0 auto; padding: 10px 16px 0; display: flex; flex-wrap: wrap; align-items: end; gap: 6px 20px; }
-.brand { display: flex; align-items: baseline; gap: 10px; padding-bottom: 10px; min-width: 0; }
-.brand h1 { font-family: var(--font-display); font-weight: 700; font-size: 26px; letter-spacing: .01em; margin: 0; line-height: 1; text-transform: uppercase; }
+.brand { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; min-width: 0; }
+.brand h1 { display: flex; align-items: center; gap: 7px; margin: 0; line-height: 1; }
+.brand h1 img { height: 42px; width: auto; }
+.brand h1 img.l { display: var(--logo-l); } .brand h1 img.d { display: var(--logo-d); }
+.brand .tag { font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; line-height: 1;
+  background: var(--accent); color: var(--surface); border-radius: 999px; padding: 3px 6px 3px 7px; }
+@media (max-width: 480px) { .brand { gap: 9px; } .brand h1 img { height: 36px; } }
 .brand .season { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--muted); letter-spacing: .04em; }
 .brand .rec { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--accent); }
 
@@ -316,7 +322,7 @@ footer { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 
 
 <header class="bar">
   <div class="bar-in">
-    <div class="brand"><h1 id="team-name">Stars</h1><span class="season" id="season"></span><span class="rec" id="rec"></span></div>
+    <div class="brand"><h1><img class="l" src="__DASHBOARD_LOGO_LIGHT__" alt="Stick Language"><img class="d" src="__DASHBOARD_LOGO_DARK__" alt="Stick Language"><span class="tag">Stats</span></h1><span class="season" id="season"></span><span class="rec" id="rec"></span></div>
   </div>
 </header>
 
@@ -1529,11 +1535,15 @@ function cardHead(C, kicker, title) {
   t.lines.forEach((ln, i) => { s += T(CP, y, ln, { fam: FD, size: t.size, w: 700, fill: C.ink }); if (i < t.lines.length - 1) y += t.size * 1.0; });
   return { s, top: y + 36 };
 }
+// The footer's logo is the header's (white letters on the dark card, dark on the light). cardPng() paints it straight
+// onto the canvas at this spot, because Safari can skip a picture nested inside an SVG the first time it draws it.
+const cardLogo = C => document.querySelector(C === CARD_THEMES.dark ? ".brand img.d" : ".brand img.l");
+const footLogo = C => { const im = cardLogo(C), h = 48; return { im, x: CP, y: CFOOT + 11, h, w: h * (im && im.naturalHeight ? im.naturalWidth / im.naturalHeight : 240 / 126) }; };
 function cardFoot(C, note) {
-  const y = CFOOT + 46, host = siteHost(), brand = host || `${NAME} player rankings`;
-  let s = L(CP, CFOOT, CW - CP, CFOOT, C.line, 2), x = CP;
-  s += `<rect x="${x}" y="${y - 26}" width="34" height="34" rx="8" fill="${C.accent}"/><polygon points="${star(x + 17, y - 8.5, 12, 5)}" fill="#fff"/>`;
-  x += 46; s += T(x, y, brand, { size: 26, w: 700, fill: C.ink });
+  const y = CFOOT + 46, host = siteHost(), lg = footLogo(C), pw = textW("STATS", 17, 700, FD, 2) + 18;
+  let s = L(CP, CFOOT, CW - CP, CFOOT, C.line, 2), x = lg.x + lg.w + 12;
+  s += `<rect x="${r1(x)}" y="${y - 22}" width="${r1(pw)}" height="26" rx="13" fill="${C.accent}"/>` + T(x + 10, y - 3, "STATS", { fam: FD, size: 17, w: 700, fill: C.bg, ls: 2 });
+  x += pw + 16; s += T(x, y, host || `${NAME} player rankings`, { size: 26, w: 700, fill: C.ink });
   s += T(CW - CP, y, note || M.credit || "Data: NHL.com", { size: 22, w: 500, fill: C.muted, anchor: "end" });
   return s;
 }
@@ -1778,7 +1788,7 @@ function cardFontCss() {
     } catch (e) { fontCssP = null; return ""; }
   })();
 }
-async function cardPng(body) {
+async function cardPng(body, C) {
   const fonts = await cardFontCss();
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${CW}" height="${CH}" viewBox="0 0 ${CW} ${CH}">${fonts ? `<style>${fonts}</style>` : ""}${body}</svg>`;
   const img = new Image();
@@ -1788,6 +1798,8 @@ async function cardPng(body) {
   ctx.drawImage(img, 0, 0, cv.width, cv.height);
   await new Promise(r => setTimeout(r, 60));  // Safari can paint embedded fonts a beat late: draw again
   ctx.clearRect(0, 0, cv.width, cv.height); ctx.drawImage(img, 0, 0, cv.width, cv.height);
+  const lg = footLogo(C);
+  if (lg.im) { try { await lg.im.decode(); } catch (e) { /* draw whatever has loaded */ } ctx.drawImage(lg.im, lg.x * 2, lg.y * 2, lg.w * 2, lg.h * 2); }
   return new Promise((res, rej) => cv.toBlob(b => b ? res(b) : rej(new Error("couldn't make the PNG")), "image/png"));
 }
 
@@ -1834,7 +1846,7 @@ function openShare(kinds, startK) {
     wait.hidden = false; wait.textContent = "Drawing the image…"; q(".share-prev").setAttribute("aria-busy", "true");
     try {
       await Promise.all(["700 52px 'Barlow Condensed'", "600 16px Figtree", "700 16px Figtree", "500 16px Figtree"].map(f => document.fonts.load(f).catch(() => null)));
-      const b = await cardPng(cur().make(CARD_THEMES[theme]));
+      const b = await cardPng(cur().make(CARD_THEMES[theme]), CARD_THEMES[theme]);
       if (my !== token) return;
       blob = b; if (url) URL.revokeObjectURL(url); url = URL.createObjectURL(b);
       await new Promise((res, rej) => { img.onload = res; img.onerror = () => rej(new Error("preview failed to load")); img.src = url; });  // Safari loads it a beat later
@@ -1877,8 +1889,7 @@ function openShare(kinds, startK) {
 
 /* ================= boot ================= */
 const TTb = teamTrend();
-$("#team-name").textContent = NAME;
-$("#season").textContent = M.seasonLabel;
+$("#season").textContent = `${NAME} ${M.seasonLabel}`;
 $("#rec").textContent = G.length ? `${TTb.w}-${TTb.l}-${TTb.o}` : "";
 if (M.sample) { const b = $("#banner"); b.hidden = false; b.textContent = "Sample data for preview: player names are real, every number and story is made up."; }
 $("#footer").innerHTML = `<span>Data: NHL.com public API</span><span>Updated ${esc(M.built)}</span>${M.credit ? `<span>${esc(M.credit)}</span>` : ""}`;

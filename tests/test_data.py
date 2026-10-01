@@ -191,7 +191,7 @@ def test_page_head_and_share_tags(sample_page):
     assert "<style>" in head and "<title>Stars Player Rankings 2025-26</title>" in head
     assert "__DASHBOARD_" not in html and "<!--share-->" not in html, "every placeholder is filled"
     for tag in ('property="og:title"', 'property="og:description"', 'name="twitter:card" content="summary_large_image"',
-                'rel="icon" href="data:image/svg+xml,', 'rel="apple-touch-icon"'):
+                'rel="icon" href="data:image/png;base64,', 'rel="apple-touch-icon"'):
         assert tag in head, tag
     assert 'property="og:image" content="https://example.com/stars/og-image.png?v=' in head
     assert (sample_page.parent / "apple-touch-icon.png").stat().st_size > 500

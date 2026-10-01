@@ -75,6 +75,21 @@ def test_page_loads_and_draws(browser, built_page, built_data, width, scheme):
     page.close()
 
 
+@pytest.mark.parametrize("scheme,shown", [("light", "l"), ("dark", "d")])
+def test_header_logo_matches_theme(browser, built_page, scheme, shown):
+    """The header shows the Stick Language logo: dark letters on the light theme, white letters on the dark one."""
+    page, errors = open_page(browser, built_page, width=390, scheme=scheme)
+    logos = page.locator(".brand h1 img")
+    assert logos.count() == 2
+    visible = [im for im in logos.all() if im.is_visible()]
+    assert len(visible) == 1 and visible[0].get_attribute("class") == shown
+    assert visible[0].get_attribute("alt") == "Stick Language"
+    assert visible[0].evaluate("im => im.complete && im.naturalWidth > 0")
+    assert page.locator(".brand .tag").inner_text().strip().upper() == "STATS"
+    assert errors == []
+    page.close()
+
+
 def test_game_picker_and_player_card(browser, built_page):
     page, errors = open_page(browser, built_page)
     page.locator(".chip").first.click()

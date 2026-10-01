@@ -15,12 +15,13 @@ games are fetched.
 from __future__ import annotations
 
 import argparse
+import base64
 import datetime as dt
 import html as htmlmod
 import json
 import re
+import shutil
 from pathlib import Path
-from urllib.parse import quote
 
 import stars_viz as sv
 
@@ -188,29 +189,12 @@ def clean(o):
 
 SHARE_IMAGE = "og-image.png"      # made by tools/make_share_image.py after the build
 TOUCH_ICON = "apple-touch-icon.png"
-STAR = "32,9 38.2,25.5 55.8,25.8 41.9,36.5 46.8,53.4 32,43.5 17.2,53.4 22.1,36.5 8.2,25.8 25.8,25.5"
 
 
-def favicon_svg(color: str) -> str:
-    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" '
-            f'fill="{color}"/><polygon points="{STAR}" fill="#fff"/></svg>')
-
-
-def write_touch_icon(path: Path, color: str) -> None:
-    """180x180 home-screen icon (iPhone/iPad), same design as the favicon."""
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import FancyBboxPatch, Polygon
-
-    fig = plt.figure(figsize=(1.8, 1.8), dpi=100)
-    ax = fig.add_axes([0, 0, 1, 1])
-    ax.set_xlim(0, 64)
-    ax.set_ylim(64, 0)
-    ax.axis("off")
-    ax.add_patch(FancyBboxPatch((0, 0), 64, 64, boxstyle="square,pad=0", facecolor=color, edgecolor="none"))
-    pts = [tuple(map(float, p.split(","))) for p in STAR.split()]
-    ax.add_patch(Polygon([(x, y + 1) for x, y in pts], closed=True, facecolor="white", edgecolor="none"))
-    fig.savefig(path, dpi=100)
-    plt.close(fig)
+def asset_uri(name: str) -> str:
+    """A brand image baked into the page. tools/make_logo.py makes the files in assets/ from the Stick Language
+    logo: logo-light.png / logo-dark.png for the header and share images, favicon.png for the browser tab."""
+    return "data:image/png;base64," + base64.b64encode((HERE / "assets" / name).read_bytes()).decode()
 
 
 def latest_line(data: dict) -> str:
@@ -260,7 +244,9 @@ def render(data: dict, template: Path, out: Path, fragment: bool = False, site_u
     desc = f"Every {m['teamName']} skater, scored and ranked after every game.{latest_line(data)}"
     html = (html.replace("__DASHBOARD_TITLE__", htmlmod.escape(title))
                 .replace("__DASHBOARD_DESCRIPTION__", htmlmod.escape(desc, quote=True))
-                .replace("__DASHBOARD_FAVICON__", quote(favicon_svg(m["color"])))
+                .replace("__DASHBOARD_FAVICON__", asset_uri("favicon.png"))
+                .replace("__DASHBOARD_LOGO_LIGHT__", asset_uri("logo-light.png"))
+                .replace("__DASHBOARD_LOGO_DARK__", asset_uri("logo-dark.png"))
                 .replace("<!--share-->", share_tags(title, desc, site_url, data))
                 .replace("__DASHBOARD_DATA__", blob))
     if fragment:  # no html/head/body wrapper: title, fonts and styles, then the page body
@@ -270,7 +256,7 @@ def render(data: dict, template: Path, out: Path, fragment: bool = False, site_u
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(html, encoding="utf-8")
     if site_url and not fragment:
-        write_touch_icon(out.parent / TOUCH_ICON, m["color"])
+        shutil.copyfile(HERE / "assets" / "touch-icon.png", out.parent / TOUCH_ICON)  # phone home-screen icon
     return out
 
 
