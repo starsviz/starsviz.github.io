@@ -1053,14 +1053,14 @@ const rinkLegend = (usLab, themLab) => `<div class="legend">
   <span class="k"><svg width="10" height="10" viewBox="-2 -2 4 4"><circle r="1.4" fill="var(--ice)" stroke="var(--muted)" stroke-width=".6"/></svg>Missed</span>
   <span class="k"><span class="kbox slot"></span>Slot</span>
   ${usLab ? `<span class="k"><span class="kbox us"></span>${esc(usLab)}</span>` : ""}${themLab ? `<span class="k"><span class="kbox them"></span>${esc(themLab)}</span>` : ""}</div>`;
-const shotTip = (g, s) => {
-  const who = s[1] ? (s[5] ? pname(s[5]) : US) : (g ? g.opp : "Opponent");
+const shotTip = (g, s, oppLab) => {
+  const who = s[1] ? (s[5] ? pname(s[5]) : US) : (oppLab || (g ? g.opp : "Opponent"));
   return `<b>${esc(who)}</b><br>${KIND[s[2]]}${STR[s[6]] ? ` · ${STR[s[6]]}` : ""}${s[3] != null && inSlot(s[3], s[4], !!s[1]) ? " · from the slot" : ""}<br>${minClock(s[0])}${g ? ` · ${esc(vs(g))} ${fdate(g.date)}` : ""}`;
 };
 const mapShots = list => list.filter(e => e.s[2] !== 3 && e.s[3] != null).map(e => ({ x: e.s[3], y: e.s[4], us: !!e.s[1], kind: e.s[2], tip: shotTip(e.g, e.s) }));
 
 /* ================= state + tabs ================= */
-const state = { game: G.length ? G[G.length - 1].id : null };
+const state = { game: G.length ? G[G.length - 1].id : null, shots: false };  // shots: is the game shot chart open
 function render() { hideTip(); renderGame(); }
 function setTab() { render(); window.scrollTo({ top: 0 }); }
 const lede = (kicker, head, dek, extra) => `<div class="lede"><p class="kicker">${esc(kicker)}</p><h2 class="headline">${esc(head)}</h2>${dek ? `<p class="dek">${esc(dek)}</p>` : ""}${extra || ""}</div>`;
@@ -1089,6 +1089,9 @@ function renderGame() {
   else if (quiet && (!best || quiet.pid !== best.pid)) qCap += ` ${pname(quiet.pid)} had a strong game without a point (two-way ${Math.round(quiet.l.two)}).`;
   const gk = g.gk.map(r => ({ pid: r[0], sa: r[1], sv: r[2], ga: r[3], toi: r[4], dec: r[6], evSv: r[7], evSa: r[8], pkSv: r[9], pkSa: r[10], s: goalies[r[0]] }));
   const noOnIce = rows.length > 0 && rows.every(r => r.l.cfd == null);
+  // the whole game's shot chart, both teams (blocked shots have no useful location, so they're left off)
+  const gameShots = g.shots.filter(x => x[2] !== 3 && x[3] != null).map(x => ({ x: x[3], y: x[4], us: !!x[1], kind: x[2], tip: shotTip(null, x, g.oppName) }));
+  const slotOf = us => gameShots.filter(x => x.us === us && inSlot(x.x, x.y, us)).length;
   root.innerHTML = `
     <div class="picker">
       <button class="step" id="prev" aria-label="Previous game" ${idx === 0 ? "disabled" : ""}>‹</button>
@@ -1111,6 +1114,9 @@ function renderGame() {
         <span class="zoom" id="quadzoom" role="group" aria-label="Zoom the chart"><span class="zhint" hidden>Drag or scroll to look around</span><button data-z="out" aria-label="Zoom out" title="Zoom out">−</button><button data-z="in" aria-label="Zoom in" title="Zoom in (or pinch the chart)">+</button><button data-z="reset" class="zr" hidden>Reset</button></span></div>
       ${howItWorks()}
     </div>
+    <details class="more" id="shotmap"${state.shots ? " open" : ""}><summary>See the shot chart</summary>
+      <p class="cap">Every goal, shot on goal and miss by both teams. Dallas shoots toward the right, the ${esc(g.oppName)} toward the left. From the shaded slot: Dallas <b>${slotOf(true)}</b>, ${esc(g.oppName)} <b>${slotOf(false)}</b>. Tap any shot for who and when.</p>
+      <div id="gmap"></div>${rinkLegend(US, g.opp)}</details>
     ${fw.length ? `<div class="card"><p class="chapter-label">Forwards · ranked by player score</p>
       <p class="cap">The percentage next to the player score is how this game's score compares to that player's season average player score. The small number under each stat is the difference from his season average per game.</p>
       ${noOnIce ? `<p class="note" style="margin:-6px 0 10px">The NHL hasn't published this game's on-ice numbers (CF%) yet. Scores will shift a little when it does.</p>` : ""}
@@ -1143,6 +1149,10 @@ function renderGame() {
   $("#prev").onclick = () => { state.game = G[idx - 1].id; renderGame(); };
   $("#next").onclick = () => { state.game = G[idx + 1].id; renderGame(); };
   quad = quadChart($("#quad"), rows, g, $("#quadzoom"));
+  // drawn when opened: the dot size depends on the chart's width, which is 0 while it's collapsed
+  const shotmap = $("#shotmap"), drawShots = () => mountRink($("#gmap"), gameShots, { label: `Shot chart, ${US} ${vs(g)}` });
+  shotmap.addEventListener("toggle", () => { state.shots = shotmap.open; if (shotmap.open) drawShots(); else hideTip(); });
+  if (shotmap.open) drawShots();
   $("#share-game").onclick = () => openShare(gameCards(g, rows), "game");
   root.querySelectorAll("tr[data-pid]").forEach(tr => {
     tr.addEventListener("mouseenter", () => quad && quad.highlight(tr.dataset.pid));

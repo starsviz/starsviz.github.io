@@ -91,6 +91,26 @@ def test_game_picker_and_player_card(browser, built_page):
     page.close()
 
 
+def test_game_shot_chart(browser, built_page, built_data):
+    """The whole-game shot chart starts collapsed, draws every unblocked attempt by both teams when opened,
+    and stays open as the reader moves between games."""
+    page, errors = open_page(browser, built_page, width=390)
+    drawn = lambda g: [s for s in g["shots"] if s[2] != 3 and s[3] is not None]
+    assert page.locator("#shotmap").get_attribute("open") is None and page.locator("#gmap .shot").count() == 0
+    page.locator("#shotmap summary").click()
+    page.wait_for_selector("#gmap svg.rink")
+    shots = drawn(built_data["games"][-1])
+    assert page.locator("#gmap .shot").count() == len(shots)
+    assert page.locator("#gmap .shot.us").count() == sum(1 for s in shots if s[1])
+    assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 0
+    page.locator(".chip").first.click()
+    page.wait_for_selector("#gmap svg.rink")
+    assert page.locator("#shotmap").get_attribute("open") is not None
+    assert page.locator("#gmap .shot").count() == len(drawn(built_data["games"][0]))
+    assert errors == []
+    page.close()
+
+
 def test_every_game_renders_and_score_scale(browser, sample_page):
     """Walk all 82 games; scores for forwards and defensemen should each average
     about 50 with a spread (SD) of about 15."""
