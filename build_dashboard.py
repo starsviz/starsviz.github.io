@@ -36,6 +36,15 @@ def toi_sec(s) -> int:
         return 0
 
 
+def saves_shots(v) -> tuple[int, int]:
+    """Boxscore goalie splits come as "saves/shots", e.g. "19/23"."""
+    try:
+        sv_, sa = str(v or "0/0").split("/")
+        return int(sv_), int(sa)
+    except ValueError:
+        return 0, 0
+
+
 def player_from_roster(p: dict) -> dict:
     first, last = sv.txt(p.get("firstName")), sv.txt(p.get("lastName"))
     return dict(
@@ -64,6 +73,7 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
     rows, season_id, team_name = sv.load_trend(api, team, season)
     sched = api.get(sv.url_schedule(team, str(season_id)))
     by_id = {g["id"]: g for g in sched.get("games", [])}
+    on_ice, season_on_ice = sv.load_skater_reports(api, sv.team_id_from_schedule(sched, team), season_id)
 
     players: dict[int, dict] = {}
     try:
@@ -97,10 +107,13 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
                     players[pid] = dict(name=nm, last=nm.split(". ")[-1], num=p.get("sweaterNumber"),
                                         pos=p.get("position"))
                 fo = p.get("faceoffWinningPctg")
+                pen, fo_wl, oi = g["pen"].get(pid, (0, 0)), g["fo"].get(pid, (0, 0)), on_ice.get((gid, pid), {})
                 skaters.append([pid, p.get("goals", 0), p.get("assists", 0), p.get("plusMinus", 0),
                                 p.get("pim", 0), p.get("sog", 0), p.get("hits", 0), p.get("blockedShots", 0),
                                 toi_sec(p.get("toi")), p.get("powerPlayGoals", 0), p.get("giveaways", 0),
-                                p.get("takeaways", 0), None if fo is None else round(fo, 4), p.get("shifts", 0)])
+                                p.get("takeaways", 0), None if fo is None else round(fo, 4), p.get("shifts", 0),
+                                pen[0], pen[1], fo_wl[0], fo_wl[1], oi.get("satFor"), oi.get("satAgainst"),
+                                oi.get("evTimeOnIce"), oi.get("ppTimeOnIce"), oi.get("shTimeOnIce")])
         goalies = []
         for p in pbg.get(us_side, {}).get("goalies", []):
             pid = p["playerId"]
@@ -115,6 +128,9 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
             top = max(goalies, key=lambda x: x[4])
             for gk in goalies:
                 gk.append(r["res"] if gk is top else "")
+        for gk in goalies:  # saves/shots at even strength, then with the opponent on the power play
+            p = next(x for x in pbg[us_side]["goalies"] if x["playerId"] == gk[0])
+            gk += [*saves_shots(p.get("evenStrengthShotsAgainst")), *saves_shots(p.get("powerPlayShotsAgainst"))]
 
         s = g["stats"]
         sched_g = by_id.get(gid, {})
@@ -142,6 +158,11 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
     for pid, p in players.items():
         if "born" not in p:
             fill_from_landing(api, pid, p)
+    for pid, p in players.items():  # season on-ice context for the player card
+        r = season_on_ice.get(pid)
+        if r:
+            p["oi"] = dict(rel=r.get("satRelative"), zs=r.get("zoneStartPct5v5"),
+                           sh=r.get("shootingPct5v5"), sv=r.get("skaterSavePct5v5"))
     for p in players.values():
         if p.get("born"):
             b = dt.date.fromisoformat(p["born"])

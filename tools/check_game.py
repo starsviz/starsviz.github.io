@@ -6,9 +6,9 @@ which are produced separately from the JSON API the dashboard reads).
 
     python tools/check_game.py dashboard.html 2025021285 [more game ids...]
 
-Checks the score, every Dallas skater's line (G, A, +/-, PIM, SOG, shot
-attempts, hits, blocks, giveaways, takeaways, TOI, shifts, faceoffs), the
-goalies, each goal's scorer, assists (in order) and strength, and that the
+Checks the score, every Dallas skater's line (G, A, +/-, PIM, penalties, SOG,
+shot attempts, hits, blocks, giveaways, takeaways, TOI and its even-strength /
+power-play / penalty-kill split, shifts, faceoffs won and lost), the goalies, each goal's scorer, assists (in order) and strength, and that the
 shot map has Dallas shooting right in every period. Prints MATCH or DIFF for
 each check.
 """
@@ -109,11 +109,13 @@ def check(data: dict, game_id: int, api: sv.Api) -> Report:
         if not e:
             continue
         who = f"#{num} {P[str(r[0])]['last']}"
-        pid, gl, a, pmv, pim, sog, hits, blk, toi, ppg, gv, tk, fo, shf = r
-        for key, mine in (("g", gl), ("a", a), ("pm", pmv), ("pim", pim), ("s", sog), ("ht", hits),
-                          ("bs", blk), ("gv", gv), ("tk", tk), ("shf", shf)):
+        pid, gl, a, pmv, pim, sog, hits, blk, toi, ppg, gv, tk, fo, shf, pen_t, pen_d, fo_w, fo_l, sat_f, sat_a, ev, pp, sh = r
+        for key, mine in (("g", gl), ("a", a), ("pm", pmv), ("pim", pim), ("pn", pen_t), ("s", sog), ("ht", hits),
+                          ("bs", blk), ("gv", gv), ("tk", tk), ("shf", shf), ("fw", fo_w), ("fl", fo_l)):
             rep.check(f"{who} {key.upper()}", mine, n(e[key]))
         rep.check(f"{who} TOI", toi, mmss(e["toi"]))
+        if ev is not None:  # the on-ice shot attempts (sat_f, sat_a) aren't on the official sheets
+            rep.check(f"{who} TOI EV/PP/SH", (ev, pp, sh), (mmss(e["ev"]), mmss(e["pp"]), mmss(e["sh"])))
         rep.check(f"{who} shot attempts", att.get(pid, 0), n(e["s"]) + n(e["ab"]) + n(e["ms"]))
         fw, fl = n(e["fw"]), n(e["fl"])
         rep.check(f"{who} FO%", round(fo or 0, 2), round(fw / (fw + fl), 2) if fw + fl else 0)

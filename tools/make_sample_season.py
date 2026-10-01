@@ -13,6 +13,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import stars_viz as sv
 
 random.seed(11)
+rng = random.Random(23)  # for everything added after the first version, so the original season stays the same
+SKATER_ROWS = {"summaryshooting": [], "timeonice": []}  # the NHL's per-skater, per-game stats reports
 CACHE = Path(sys.argv[1]); CACHE.mkdir(parents=True, exist_ok=True)
 api = sv.Api(CACHE)
 put = lambda url, data: api._path(url).write_text(json.dumps(data))
@@ -185,9 +187,14 @@ def gen_game(gid, date, opp, us_home, gf, ga, last, form):
             else:
                 det = {"xCoord": x, "yCoord": y, "zoneCode": "O", "eventOwnerTeamId": team, "shootingPlayerId": shooter}
             add(period, sec, kind, team, sc, det)
+    centers = [p for p in dressed if p["pos"] == "C"]
     for _ in range(58):
         t = random.randint(0, 3599)
         add(t // 1200 + 1, t % 1200, "faceoff", random.choice([25, opp_id]), "1551", {"eventOwnerTeamId": random.choice([25, opp_id])})
+        d = plays[-1]["details"]
+        ours = rng.choices(centers, [p["toi"] for p in centers])[0]["id"]
+        theirs = rng.choice(opp_players)[0]
+        d["winningPlayerId"], d["losingPlayerId"] = (ours, theirs) if d["eventOwnerTeamId"] == 25 else (theirs, ours)
     plays.sort(key=lambda p: (p["periodDescriptor"]["number"], p["timeInPeriod"]))
     # OT: drop anything after the winning goal
     if last == "OT":
@@ -238,6 +245,52 @@ def gen_game(gid, date, opp, us_home, gf, ga, last, form):
                             for pid, nm in opp_players[:8]],
                "defense": [], "goalies": [{"playerId": opp_goalie[0], "name": {"default": opp_goalie[1]}, "starter": True,
                                            "shotsAgainst": sog[25], "saves": sog[25] - (gf_reg - en_against[opp_id]), "toi": "60:00"}]}
+    # extras the first version didn't have: penalties (matching each skater's PIM), faceoff % from the faceoff
+    # plays, goalie saves by situation, and the stats-report rows (on-ice shot attempts, ice time by situation)
+    us_skaters = us_box["forwards"] + us_box["defense"]
+    for b in us_skaters:
+        for _ in range(b["pim"] // 2):
+            t = rng.randint(0, 3599)
+            add(t // 1200 + 1, t % 1200, "penalty", 25, "1551", {
+                "eventOwnerTeamId": 25, "typeCode": "MIN", "duration": 2, "descKey": "tripping",
+                "committedByPlayerId": b["playerId"], "drawnByPlayerId": rng.choice(opp_players)[0]})
+    for _ in range(rng.randint(1, 4)):
+        t = rng.randint(0, 3599)
+        det = {"eventOwnerTeamId": opp_id, "typeCode": "MIN", "duration": 2, "descKey": "hooking",
+               "committedByPlayerId": rng.choice(opp_players)[0]}
+        if rng.random() < 0.85:
+            det["drawnByPlayerId"] = rng.choices(dressed, [p["gw"] + 2 for p in dressed])[0]["id"]
+        add(t // 1200 + 1, t % 1200, "penalty", opp_id, "1551", det)
+    plays.sort(key=lambda p: (p["periodDescriptor"]["number"], p["timeInPeriod"]))
+    won, lost = {}, {}
+    for p in plays:
+        if p["typeDescKey"] == "faceoff":
+            won[p["details"]["winningPlayerId"]] = won.get(p["details"]["winningPlayerId"], 0) + 1
+            lost[p["details"]["losingPlayerId"]] = lost.get(p["details"]["losingPlayerId"], 0) + 1
+    att5 = {25: 0, opp_id: 0}
+    for p in reg:
+        if p["situationCode"] == "1551" and p["typeDescKey"] in ("goal", "shot-on-goal", "missed-shot", "blocked-shot"):
+            att5[p["details"]["eventOwnerTeamId"]] += 1
+    for b, p in zip(us_skaters, [q for q in dressed if q["pos"] != "D"] + [q for q in dressed if q["pos"] == "D"]):
+        w, l = won.get(b["playerId"], 0), lost.get(b["playerId"], 0)
+        b["faceoffWinningPctg"] = round(w / (w + l), 6) if w + l else 0.0
+        mm, ss = b["toi"].split(":")
+        toi = int(mm) * 60 + int(ss)
+        pp = min(toi // 3, max(0, int(rng.gauss(150, 50)))) if p["toi"] >= 15 else rng.choice([0, 0, 0, 20, 45])
+        sh = min(toi // 4, max(0, int(rng.gauss(95, 40)))) if p["pos"] == "D" or p["toi"] < 14 else rng.choice([0, 0, 15])
+        share = (toi - pp - sh) / 3600 * rng.gauss(1 + (p["gw"] - 5) * 0.006, 0.16)
+        base = dict(gameId=gid, playerId=b["playerId"], gameDate=date, gamesPlayed=1)
+        SKATER_ROWS["summaryshooting"].append(dict(base, satFor=max(0, round(att5[25] * share)),
+                                                   satAgainst=max(0, round(att5[opp_id] * share * rng.gauss(1, 0.16)))))
+        SKATER_ROWS["timeonice"].append(dict(base, timeOnIce=toi, evTimeOnIce=toi - pp - sh, ppTimeOnIce=pp, shTimeOnIce=sh))
+    for b in us_box["goalies"]:
+        pk_sa = min(b["shotsAgainst"], rng.randint(2, 7))
+        pk_ga = min(b["goalsAgainst"], pp_counts[opp_id], pk_sa)
+        ev_sa, ev_ga = b["shotsAgainst"] - pk_sa, b["goalsAgainst"] - pk_ga
+        if ev_ga > ev_sa:  # keep both splits possible
+            pk_ga += ev_ga - ev_sa; ev_ga = ev_sa
+        b.update(evenStrengthShotsAgainst=f"{ev_sa - ev_ga}/{ev_sa}", powerPlayShotsAgainst=f"{pk_sa - pk_ga}/{pk_sa}",
+                 shorthandedShotsAgainst="0/0")
     # names for opponent players via rosterSpots
     spots = [{"playerId": pid, "teamId": opp_id, "firstName": {"default": nm.split(". ")[0]},
               "lastName": {"default": nm.split(". ")[1]}} for pid, nm in opp_players]
@@ -303,5 +356,10 @@ put(sv.url_schedule("DAL", str(SEASON)), {"previousSeason": 20242025, "currentSe
 for rep, rows in reports.items():
     random.shuffle(rows)
     put(sv.url_team_report(rep, 25, SEASON), {"data": rows, "total": len(rows)})
+for rep, rows in SKATER_ROWS.items():
+    put(sv.url_skater_report(rep, 25, SEASON), {"data": rows, "total": len(rows)})
+put(sv.url_skater_report("percentages", 25, SEASON, by_game=False), {"total": len(stars), "data": [
+    dict(playerId=p["id"], satRelative=round(rng.gauss(0, 0.03), 3), zoneStartPct5v5=round(rng.uniform(0.38, 0.62), 3),
+         shootingPct5v5=round(rng.uniform(0.07, 0.12), 3), skaterSavePct5v5=round(rng.uniform(0.895, 0.93), 3)) for p in stars]})
 put(sv.url_schedule("DAL"), {"previousSeason": SEASON, "currentSeason": 20262027, "nextSeason": 20272028, "games": []})
 print("sample season ok:", len(games), "games")

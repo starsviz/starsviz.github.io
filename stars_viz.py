@@ -91,6 +91,13 @@ def url_team_report(report: str, team_id: int, season: int) -> str:
             f"&cayenneExp={quote(exp)}")
 
 
+def url_skater_report(report: str, team_id: int, season: int, by_game: bool = True, start: int = 0) -> str:
+    """One row per skater per game (by_game) or per skater for the season. limit=-1 asks for every row."""
+    exp = f"teamId={team_id} and seasonId={season} and gameTypeId=2"
+    return (f"{STATS}/skater/{report}?isAggregate=false&isGame={'true' if by_game else 'false'}"
+            f"&start={start}&limit=-1&cayenneExp={quote(exp)}")
+
+
 class Api:
     """Tiny cached client. Games whose stats are official are cached for good;
     everything else refreshes after `ttl` seconds. --offline reads only from cache.
@@ -202,6 +209,7 @@ def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
                 names[p["playerId"]] = txt(p.get("name"), names.get(p["playerId"], "?"))
 
     shots, goals, faceoffs = [], [], {us_id: 0, them_id: 0}
+    pen, fo = {}, {}  # per player: [penalties taken, drawn] and [faceoffs won, lost]
     for p in pbp.get("plays", []):
         kind = p.get("typeDescKey")
         pd = p.get("periodDescriptor", {}) or {}
@@ -211,6 +219,14 @@ def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
         owner = d.get("eventOwnerTeamId")
         if kind == "faceoff" and owner in faceoffs:
             faceoffs[owner] += 1
+            for key, i in (("winningPlayerId", 0), ("losingPlayerId", 1)):
+                if d.get(key):
+                    fo.setdefault(d[key], [0, 0])[i] += 1
+            continue
+        if kind == "penalty":  # bench minors have no committedByPlayerId; misconducts have no drawnByPlayerId
+            for key, i in (("committedByPlayerId", 0), ("drawnByPlayerId", 1)):
+                if d.get(key):
+                    pen.setdefault(d[key], [0, 0])[i] += 1
             continue
         if kind not in ("goal", "shot-on-goal", "missed-shot", "blocked-shot"):
             continue
@@ -311,7 +327,7 @@ def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
         game_type=box.get("gameType"), us=us, them=them, us_home=us_home,
         us_score=us.get("score", 0), them_score=them.get("score", 0),
         suffix={"OT": "OT", "SO": "SO"}.get((box.get("gameOutcome") or {}).get("lastPeriodType"), ""),
-        shots=shots, goals=goals, stats=stats, top=top,
+        shots=shots, goals=goals, stats=stats, top=top, pen=pen, fo=fo,
         us_goalies=goalies(us_side), them_goalies=goalies(them_side),
     )
 
@@ -583,6 +599,27 @@ def load_trend(api: Api, team: str, season: str) -> tuple[list[dict], int, int]:
             ppga=r.get("ppGoalsAgainst", np.nan), tsh=r.get("timesShorthanded", np.nan),
         ))
     return rows, season_id, team_name
+
+
+def load_skater_reports(api: Api, team_id: int, season_id: int) -> tuple[dict, dict]:
+    """What the gamecenter feeds don't carry, from the NHL's stats reports (one request per report for the
+    whole season). Returns ({(gameId, playerId): row}, {playerId: season row}).
+      per game:  satFor / satAgainst (5-on-5 shot attempts while he was on the ice), evTimeOnIce / ppTimeOnIce / shTimeOnIce
+      season:    satRelative, zoneStartPct5v5, shootingPct5v5, skaterSavePct5v5
+    A game the NHL hasn't added to its reports yet simply has no rows; the page shows a dash for it."""
+    def rows(report, by_game):
+        out = []
+        while True:
+            d = api.get(url_skater_report(report, team_id, season_id, by_game, start=len(out)))
+            out += d.get("data", [])
+            if not d.get("data") or len(out) >= d.get("total", 0):
+                return out
+
+    by_game: dict = {}
+    for report in ("summaryshooting", "timeonice"):
+        for r in rows(report, True):
+            by_game.setdefault((r["gameId"], r["playerId"]), {}).update(r)
+    return by_game, {r["playerId"]: r for r in rows("percentages", False)}
 
 
 def has(arr) -> bool:

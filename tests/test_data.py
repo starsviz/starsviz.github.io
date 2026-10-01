@@ -8,8 +8,10 @@ import pytest
 import build_dashboard
 import stars_viz as sv
 
-SK_LEN, GK_LEN, SHOT_LEN, GOAL_LEN = 14, 7, 7, 9
-FO = 12  # faceoff % is the only skater field allowed to be null
+SK_LEN, GK_LEN, SHOT_LEN, GOAL_LEN = 23, 11, 7, 9
+FO = 12  # faceoff % can be null
+ON_ICE = range(18, 23)  # so can the stats-report fields (on-ice attempts for/against, EV/PP/SH seconds), until the NHL posts them
+PEN_T, PEN_D, FO_W, FO_L, SAT_F, SAT_A, EV, PP, SH = range(14, 23)
 
 
 def first_game_id(api):
@@ -85,16 +87,75 @@ def _numbers_ok(v) -> bool:
 def test_no_missing_numbers(sample_data):
     for g in sample_data["games"]:
         for r in g["sk"]:
-            assert all(_numbers_ok(v) for i, v in enumerate(r) if i != FO), r
-            assert r[FO] is None or _numbers_ok(r[FO])
+            assert all(_numbers_ok(v) for i, v in enumerate(r) if i != FO and i not in ON_ICE), r
+            assert all(r[i] is None or _numbers_ok(r[i]) for i in (FO, *ON_ICE)), r
         for r in g["gk"]:
-            assert all(_numbers_ok(v) for v in r[:6]), r
+            assert all(_numbers_ok(v) for v in r[:6] + r[7:]), r
         for s in g["shots"]:
             assert _numbers_ok(s[0]) and s[1] in (0, 1) and s[2] in (0, 1, 2, 3)
             assert s[3] is None or _numbers_ok(s[3])
         for k, pair in g["st"].items():
             if k != "pp":
                 assert len(pair) == 2 and all(_numbers_ok(v) for v in pair), (k, pair)
+
+
+def test_new_stats_add_up(sample_data):
+    """Ice time by situation adds up to total ice time, faceoffs won by players match the team's count,
+    penalties match penalty minutes (the sample season only has minors), and goalie splits fit inside the totals."""
+    for g in sample_data["games"]:
+        for r in g["sk"]:
+            assert r[EV] + r[PP] + r[SH] == r[8], r
+            assert r[SAT_F] >= 0 and r[SAT_A] >= 0
+            assert r[PEN_T] * 2 == r[4], r
+        assert sum(r[FO_W] for r in g["sk"]) == g["st"]["fo"][0]
+        assert sum(r[FO_L] for r in g["sk"]) == g["st"]["fo"][1]
+        for r in g["gk"]:
+            ev_sv, ev_sa, pk_sv, pk_sa = r[7:11]
+            assert 0 <= ev_sv <= ev_sa and 0 <= pk_sv <= pk_sa and ev_sa + pk_sa <= r[1] and ev_sv + pk_sv <= r[2], r
+    assert sum(r[PEN_D] for g in sample_data["games"] for r in g["sk"]) > 50
+    assert all("oi" in p for p in sample_data["players"].values() if p["pos"] != "G")
+
+
+def test_penalties_and_faceoffs_per_player():
+    team = lambda i, ab: {"id": i, "abbrev": ab, "commonName": {"default": ab}, "score": 0, "sog": 0}
+    box = {"id": 1, "homeTeam": team(25, "DAL"), "awayTeam": team(20, "CGY"), "playerByGameStats": {}}
+    play = lambda kind, per_type="REG", **d: {"typeDescKey": kind, "periodDescriptor": {"number": 1, "periodType": per_type},
+                                              "timeInPeriod": "05:00", "situationCode": "1551", "details": d}
+    pbp = {"rosterSpots": [], "plays": [
+        play("penalty", eventOwnerTeamId=25, committedByPlayerId=1, drawnByPlayerId=9),
+        play("penalty", eventOwnerTeamId=20, committedByPlayerId=9, drawnByPlayerId=1),
+        play("penalty", eventOwnerTeamId=20, committedByPlayerId=8, drawnByPlayerId=1),
+        play("penalty", eventOwnerTeamId=25, servedByPlayerId=2),             # bench minor: nobody's penalty
+        play("penalty", eventOwnerTeamId=25, committedByPlayerId=3),          # misconduct: nobody drew it
+        play("faceoff", eventOwnerTeamId=25, winningPlayerId=1, losingPlayerId=9),
+        play("faceoff", eventOwnerTeamId=20, winningPlayerId=9, losingPlayerId=1),
+        play("faceoff", eventOwnerTeamId=25, winningPlayerId=1, losingPlayerId=8),
+        play("faceoff", "SO", eventOwnerTeamId=25, winningPlayerId=1, losingPlayerId=8)]}  # shootout plays don't count
+    g = sv.parse_game(box, pbp, {}, "DAL")
+    assert g["pen"][1] == [1, 2] and g["pen"][3] == [1, 0] and 2 not in g["pen"]
+    assert g["fo"][1] == [2, 1] and g["fo"][9] == [1, 1]
+    assert g["stats"]["faceoffs"] == (2, 1)
+
+
+def test_skater_reports_page_through_and_merge():
+    """The stats reports are asked for in one request; if the NHL ever caps the page size, keep asking."""
+    class FakeApi:
+        def __init__(self): self.urls = []
+        def get(self, url):
+            self.urls.append(url)
+            start = int(url.split("start=")[1].split("&")[0])
+            if "isGame=false" in url:
+                return {"total": 1, "data": [{"playerId": 7, "satRelative": .02}] if start == 0 else []}
+            rows = [{"gameId": 1, "playerId": 7, "satFor": 10, "satAgainst": 8}, {"gameId": 2, "playerId": 7, "satFor": 5, "satAgainst": 9}] \
+                if "summaryshooting" in url else [{"gameId": 1, "playerId": 7, "evTimeOnIce": 600}, {"gameId": 2, "playerId": 7, "evTimeOnIce": 700}]
+            return {"total": 2, "data": rows[start:start + 1]}  # one row per page
+
+    api = FakeApi()
+    by_game, season = sv.load_skater_reports(api, 25, 20252026)
+    assert by_game[(1, 7)] == {"gameId": 1, "playerId": 7, "satFor": 10, "satAgainst": 8, "evTimeOnIce": 600}
+    assert by_game[(2, 7)]["satAgainst"] == 9 and by_game[(2, 7)]["evTimeOnIce"] == 700
+    assert season[7]["satRelative"] == .02
+    assert len(api.urls) == 5 and all("teamId%3D25" in u and "limit=-1" in u for u in api.urls)
 
 
 def test_players_have_names(sample_data):

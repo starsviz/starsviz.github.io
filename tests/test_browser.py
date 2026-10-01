@@ -110,8 +110,9 @@ def test_every_game_renders_and_score_scale(browser, sample_page):
     page.close()
 
 
-def page_with_first_games(src, n, out):
-    """Copy of a built page keeping only its first n games: what the site shows early in a season."""
+def page_with_first_games(src, n, out, edit=None):
+    """Copy of a built page keeping only its first n games: what the site shows early in a season.
+    `edit(data)` can change the data further."""
     import json
     import re
 
@@ -119,9 +120,36 @@ def page_with_first_games(src, n, out):
     m = re.search(r'<script id="data" type="application/json">(.*?)</script>', html, re.S)
     data = json.loads(m.group(1).replace("<\\/", "</"))
     data["games"] = data["games"][:n]
+    if edit:
+        edit(data)
     blob = json.dumps(data, separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
     out.write_text(html[:m.start(1)] + blob + html[m.end(1):], encoding="utf-8")
     return out
+
+
+@pytest.mark.parametrize("n", [1, 40])
+def test_latest_game_without_on_ice_numbers(browser, sample_page, tmp_path, n):
+    """The NHL adds a game to its stats reports some time after the final horn. Until then the page has no
+    on-ice shot attempts or ice-time split for that game: it says so, shows dashes, and still scores everyone."""
+    def strip(data):
+        for r in data["games"][-1]["sk"]:
+            r[18:23] = [None] * 5
+        if n == 1:
+            for p in data["players"].values():
+                p.pop("oi", None)
+
+    page, errors = open_page(browser, page_with_first_games(sample_page, n, tmp_path / f"no-on-ice{n}.html", strip))
+    fwd = page.locator('.card:has(> .chapter-label:text-matches("^Forwards"))')
+    assert "on-ice numbers" in fwd.locator(".note").inner_text()
+    scores = fwd.locator(".scv").all_inner_texts()
+    assert scores and all(s.isdigit() for s in scores)
+    fwd.locator("tr[data-pid] .linkish").first.click()
+    page.wait_for_selector(".sheet")
+    assert "aren't in yet" in page.locator("#sheet-body").inner_text()
+    page.locator('#scopeseg button[data-k="season"]').click()
+    page.wait_for_selector("#pc0 svg")
+    assert errors == []
+    page.close()
 
 
 @pytest.mark.parametrize("n", [1, 2, 3, 4, 5, 82])
@@ -140,15 +168,32 @@ def test_every_player_card_opens(browser, sample_page, tmp_path, n):
     page.close()
 
 
-DOTS_JS = """() => [...document.querySelectorAll('#quad .qd')].map(n => ({
+DOTS_JS = """() => [...document.querySelectorAll('#quad .qd')].map(n => ({ id: n.dataset.dot,
   x: +(n.getAttribute('cx') ?? +n.getAttribute('x') + 6), y: +(n.getAttribute('cy') ?? +n.getAttribute('y') + 6),
   size: +(n.getAttribute('r') ?? n.getAttribute('width')) }))"""
 
 
-def median_gap(dots):
+def spread(before, after):
+    """How much farther apart the dots are now: the typical ratio of the distance between the same two dots,
+    over the pairs still on screen (zooming in pushes some dots out of view)."""
+    import itertools
     import math
     import statistics
-    return statistics.median(min(math.hypot(a["x"] - b["x"], a["y"] - b["y"]) for b in dots if b is not a) for a in dots)
+    was = {d["id"]: d for d in before}
+    dist = lambda a, b: math.hypot(a["x"] - b["x"], a["y"] - b["y"])
+    ratios = [dist(a, b) / dist(was[a["id"]], was[b["id"]]) for a, b in itertools.combinations(after, 2)
+              if dist(was[a["id"]], was[b["id"]]) > 1]
+    assert ratios, "at least two dots are still on screen"
+    return statistics.median(ratios)
+
+
+def dots_middle(page, dots):
+    """Screen position of the middle of the dots, to aim a pinch at (the dots no longer sit in the middle of the chart)."""
+    import statistics
+    box = page.locator("#quad svg").bounding_box()
+    vb = page.eval_on_selector("#quad svg", "s => s.viewBox.baseVal.width")
+    k = box["width"] / vb
+    return box["x"] + statistics.median(d["x"] for d in dots) * k, box["y"] + statistics.median(d["y"] for d in dots) * k
 
 
 def test_quadrant_zoom_buttons_and_trackpad(browser, built_page):
@@ -161,7 +206,7 @@ def test_quadrant_zoom_buttons_and_trackpad(browser, built_page):
     page.click('[data-z="in"]')
     zoomed = page.evaluate(DOTS_JS)
     assert {d["size"] for d in zoomed} == {d["size"] for d in start}, "dots keep their size"
-    assert median_gap(zoomed) > 2 * median_gap(start), "crowded dots spread apart"
+    assert spread(start, zoomed) > 2, "crowded dots spread apart"
     page.click('[data-z="reset"]')
     assert page.evaluate(DOTS_JS) == start
     box = page.locator("#quad svg").bounding_box()
@@ -170,13 +215,12 @@ def test_quadrant_zoom_buttons_and_trackpad(browser, built_page):
     page.wait_for_timeout(100)
     assert page.evaluate(DOTS_JS) == start
     page.locator("#quad").scroll_into_view_if_needed()  # the wheel scrolled the page; aim at the chart again
-    box = page.locator("#quad svg").bounding_box()
-    page.mouse.move(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.mouse.move(*dots_middle(page, start))
     page.keyboard.down("Control")  # a trackpad pinch arrives as ctrl+wheel
     page.mouse.wheel(0, -60)
     page.keyboard.up("Control")
     page.wait_for_timeout(100)
-    assert median_gap(page.evaluate(DOTS_JS)) > median_gap(start)
+    assert spread(start, page.evaluate(DOTS_JS)) > 1.2
     assert errors == []
     page.close()
 
@@ -192,8 +236,7 @@ def test_quadrant_pinch_on_phone(browser, built_page):
     page.wait_for_selector("#quad svg")
     page.locator("#quad").scroll_into_view_if_needed()
     start = page.evaluate(DOTS_JS)
-    box = page.locator("#quad svg").bounding_box()
-    cx, cy = box["x"] + box["width"] * .55, box["y"] + box["height"] * .5
+    cx, cy = dots_middle(page, start)
     cdp = ctx.new_cdp_session(page)
 
     def touch(kind, pts):
@@ -206,7 +249,7 @@ def test_quadrant_pinch_on_phone(browser, built_page):
     touch("touchEnd", [])
     page.wait_for_timeout(150)
     assert page.evaluate("visualViewport.scale") == 1, "the page itself didn't zoom"
-    assert median_gap(page.evaluate(DOTS_JS)) > 1.5 * median_gap(start)
+    assert spread(start, page.evaluate(DOTS_JS)) > 1.5
     assert page.locator(".sheet").count() == 0 and page.locator('[data-z="reset"]').is_visible()
     dot = page.locator("#quad .qd").first.bounding_box()
     page.touchscreen.tap(dot["x"] + dot["width"] / 2, dot["y"] + dot["height"] / 2)
