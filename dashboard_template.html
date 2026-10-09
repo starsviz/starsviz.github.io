@@ -438,8 +438,10 @@ const ord = n => { const v = n % 100; return n + (v >= 11 && v <= 13 ? "th" : ["
 
 /* ================= player score ================= */
 // Each stat is standardized against how Stars players at the same position do in a typical game,
-// weighted, summed, then rescaled so 50 = a typical game and 15 points = one standard deviation.
-// Forwards and defensemen use different weights but end up on the same 0-100 scale.
+// weighted, summed, then rescaled like a school grade: 70 = a typical game and 10 points = one standard deviation,
+// so the 90s are an A night (about 1 player-game in 20), the 80s a B, and 100 is the cap.
+// Forwards and defensemen use different weights but end up on the same scale.
+const MID = 70, SD = 10, at = z => MID + SD * z;  // at(1) = the score one standard deviation above a typical game
 const WEIGHTS = {
   F: [["gl", .22, "Goals"], ["a1", .13, "Primary assists"], ["slot", .10, "Shot attempts from the slot"],
       ["cfd", .10, "On-ice shot attempts, for minus against"], ["sog", .08, "Shots on goal"], ["toi", .07, "Ice time"],
@@ -450,7 +452,7 @@ const WEIGHTS = {
       ["a2", .05, "Secondary assists"], ["pen", .05, "Penalties drawn minus taken"], ["hits", .05, "Hits"]],
 };
 // The quadrant chart splits the score in two: what he produced himself, and how the play went with him out there.
-// Each half is scaled like the full score (50 = a typical game for his position, 15 points = one standard deviation).
+// Each half is scaled like the full score (70 = a typical game for his position, 10 points = one standard deviation).
 // Ice time counts toward the full score only.
 const AXES = { off: ["gl", "a1", "a2", "slot", "sog", "att"], two: ["cfd", "pm", "tkgv", "pen", "hits", "blk", "fod"] };
 const WMAX = Math.max(...Object.values(WEIGHTS).flat().map(w => Math.abs(w[1])));
@@ -497,7 +499,7 @@ const GSTATS = { F: {}, D: {} };
     const scale = (name, ws) => {
       const c = L.map(l => sum(ws.map(([k, w]) => { const st = GSTATS[grp][k]; return st.sd && l[k] != null ? w * (l[k] - st.mu) / st.sd : 0; })));
       const mu = mean(c), sd = Math.sqrt(mean(c.map(x => (x - mu) ** 2))) || 1;
-      L.forEach((l, i) => { l[name] = Math.max(0, Math.min(100, 50 + 15 * (c[i] - mu) / sd)); });
+      L.forEach((l, i) => { l[name] = Math.max(0, Math.min(100, at((c[i] - mu) / sd))); });
     };
     scale("score", WEIGHTS[grp]);
     Object.entries(AXES).forEach(([name, keys]) => scale(name, WEIGHTS[grp].filter(w => keys.includes(w[0]))));
@@ -516,10 +518,11 @@ function statDelta(v, avg, sd, c) {
   const d = v - avg, z = Math.abs(d) / (sd || 1), good = c.inv ? d < 0 : d > 0;
   return { tier: z < .35 ? "flat" : good ? "up" : "down", strong: z >= 1, txt: Math.abs(d) < (c.eps || .05) ? "even" : (d > 0 ? "▲" : "▼") + (c.dfmt ? c.dfmt(d) : sdDelta(d)) };
 }
-// change vs. his season-average player score, as a percentage of that average
+// change vs. his season-average player score, as a percentage of that average; colored like the stats
+// (gray under a third of a standard deviation, shaded at one or more)
 function scoreDelta(score, avg) {
-  const pc = avg > 0 ? Math.round((score - avg) / avg * 100) : 0;
-  return { pc, tier: Math.abs(pc) < 10 ? "flat" : pc > 0 ? "up" : "down", strong: Math.abs(pc) >= 30, text: pc === 0 ? "even" : (pc > 0 ? "▲" : "▼") + Math.abs(pc) + "%" };
+  const pc = avg > 0 ? Math.round((score - avg) / avg * 100) : 0, z = Math.abs(score - avg) / SD;
+  return { pc, tier: z < 1 / 3 || pc === 0 ? "flat" : pc > 0 ? "up" : "down", strong: z >= 1, text: pc === 0 ? "even" : (pc > 0 ? "▲" : "▼") + Math.abs(pc) + "%" };
 }
 function statCell(r, c) {
   const v = r.l[c.k], avg = r.s.avg[c.k], fmt = c.fmt || (x => x);
@@ -542,17 +545,19 @@ function rankTable(rows, grp, g) {
       <td class="l">${scoreCell(r)}</td>${cols.map(c => statCell(r, c)).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 const howItWorks = () => `<details class="how"><summary>How the player score works</summary>
-  <p>Every stat in a game is compared with how Stars players at the same position usually do in a game, then weighted and added up. It mixes what a player did himself (goals, assists, shots) with what happened while he was on the ice: "on-ice shot attempts" counts every Dallas shot attempt at 5-on-5 during his shifts, minus the opponent's, which is the best public measure of which way the play was going. The total is scaled so <b>50 is a typical game</b> for that position, and about two out of three games land between 35 and 65. Forwards and defensemen are weighted differently but land on the same scale, so an 80 means the same thing for either.</p>
+  <p>Every stat in a game is compared with how Stars players at the same position usually do in a game, then weighted and added up. It mixes what a player did himself (goals, assists, shots) with what happened while he was on the ice: "on-ice shot attempts" counts every Dallas shot attempt at 5-on-5 during his shifts, minus the opponent's, which is the best public measure of which way the play was going. The total is scaled like a school grade: <b>70 is a typical game</b> for that position, the 80s are a B, the 90s are an A and 100 is the most a player can get. About two out of three games land between 60 and 80, and an A comes along about once a game across the whole lineup. Forwards and defensemen are weighted differently but land on the same scale, so a 90 means the same thing for either.</p>
   <div class="grid2">${[["F", "Forwards"], ["D", "Defensemen"]].map(([k, lab]) => `<div><p class="chapter-label">${lab}</p><ul class="wts">${WEIGHTS[k].map(([, w, name]) =>
     `<li><span>${esc(name)}</span><span class="wbar" aria-hidden="true"><i style="width:${Math.abs(w) / WMAX * 100}%" class="${w < 0 ? "neg" : ""}"></i></span><b class="num">${Math.round(Math.abs(w) * 100)}%</b></li>`).join("")}</ul></div>`).join("")}</div>
-  <p class="note">The chart splits that score in two, each on the same 0 to 100 scale. <b>Offense</b> (left to right) is goals, assists and shots. <b>Two-way play</b> (bottom to top) is everything else except ice time: on-ice shot attempts, plus-minus, takeaways and giveaways, blocks, hits, penalties and faceoffs. Ice time counts toward the full score only.</p></details>`;
+  <p class="note">The chart splits that score in two, each on the same scale, and its axes are the same for every game, so a dot's spot means the same thing from one night to the next. <b>Offense</b> (left to right) is goals, assists and shots. <b>Two-way play</b> (bottom to top) is everything else except ice time: on-ice shot attempts, plus-minus, takeaways and giveaways, blocks, hits, penalties and faceoffs. Ice time counts toward the full score only.</p></details>`;
 
 // What the quadrant chart plots. x and y take a row ({ pid, s, grp, l }); sx/sy are where the quadrants split.
-// round out to the nearest 10 with a little air; a dot at 0 or 100 gets a few points of margin so it isn't cut by the frame
-const quadFit = (vals, pad = 6) => { const lo = Math.floor((Math.min(40, ...vals) - pad) / 10) * 10, hi = Math.ceil((Math.max(60, ...vals) + pad) / 10) * 10; return [lo < 0 ? -4 : lo, hi > 100 ? 104 : hi]; };
-const quadDomain = rows => { const [x0, x1] = quadFit(rows.map(r => r.l.off)), [y0, y1] = quadFit(rows.map(r => r.l.two)); return { x0, x1, y0, y1 }; };
+// The axes are the same for every game (a reader pointed out that axes fitted to each game made a 40 one night sit where
+// a 20 sat the next). Offense can't go much under 60 (a game with no points or shots), so x starts higher than y.
+// The 4 points past 100 keep a dot at 100 from being cut by the frame; the rare dot below the floor is drawn on it.
+const QUAD_DOMAIN = { x0: 55, x1: 104, y0: 40, y1: 104 };
+const quadDomain = () => QUAD_DOMAIN;
 const QUAD = {
-  x: r => r.l.off, y: r => r.l.two, sx: 50, sy: 50, domain: quadDomain,  // the axes fit each game's dots, so they spread out
+  x: r => Math.max(QUAD_DOMAIN.x0 + 1.5, r.l.off), y: r => Math.max(QUAD_DOMAIN.y0 + 1.5, r.l.two), sx: MID, sy: MID, domain: quadDomain,
   xLab: "Offense: goals, assists, shots →", yLab: "Two-way play: on-ice shots, defense, discipline →",
   corners: ["Did it all", "Strong two-way", "Strong offense", "Room for more"],  // top right, top left, bottom right, bottom left
   aria: "Each skater's offense score against his two-way score for this game",
@@ -588,9 +593,9 @@ function quadChart(el, rows, g, zoomUi) {
     add(plot, "rect", { class: "q-bad", x: X(FULL.x0), y: Y(sy), width: X(sx) - X(FULL.x0), height: Y(FULL.y0) - Y(sy) });
     const gGrid = add(plot, "g", { class: "grid" }), gAx = add(svg, "g", { class: "axis" });
     const within = (t, a, b) => t >= a - 1e-9 && t <= b + 1e-9;
-    const xt = niceTicks(v.x0, v.x1, 4).ticks.filter(t => within(t, v.x0, v.x1));
+    const xt = niceTicks(v.x0, v.x1, 6).ticks.filter(t => within(t, v.x0, v.x1));
     xt.forEach(t => { add(gGrid, "line", { x1: X(t), x2: X(t), y1: m.t, y2: H - m.b }); add(gAx, "text", { x: X(t), y: H - m.b + 15, "text-anchor": "middle" }, +t.toFixed(1)); });
-    const yt = niceTicks(v.y0, v.y1, 4).ticks.filter(t => within(t, v.y0, v.y1));
+    const yt = niceTicks(v.y0, v.y1, 6).ticks.filter(t => within(t, v.y0, v.y1));
     yt.forEach(t => { add(gGrid, "line", { x1: m.l, x2: W - m.r, y1: Y(t), y2: Y(t) }); add(gAx, "text", { x: m.l - 6, y: Y(t) + 4, "text-anchor": "end" }, +t.toFixed(1)); });
     add(plot, "line", { class: "qline", x1: X(sx), x2: X(sx), y1: m.t, y2: H - m.b });
     add(plot, "line", { class: "qline", x1: m.l, x2: W - m.r, y1: Y(sy), y2: Y(sy) });
@@ -1101,12 +1106,12 @@ function renderGame() {
   const byScore = rows.slice().sort((a, b) => b.l.score - a.l.score);
   const fw = byScore.filter(r => r.grp === "F"), dm = byScore.filter(r => r.grp === "D");
   const best = byScore[0], topTwo = rows.slice().sort((a, b) => b.l.two - a.l.two)[0];
-  const both = rows.filter(r => r.l.off >= 50 && r.l.two >= 50).length;
+  const both = rows.filter(r => r.l.off >= MID && r.l.two >= MID).length;
   // the clearest "scored, but the play went against him" and "strong game, no points" of the night, if there is one
-  const offOnly = rows.filter(r => r.l.off >= 60 && r.l.two <= 40).sort((a, b) => (b.l.off - b.l.two) - (a.l.off - a.l.two))[0];
-  const quiet = rows.filter(r => r.l.two >= 65 && r.l.p === 0).sort((a, b) => b.l.two - a.l.two)[0];
+  const offOnly = rows.filter(r => r.l.off >= at(2 / 3) && r.l.two <= at(-2 / 3)).sort((a, b) => (b.l.off - b.l.two) - (a.l.off - a.l.two))[0];
+  const quiet = rows.filter(r => r.l.two >= at(1) && r.l.p === 0).sort((a, b) => b.l.two - a.l.two)[0];
   let qHead = best ? `${plast(best.pid)} led the way with ${aan(Math.round(best.l.score))}` : "Player scores";
-  if (best && topTwo && topTwo.pid !== best.pid && topTwo.l.two >= 65) qHead += `; ${plast(topTwo.pid)} had the best two-way game`;
+  if (best && topTwo && topTwo.pid !== best.pid && topTwo.l.two >= at(1)) qHead += `; ${plast(topTwo.pid)} had the best two-way game`;
   let qCap = `${cap1(word(both))} ${both === 1 ? "skater" : "skaters"} landed in the top-right corner, above average on both.`;
   if (offOnly) qCap += ` ${pname(offOnly.pid)} produced (offense ${Math.round(offOnly.l.off)}), but the play went against him (two-way ${Math.round(offOnly.l.two)}).`;
   else if (quiet && (!best || quiet.pid !== best.pid)) qCap += ` ${pname(quiet.pid)} had a strong game without a point (two-way ${Math.round(quiet.l.two)}).`;
@@ -1129,7 +1134,7 @@ function renderGame() {
     <div class="card">
       <p class="chapter-label">Who produced, and who drove the play</p>
       <h2>${esc(qHead)}</h2>
-      <p class="cap">${esc(qCap)} Farther right means more offense. Higher means the play went Dallas's way with him on the ice. 50 is a typical game for his position.</p>
+      <p class="cap">${esc(qCap)} Farther right means more offense. Higher means the play went Dallas's way with him on the ice. 70 is a typical game for his position, and the chart's scale is the same every game.</p>
       <div class="chart" id="quad"></div>
       <div class="legend"><span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="5.5" class="dot-f"/></svg>Forward</span>
         <span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><rect x="-5" y="-5" width="10" height="10" rx="2" class="dot-d"/></svg>Defenseman</span>
@@ -1394,8 +1399,8 @@ function skaterSeason(body, pid, s) {
     pdo != null ? [pdo.toFixed(1), `on-ice shooting % plus save % at 5-on-5. It settles near 100 over time, so ${pdo >= 101.5 ? "the bounces have been going his way." : pdo <= 98.5 ? "the bounces have been going against him." : "luck hasn't played much of a part."}`] : null].filter(Boolean);
   body.innerHTML = lede(`${M.seasonLabel} · ${kicker}`, head, dek)
     + `<div class="card"><p class="chapter-label">1 · Player score</p><h2>Averaging ${Math.round(s.avgScore)}${sRank ? `, ${ord(sRank)} among Stars ${grpName}` : ""}</h2>
-      <p class="cap">Each dot is one game; the line is his 10-game average, now at ${Math.round(sc10)}. The gray line at 50 is a typical game for a Stars ${grpName.slice(0, -1)}. Tap a dot to see that night.</p>
-      <div class="chart" id="pc0"></div><div class="legend"><span class="k"><span class="kbox us"></span>10-game average</span><span class="k"><span class="kbox otl"></span>Single game</span><span class="k"><span class="kbox ref"></span>Typical game (50)</span></div></div>`
+      <p class="cap">Each dot is one game; the line is his 10-game average, now at ${Math.round(sc10)}. The gray line at 70 is a typical game for a Stars ${grpName.slice(0, -1)}. Tap a dot to see that night.</p>
+      <div class="chart" id="pc0"></div><div class="legend"><span class="k"><span class="kbox us"></span>10-game average</span><span class="k"><span class="kbox otl"></span>Single game</span><span class="k"><span class="kbox ref"></span>Typical game (70)</span></div></div>`
     + `<div class="card"><p class="chapter-label">2 · Production</p><h2>${prodHead}</h2>
       <p class="cap">His points per game over a rolling 10-game window, against his season rate of ${t.rate.toFixed(2)}.${peakI >= 0 && s.gp >= 15 ? (peakI >= N - 3 ? " He's in his hottest stretch of the season right now." : ` His hottest stretch peaked at ${r10[peakI].toFixed(2)} a game around ${fdate(G[peakI].date)}.`) : ""}</p>
       <div class="chart" id="pc1"></div><div class="legend"><span class="k"><span class="kbox us"></span>10-game average</span><span class="k"><span class="kbox ref"></span>Season rate</span></div></div>
@@ -1411,8 +1416,8 @@ function skaterSeason(body, pid, s) {
     <div class="card"><p class="chapter-label">6 · Shot profile</p><h2>${unb.length ? `${pct(slotN / unb.length)} of his attempts come from the slot` : "No shots yet"}</h2>
       <p class="cap">${plural(slotGoals, "goal")} of his ${s.gl} came from the shaded slot. Tap any shot for the game and time.</p><div id="pmap"></div>${rinkLegend()}</div>
     <details class="more"><summary>Game log</summary>${skaterLog(s)}</details>`;
-  chart($("#pc0"), { xs, xTicks: xt, yDomain: [0, 100], refs: [{ y: 50, label: "50" }], yFmt: v => v,
-    series: [{ values: scs, line: false, dots: true, dotCls: "dot-faint", r: 3 }, { values: scR, cls: "ln-us", end: v => Math.round(v) }],
+  chart($("#pc0"), { xs, xTicks: xt, yDomain: [40, 100], refs: [{ y: MID, label: String(MID) }], yFmt: v => v,
+    series: [{ values: scs.map(v => v == null ? null : Math.max(41, v)), line: false, dots: true, dotCls: "dot-faint", r: 3 }, { values: scR, cls: "ln-us", end: v => Math.round(v) }],
     tip: i => { const l = logBy.get(xs[i]), g = byN.get(xs[i]); return l ? `<b>${fdate(g.date)} ${esc(vs(g))}</b> · ${resLabel(g)} ${scoreStr(g)}<br>Player score ${Math.round(l.score)} · ${l.gl}G ${l.a}A` : null; },
     onClick: i => logBy.get(xs[i]) && sheet.open(byN.get(xs[i]).id) });
   chart($("#pc1"), { xs, xTicks: xt, zeroBase: true, refs: [{ y: t.rate, label: t.rate.toFixed(2) }], series: [{ values: r10, cls: "ln-us", end: v => v.toFixed(2) }], yFmt: v => v.toFixed(1),
@@ -1602,8 +1607,8 @@ function cardQuad(C, rows, bx, by, bw, bh) {
   // names only for the players the story is about: the top three, the best two-way game, the roughest night
   const byScore = rows.slice().sort((a, b) => b.l.score - a.l.score), named = new Set(byScore.slice(0, 3));
   const up = rows.slice().sort((a, b) => b.l.two - a.l.two)[0], down = byScore[byScore.length - 1];
-  if (up && up.l.two >= 65) named.add(up);
-  if (down && down.l.score <= 40) named.add(down);
+  if (up && up.l.two >= at(1)) named.add(up);
+  if (down && down.l.score <= at(-2 / 3)) named.add(down);
   const inside = b => b.x >= X(x0) + 4 && b.x + b.w <= X(x1) - 4 && b.y >= Y(y1) + 4 && b.y + b.h <= Y(y0) - 4;
   const hit = b => boxes.some(o => b.x < o.x + o.w && b.x + b.w > o.x && b.y < o.y + o.h && b.y + b.h > o.y);
   pts.filter(p => named.has(p.r)).sort((a, b) => b.r.l.score - a.r.l.score).forEach(p => {
@@ -1649,7 +1654,7 @@ function cardGame(C, g, rows) {
     s += T(px + textW(`${r.l.gl}G ${r.l.a}A`, 24, 600) + 14, ry + 72, d.text, { size: 24, w: 700, fill: tierColor(C, d.tier) });
     s += T(px + pw, ry + 62, sc, { fam: FD, size: 64, w: 700, fill: r.grp === "D" ? C.defc : C.accent, anchor: "end" });
   });
-  return s + cardFoot(C, "Player score: 50 = a typical game");
+  return s + cardFoot(C, "Player score: 70 = a typical game");
 }
 
 /* ---- card: every skater, ranked ---- */
@@ -1673,10 +1678,10 @@ function cardRank(C, g, rows) {
       s += T(x + colW, y + 34, sc, { fam: FD, size: 40, w: 700, fill: C.ink, anchor: "end" });
       const bw = colW - 34 - 60;
       s += `<rect x="${r1(nx)}" y="${r1(y + 42)}" width="${r1(bw)}" height="10" rx="5" fill="${C.panel}"/>`;
-      s += `<rect x="${r1(nx)}" y="${r1(y + 42)}" width="${r1(Math.max(8, bw * sc / 100))}" height="10" rx="5" fill="${color}"/>`;
+      s += `<rect x="${r1(nx)}" y="${r1(y + 42)}" width="${r1(Math.max(8, bw * (sc - 40) / 60))}" height="10" rx="5" fill="${color}"/>`;
     });
   });
-  return s + cardFoot(C, "50 = a typical game · ▲▼ vs. his own average");
+  return s + cardFoot(C, "70 = a typical game · ▲▼ vs. his own average");
 }
 
 /* ---- card: one player, one game ---- */
@@ -1705,7 +1710,7 @@ function cardPlayerGame(C, pid, g) {
       const c = STATCOLS.find(x => x.k === k);
       s += bigTile(C, CP + i * (tw + 18), tilesY, tw, tileH, TILE_NAMES[k], (c.fmt || (x => x))(l[k]));
     });
-    return s + cardFoot(C, `50 = a typical game for a Stars ${sk.grp === "D" ? "defenseman" : "forward"}`);
+    return s + cardFoot(C, `70 = a typical game for a Stars ${sk.grp === "D" ? "defenseman" : "forward"}`);
   }
   const gs = goalies[pid], l = st.l, sv = st.sv, d = sv != null && gs.svp != null ? sv - gs.svp : null;
   const tier = d == null || Math.abs(d) < .01 ? "flat" : d > 0 ? "up" : "down";
@@ -1730,7 +1735,7 @@ function trendChart(C, bx, by, bw, bh, o) {
   const X = v => bx + m.l + (v - x0) / (x1 - x0) * (bw - m.l - m.r), Y = v => by + m.t + (o.y1 - Math.max(o.y0, Math.min(o.y1, v))) / (o.y1 - o.y0) * (bh - m.t - m.b);
   let s = `<rect x="${r1(bx)}" y="${r1(by)}" width="${r1(bw)}" height="${r1(bh - m.b + 10)}" rx="12" fill="${C.panel}" fill-opacity=".6"/>`;
   s += L(X(x0), Y(o.ref), X(x1), Y(o.ref), C.muted, 2.5, `stroke-dasharray="10 8"`);
-  const kw = textW(o.refLabel, 20, 600);  // key in the heading row: "- - - 50 = typical game"
+  const kw = textW(o.refLabel, 20, 600);  // key in the heading row: "- - - 70 = typical game"
   s += L(bx + bw - kw - 58, by - 22, bx + bw - kw - 12, by - 22, C.muted, 2.5, `stroke-dasharray="8 6"`) + T(bx + bw, by - 15, o.refLabel, { size: 20, w: 600, fill: C.muted, anchor: "end" });
   let lastX = -1e9;
   monthTicks(G.map(x => x.n)).forEach(t => { const tx = X(t.n); if (tx - lastX < 90 || tx > X(x1) - 20) return; lastX = tx; s += T(tx, by + bh - 4, t.label, { size: 22, w: 600, fill: C.muted, anchor: "middle" }); });
@@ -1763,9 +1768,9 @@ function cardPlayerSeason(C, pid) {
     s += T(CP, Math.min(CBOT - 4, y + 196), `${sk.gp} GP · ${sk.gl} G · ${sk.a} A · ${sk.p} P`, { size: 30, w: 700, fill: C.ink2 });
     const roll = rolling(sk.log.map(l => l.score), 10, mean);
     s += label(C, rx, top + 14, "10-game avg score");
-    s += trendChart(C, rx, top + 30, rw, CBOT - top - 26, { y0: 0, y1: 100, step: 10, ref: 50, refLabel: "typical game (50)", fmt: v => Math.round(v),
+    s += trendChart(C, rx, top + 30, rw, CBOT - top - 26, { y0: 40, y1: 100, step: 10, ref: MID, refLabel: "typical game (70)", fmt: v => Math.round(v),
       line: roll.map((v, i) => v == null ? null : [sk.log[i].g.n, v]) });
-    return s + cardFoot(C, "Player score: 50 = a typical game");
+    return s + cardFoot(C, "Player score: 70 = a typical game");
   }
   const gs = goalies[pid];
   s += label(C, CP, y + 18, "Save percentage");

@@ -157,21 +157,24 @@ def test_game_shot_chart(browser, built_page, built_data):
 
 
 def test_every_game_renders_and_score_scale(browser, sample_page):
-    """Walk all 82 games; scores for forwards and defensemen should each average
-    about 50 with a spread (SD) of about 15."""
+    """Walk all 82 games; the chart keeps one set of axes, and scores for forwards and defensemen should each average
+    about 70 with a spread (SD) of about 10 (the school-grade scale)."""
     page, errors = open_page(browser, sample_page)
     scores = {"F": [], "D": []}
+    axes = set()
     for gid in page.eval_on_selector_all(".chip", "cs => cs.map(c => c.dataset.id)"):
         page.click(f'.chip[data-id="{gid}"]')
+        axes.add(tuple(page.eval_on_selector_all("#quad .axis text", "ts => ts.map(t => t.textContent)")))
         for grp, label in (("F", "Forwards"), ("D", "Defensemen")):
             scores[grp] += page.eval_on_selector_all(
                 f'.card:has(.chapter-label:text-matches("^{label}", "i")) .scv', "els => els.map(e => +e.textContent)")
     assert errors == []
+    assert len(axes) == 1, "the chart's axes are the same for every game, so dots compare from one night to the next"
     for grp, vals in scores.items():
         assert len(vals) > 300, grp
         assert all(0 <= v <= 100 for v in vals)
-        assert 48 <= statistics.mean(vals) <= 52, (grp, statistics.mean(vals))
-        assert 12.5 <= statistics.pstdev(vals) <= 16, (grp, statistics.pstdev(vals))
+        assert 68.5 <= statistics.mean(vals) <= 71.5, (grp, statistics.mean(vals))
+        assert 8.3 <= statistics.pstdev(vals) <= 10.7, (grp, statistics.pstdev(vals))
     page.close()
 
 
