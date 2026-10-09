@@ -236,6 +236,25 @@ def test_every_player_card_opens(browser, sample_page, tmp_path, n):
     page.close()
 
 
+@pytest.mark.parametrize("wide", [False, True])
+@pytest.mark.parametrize("width", [1280, 390, 320])
+def test_quadrant_names_stay_in_their_quadrants(browser, built_page, width, wide):
+    """All four corner names show, and none runs through a dividing line, on phones too (the left-hand ones
+    go on two lines there) and whatever font the text ends up in."""
+    page, errors = open_page(browser, built_page, width=width)
+    if wide:
+        page.add_style_tag(content=WIDE_FONT)
+    crossing = page.evaluate("""() => { const svg = document.querySelector('#quad svg');
+      const ls = [...svg.querySelectorAll('.qline')].map(l => l.getBoundingClientRect());
+      const v = ls.find(r => r.width < 3), hz = ls.find(r => r.height < 3);
+      return [...svg.querySelectorAll('.qlab')].map(t => { const r = t.getBoundingClientRect();
+        return [t.textContent, (r.left < v.left && r.right > v.left) || (r.top < hz.top && r.bottom > hz.top)]; }); }""")
+    assert " ".join(t for t, _ in crossing) == "DID IT ALL STRONG TWO-WAY STRONG OFFENSE ROOM FOR MORE"
+    assert [t for t, bad in crossing if bad] == []
+    assert errors == []
+    page.close()
+
+
 DOTS_JS = """() => [...document.querySelectorAll('#quad .qd')].map(n => ({ id: n.dataset.dot,
   x: +(n.getAttribute('cx') ?? +n.getAttribute('x') + 6), y: +(n.getAttribute('cy') ?? +n.getAttribute('y') + 6),
   size: +(n.getAttribute('r') ?? n.getAttribute('width')) }))"""

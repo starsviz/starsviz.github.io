@@ -607,11 +607,18 @@ function quadChart(el, rows, g, zoomUi) {
     [[sx, FULL.x1, sy, FULL.y1, "end", "top", QUAD.corners[0]], [FULL.x0, sx, sy, FULL.y1, "start", "top", QUAD.corners[1]],
      [sx, FULL.x1, FULL.y0, sy, "end", "bottom", QUAD.corners[2]], [FULL.x0, sx, FULL.y0, sy, "start", "bottom", QUAD.corners[3]]].forEach(([a0, a1, b0, b1, a, vert, t]) => {
       const qx0 = Math.max(X(a0), m.l), qx1 = Math.min(X(a1), W - m.r), qy0 = Math.max(Y(b1), m.t), qy1 = Math.min(Y(b0), H - m.b);
-      const w = t.length * 7.4;
       if (qx1 - qx0 < 60 || qy1 - qy0 < 30) return;  // hide once its quadrant is mostly off screen
-      const x = a === "end" ? qx1 - 7 : qx0 + 7, y = vert === "top" ? qy0 + 15 : qy1 - 8;
-      add(svg, "text", { class: "qlab", x, y, "text-anchor": a }, t.toUpperCase());
-      boxes.push({ x: a === "end" ? x - w : x, y: y - 11, w, h: 14 });
+      // smaller on phones; a name wider than its quadrant goes on two lines, so it never runs through the dividing line
+      const fs = narrow ? 9 : 10.5, cw = fs * .705, lh = fs + 2;
+      let lines = [t];
+      if (t.length * cw > qx1 - qx0 - 14 && t.includes(" ")) {
+        const cut = [...t].map((ch, i) => ch === " " ? i : -1).filter(i => i > 0).sort((p, q) => Math.abs(p - t.length / 2) - Math.abs(q - t.length / 2))[0];
+        lines = [t.slice(0, cut), t.slice(cut + 1)];
+      }
+      const w = Math.max(...lines.map(s => s.length)) * cw, hh = lines.length * lh;
+      const x = a === "end" ? qx1 - 7 : qx0 + 7, y = vert === "top" ? qy0 + fs + 4 : qy1 - 8 - (lines.length - 1) * lh;
+      lines.forEach((s, i) => add(svg, "text", { class: "qlab", x, y: y + i * lh, "text-anchor": a, style: `font-size:${fs}px` }, s.toUpperCase()));
+      boxes.push({ x: a === "end" ? x - w : x, y: y - fs, w, h: hh + 2 });
     });
     pts = rows.map(r => ({ r, x: X(QUAD.x(r)), y: Y(QUAD.y(r)) }))
       .filter(p => p.x >= m.l - 7 && p.x <= W - m.r + 7 && p.y >= m.t - 7 && p.y <= H - m.b + 7);
