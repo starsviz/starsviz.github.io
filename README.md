@@ -4,7 +4,7 @@ Dallas Stars data tools built on the NHL's free public API:
 
 1. **Player rankings** (`build_dashboard.py`): one web page built around a **player score** for every skater in every game.
    - Pick any game from the strip at the top.
-   - A quadrant chart plots each player's score against his own season average: big night, better than usual, below his usual, off night.
+   - A quadrant chart plots each player's offense against his two-way play: did it all, strong two-way, strong offense, room for more.
    - Forwards and defensemen are ranked by score, with every stat color-coded against that player's season average. Goalies follow.
    - Tap any player for his card: score trend, production, role and shot profile, or switch to **One game** for his night against his normal.
    - **Share image** buttons (beside the game score, and in every player card) make a 1200×675 picture sized for X, Reddit and Substack: a game card (headline, quadrant, top performers), a rankings card (every skater's score), a player's game, or a player's season, in light or dark. On a phone, **Share…** opens the normal share menu; on a computer, **Copy image** pastes straight into an X post or a Substack draft, or use **Download**.

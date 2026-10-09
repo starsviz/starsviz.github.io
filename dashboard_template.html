@@ -554,7 +554,7 @@ const quadDomain = rows => { const [x0, x1] = quadFit(rows.map(r => r.l.off)), [
 const QUAD = {
   x: r => r.l.off, y: r => r.l.two, sx: 50, sy: 50, domain: quadDomain,  // the axes fit each game's dots, so they spread out
   xLab: "Offense: goals, assists, shots →", yLab: "Two-way play: on-ice shots, defense, discipline →",
-  corners: ["Did it all", "Quietly solid", "Offense only", "Off night"],  // top right, top left, bottom right, bottom left
+  corners: ["Did it all", "Strong two-way", "Strong offense", "Room for more"],  // top right, top left, bottom right, bottom left
   aria: "Each skater's offense score against his two-way score for this game",
   tip: r => `Offense ${Math.round(r.l.off)} · Two-way ${Math.round(r.l.two)}<br>Player score ${Math.round(r.l.score)} (${pm(Math.round(r.l.dScore))} vs his average)`,
 };
