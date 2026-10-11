@@ -795,7 +795,7 @@ function gameStory(g) {
   else if (won && ppU >= 2 && ppU > ppT) { head = `The power play carries the ${NAME} past the ${opp}`; kicker = "Special teams"; }
   else if (!won && ppT >= 2 && ppT > ppU) { head = `Penalties cost the ${NAME} against the ${opp}`; kicker = "Special teams"; }
   else if (won && extra) { head = `${NAME} edge the ${opp}${extra}`; kicker = "Nail-biter"; }
-  else if (extra) { head = `${NAME} fall to the ${opp}${extra} but take a point`; kicker = "Nail-biter"; }
+  else if (extra) { head = `${NAME} fall to the ${opp}${extra}`; kicker = "Nail-biter"; }
   else if (won && share5 >= .56) { head = `${NAME} control the ${opp} from start to finish`; kicker = "Wire to wire"; }
   else if (!won && oppG && oppG[1] >= 30 && oppG[2] / oppG[1] >= .935) { head = `${oppG[0].split(". ").pop()} stonewalls the ${NAME}`; kicker = "Hot goalie"; }
   else if (won && myGsv >= .935 && sogT >= 30) { head = `${plast(myG[0])} stands tall as the ${NAME} beat the ${opp}`; kicker = "Big saves"; }
