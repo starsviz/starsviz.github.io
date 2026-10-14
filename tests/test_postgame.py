@@ -101,7 +101,7 @@ def test_send_once_per_game(brief, tmp_path, monkeypatch):
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "test")
     calls = []
     monkeypatch.setattr(pe, "ask_claude", lambda b: (calls.append(b["game"]["id"]) or ANSWER[ANSWER.index("=== STATS ==="):],
-                                                        {"turns": 3, "searches": 2, "model": "claude-opus-5-5"}))
+                                                        {"turns": 3, "model": "claude-opus-5-5"}))
     mails = []
     monkeypatch.setattr(pe, "send_mail", lambda *a: mails.append(a) or "me@example.com")
     assert pe.send(path, state, out, force=False, dry_run=False) is True
@@ -120,12 +120,12 @@ def test_ask_claude_runs_claude_code(brief, monkeypatch):
     def fake_run(cmd, input, cwd, env, **kw):
         seen.update(cmd=cmd, input=input, cwd=cwd, token=env["CLAUDE_CODE_OAUTH_TOKEN"])
         res = {"type": "result", "subtype": "success", "is_error": False, "num_turns": 4, "result": ANSWER,
-               "usage": {"server_tool_use": {"web_search_requests": 3}}, "modelUsage": {"claude-opus-5-5": {}}}
+               "modelUsage": {"claude-opus-5-5": {}, "claude-haiku-5-5": {}}}
         return pe.subprocess.CompletedProcess(cmd, 0, json.dumps(res), "")
     monkeypatch.setattr(pe.subprocess, "run", fake_run)
     md, usage = pe.ask_claude(brief)
     assert md.startswith("=== STATS ===") and "Let me check" not in md
-    assert usage == {"turns": 4, "searches": 3, "model": "claude-opus-5-5"}
+    assert usage == {"turns": 4, "model": "claude-opus-5-5"}
     assert seen["cmd"][:2] == ["claude", "-p"] and "--system-prompt" in seen["cmd"] and "WebSearch,WebFetch" in seen["cmd"]
     assert '"siteHeadline"' in seen["input"]
     assert not Path(seen["cwd"]).exists(), "ran in a throwaway folder"

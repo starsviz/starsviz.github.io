@@ -191,10 +191,8 @@ def ask_claude(brief: dict) -> tuple[str, dict]:
         raise SystemExit(f"Claude Code didn't run (exit {run.returncode}):\n{run.stderr or run.stdout}")
     if res.get("is_error") or res.get("subtype") != "success":
         raise SystemExit(f"Claude Code failed: {res.get('result') or res.get('subtype')}")
-    u = res.get("usage") or {}
-    usage = {"turns": res.get("num_turns", 0),
-             "searches": (u.get("server_tool_use") or {}).get("web_search_requests", 0),
-             "model": ", ".join(res.get("modelUsage") or {}) or MODEL}
+    # (Claude Code doesn't report how many web searches it ran, so the email doesn't claim a number)
+    usage = {"turns": res.get("num_turns", 0), "model": next(iter(res.get("modelUsage") or {}), MODEL)}
     out = res.get("result") or ""
     if "=== STATS ===" not in out or "=== NO FILTER ===" not in out:
         raise SystemExit("Claude's answer didn't come back in the expected format:\n\n" + out)
@@ -294,7 +292,7 @@ def send(brief_path: Path, state_path: Path, out_dir: Path, force: bool, dry_run
     md, usage = ask_claude(brief)
     missing = stats_missing(brief)
     notes = [f"Sent without the NHL's final stats: {missing}." if missing else "Written from the NHL's final stats.",
-             f"Written by Claude ({usage['model']}) on your subscription: {usage['searches']} web searches, {usage['turns']} turns."]
+             f"Written by Claude ({usage['model']}) on your subscription, in {usage['turns']} turns."]
     text, page = email_bodies(brief, md, notes)
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "email.md").write_text(md + "\n", encoding="utf-8")
