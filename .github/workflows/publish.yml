@@ -7,6 +7,12 @@
 #
 # If anything fails (NHL API down, a data change, a failed test), nothing is published:
 # the last good page stays live and GitHub emails you that the run failed.
+#
+# After a game is published, the last job emails the post-game notes (noteworthy stats + "No Filter"),
+# once per game, after the publish that has the game's final stats (official, on-ice numbers in). See tools/postgame_email.py. Claude runs as Claude Code
+# on the owner's Claude subscription (no paid API key). It needs these repo secrets: CLAUDE_CODE_OAUTH_TOKEN
+# (from `claude setup-token`), SMTP_USER, SMTP_PASSWORD, and optionally EMAIL_TO. Until they're set,
+# it skips quietly.
 name: Publish player rankings
 
 on:
@@ -14,6 +20,11 @@ on:
     - cron: "30 8 * * *"
     - cron: "0,30 2-6 * * *"
   workflow_dispatch:
+    inputs:
+      resend_postgame_email:
+        description: "Email the latest game's post-game notes now, even if they were already sent"
+        type: boolean
+        default: false
   push:
     branches: [main]
 
@@ -72,6 +83,15 @@ jobs:
       - name: Smoke-test the real page
         run: python -m pytest -q tests/test_browser.py --page _site/index.html -k "loads_and_draws or player_card or share_game or share_player or safari"
 
+      - name: Pull the latest game's numbers for the post-game email
+        run: python tools/postgame_email.py brief _site/index.html --out postgame/brief.json
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: postgame-brief
+          path: postgame/brief.json
+          retention-days: 3
+
       - uses: actions/upload-pages-artifact@v5
         with:
           path: _site
@@ -93,3 +113,57 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/publish.yml/enable"
+
+  # Runs after every publish but only sends once per game (the list of games already emailed is kept in
+  # the Actions cache). If it fails, the page is already live; GitHub emails you and the next run retries.
+  postgame-email:
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        run: |
+          npm install -g @anthropic-ai/claude-code
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: postgame-brief
+          path: postgame
+
+      - name: Restore the list of games already emailed
+        uses: actions/cache/restore@v6
+        with:
+          path: .postgame_state
+          key: postgame-sent-${{ github.run_id }}
+          restore-keys: postgame-sent-
+
+      - id: email
+        name: Write and send the post-game email (if it's due)
+        env:
+          CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          FORCE: ${{ inputs.resend_postgame_email && '--force' || '' }}
+        run: python tools/postgame_email.py send postgame/brief.json $FORCE
+
+      - name: Remember that this game was emailed
+        if: steps.email.outputs.sent == 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: .postgame_state
+          key: postgame-sent-${{ github.run_id }}
+
+      # a copy of what was written, on the run's page under Artifacts, in case the email goes astray
+      - uses: actions/upload-artifact@v7
+        if: always() && hashFiles('postgame/email.html') != ''
+        with:
+          name: postgame-email
+          path: postgame/email.*
+          retention-days: 30

@@ -9,3 +9,5 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .DS_Store
+postgame/
+.postgame_state/

@@ -137,9 +137,10 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
         sched_g = by_id.get(gid, {})
         opp_obj = sched_g.get("homeTeam" if not g["us_home"] else "awayTeam", g["them"])
         games.append(dict(
-            id=gid, n=r["n"], date=r["date"], opp=r["opp"],
+            id=gid, n=r["n"], date=r["date"], start=sched_g.get("startTimeUTC"), opp=r["opp"],
             oppName=sv.txt(opp_obj.get("commonName"), r["opp"]),
             home=g["us_home"], gf=r["gf"], ga=r["ga"], res=r["res"], sfx=r["suffix"], venue=g["venue"],
+            official=box.get("gameState") == sv.OFFICIAL,  # the NHL has made the stats official (the post-game email waits for this)
             takeaway=sv.game_takeaway(g),
             st=dict(sog=list(s["sog"]), att=list(s["attempts"]), att5=list(s["attempts5v5"]),
                     fo=list(s["faceoffs"]), hits=list(s["hits"]), blk=list(s["blockedShots"]),

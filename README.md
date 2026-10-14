@@ -25,6 +25,30 @@ To change the footer credit, go to the repo's **Settings → Secrets and variabl
 
 The season switches over on its own: until the Stars play a regular-season game, the page shows last season.
 
+## The post-game email
+
+After each game, the workflow also emails you two things to paste into Substack:
+
+1. **Noteworthy stats**: 8 to 14 bullets on the game's most interesting numbers.
+2. **No Filter**: a one-paragraph recap, then the questions a reporter would ask the coach if they could ask anything, each followed by a paragraph on why it needs asking.
+
+Claude writes both from the page's own numbers (the same player scores as the site) and a few web searches for things like injuries, what the coach said, and how fans and local media reacted. It sends once per game, right after the site update that brings in the game's final stats: when the NHL has made the game official and the on-ice numbers (the last stats to arrive) are on the page. That can be late at night or with the 3:30 am run. If the NHL still hasn't posted everything 18 hours after puck drop, it sends anyway and says what was missing. Each email ends with a note on that and on how much work Claude did.
+
+(Reading the r/DallasStars post-game thread was tried and dropped: Reddit now gives its API only to moderators and blocks scripts that read the site without it.)
+
+To switch it on, add these on the repo's **Settings → Secrets and variables → Actions → Secrets** page (**New repository secret**):
+
+| Secret | What it is |
+|---|---|
+| `CLAUDE_CODE_OAUTH_TOKEN` | Lets the workflow use Claude on **your Claude subscription** (no API key, no extra bill; each game uses a little of your plan's usage). To make it, open the Terminal app and run `claude setup-token`, sign in when the browser opens, and paste the long token it prints (it starts with `sk-ant-oat`) in as this secret. If the token ever expires, the email step fails, GitHub emails you, and you make a new one the same way. |
+| `SMTP_USER` | The Gmail address that sends the email. |
+| `SMTP_PASSWORD` | A Google **app password** for that address (myaccount.google.com/apppasswords; needs 2-Step Verification). Not your normal password. |
+| `EMAIL_TO` | Optional: where to send it, if not to `SMTP_USER`. |
+
+Until `CLAUDE_CODE_OAUTH_TOKEN`, `SMTP_USER` and `SMTP_PASSWORD` are all set, the email step just skips.
+
+To get an email right now (to test it, or to re-send one), open **Actions → Publish player rankings → Run workflow**, tick **Email the latest game's post-game notes now**, and run it. If an email ever goes missing, a copy is on that run's page under **Artifacts** (`postgame-email`).
+
 ## Running it on your own computer (optional)
 
 You need Python 3.9 or newer.
