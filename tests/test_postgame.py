@@ -115,8 +115,10 @@ def test_send_once_per_game(brief, tmp_path, monkeypatch):
 def test_ask_claude_runs_claude_code(brief, monkeypatch):
     seen = {}
 
-    def fake_run(cmd, input, cwd, **kw):
-        seen.update(cmd=cmd, input=input, cwd=cwd)
+    monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "sk-ant-oat01-abc\ndef ")
+
+    def fake_run(cmd, input, cwd, env, **kw):
+        seen.update(cmd=cmd, input=input, cwd=cwd, token=env["CLAUDE_CODE_OAUTH_TOKEN"])
         res = {"type": "result", "subtype": "success", "is_error": False, "num_turns": 4, "result": ANSWER,
                "usage": {"server_tool_use": {"web_search_requests": 3}}, "modelUsage": {"claude-opus-5-5": {}}}
         return pe.subprocess.CompletedProcess(cmd, 0, json.dumps(res), "")
@@ -127,6 +129,7 @@ def test_ask_claude_runs_claude_code(brief, monkeypatch):
     assert seen["cmd"][:2] == ["claude", "-p"] and "--system-prompt" in seen["cmd"] and "WebSearch,WebFetch" in seen["cmd"]
     assert '"siteHeadline"' in seen["input"]
     assert not Path(seen["cwd"]).exists(), "ran in a throwaway folder"
+    assert seen["token"] == "sk-ant-oat01-abcdef", "line breaks from copying the token are dropped"
 
     monkeypatch.setattr(pe.subprocess, "run", lambda cmd, **kw: pe.subprocess.CompletedProcess(cmd, 1, json.dumps(
         {"type": "result", "subtype": "success", "is_error": True, "result": "Failed to authenticate"}), ""))

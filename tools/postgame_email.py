@@ -180,8 +180,11 @@ def ask_claude(brief: dict) -> tuple[str, dict]:
     cmd = ["claude", "-p", "--model", MODEL, "--effort", "high", "--system-prompt", SYSTEM,
            "--tools", "WebSearch,WebFetch", "--allowedTools", "WebSearch", "WebFetch",
            "--output-format", "json", "--no-session-persistence"]
+    env = dict(os.environ)
+    if env.get("CLAUDE_CODE_OAUTH_TOKEN"):  # a long token copied out of Terminal can pick up a line break
+        env["CLAUDE_CODE_OAUTH_TOKEN"] = "".join(env["CLAUDE_CODE_OAUTH_TOKEN"].split())
     with tempfile.TemporaryDirectory() as cwd:  # an empty folder, so it doesn't pick up this repo's CLAUDE.md
-        run = subprocess.run(cmd, input="\n\n".join(parts), capture_output=True, text=True, cwd=cwd, timeout=20 * 60)
+        run = subprocess.run(cmd, input="\n\n".join(parts), capture_output=True, text=True, cwd=cwd, env=env, timeout=20 * 60)
     try:
         res = json.loads(run.stdout)
     except ValueError:
@@ -257,7 +260,8 @@ def email_bodies(brief: dict, md: str, notes: list[str]) -> tuple[str, str]:
 
 
 def send_mail(subj: str, text: str, page: str) -> str:
-    user, pw = os.environ["SMTP_USER"], os.environ["SMTP_PASSWORD"]
+    # Google shows app passwords in groups of four ("abcd efgh ijkl mnop"); the spaces aren't part of it
+    user, pw = os.environ["SMTP_USER"].strip(), "".join(os.environ["SMTP_PASSWORD"].split())
     to = os.environ.get("EMAIL_TO") or user
     msg = EmailMessage()
     msg["Subject"], msg["From"], msg["To"] = subj, user, to
