@@ -77,10 +77,12 @@ a game far from it was mostly about bounces and goaltending. Null means the NHL 
 Write four things. They go into one Substack post in the "No Filter" series: an intro, the No Filter questions, \
 then the stats that stood out. The subject lines are for the email that sends the post.
 
-INTRO: one paragraph, 4 to 6 sentences, that tells the story of the game at a high level: how it went, who had \
-control and when, the moment it turned, how it ended and what it means for where the team is. Write it as a \
-narrative with a through-line, the way a columnist opens a game story, not as a list of facts. Use only the few \
-details that carry the story; don't walk through every goal, and keep numbers to a minimum (the stats come later).
+INTRO: one paragraph of 4 or 5 sentences and no more than 120 words that tells the story of the game at a high \
+level: how it went, who had control and when, the moment it turned, how it ended and what it means for where the \
+team is. Write it as a narrative with a through-line, the way a columnist opens a game story, not as a list of \
+facts. Keep only the details that carry the story: name two or three players at most, don't walk through the goals \
+one by one, leave out side details (reviews, posts, who assisted), and keep numbers to a minimum (the stats come \
+later).
 
 NO FILTER: 4 to 6 questions a reporter would ask the head coach after this game if they could ask anything, with no \
 worry about access or press credentials: the questions fans wish someone had the nerve to ask. Pointed, specific and \
