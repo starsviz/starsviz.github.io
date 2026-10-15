@@ -16,18 +16,27 @@ import postgame_email as pe  # noqa: E402
 
 ANSWER = """Let me check a couple of things first.
 
-=== STATS ===
-- **Seguin** scored a 100, his best game so far.
-- Dallas took 56% of the 5-on-5 shot attempts & still lost.
-
-=== NO FILTER ===
+=== INTRO ===
 The Stars outshot Colorado and lost anyway.
 
+=== NO FILTER ===
 ## Why was Johnston *not* in the lineup?
 He'd played every game. Fans wanted to know.
 
 ## What's wrong with the power play?
-It's 2 for 14."""
+It's 2 for 14.
+
+=== STATS ===
+- **Seguin** scored a 100, his best game so far.
+- Dallas took 56% of the 5-on-5 shot attempts & still lost.
+
+=== SUBJECT LINES ===
+1. Three shots in the third
+2. Seguin's perfect night wasn't enough
+3. Who sat Johnston?
+4. The power play is 2 for 14
+5. Outshot, outplayed, out of luck"""
+START = ANSWER.index("=== INTRO ===")
 
 
 @pytest.fixture(scope="module")
@@ -73,15 +82,26 @@ def test_when_it_sends():
 
 
 def test_email_format(brief):
-    md = ANSWER[ANSWER.index("=== STATS ==="):]
-    stats, nofilter = pe.split(md)
-    assert stats.startswith("- **Seguin**") and nofilter.startswith("The Stars")
-    h = pe.md_html(stats)
+    md = ANSWER[START:]
+    sec = pe.split(md)
+    assert sec["STATS"].startswith("- **Seguin**") and sec["INTRO"].startswith("The Stars")
+    h = pe.md_html(sec["STATS"])
     assert h.count("<li>") == 2 and "<strong>Seguin</strong>" in h and "&amp;" in h and "<ul>" in h
-    h = pe.md_html(nofilter)
-    assert h.count("<h2>") == 2 and h.count("<p>") == 3 and "<em>not</em>" in h
-    text, page = pe.email_bodies(brief, md, ["note one", "note two"])
-    assert "NO FILTER" in text and "<h1>No Filter</h1>" in page and "note two" in page
+    h = pe.md_html(sec["NO FILTER"])
+    assert h.count("<h2>") == 2 and h.count("<p>") == 2 and "<em>not</em>" in h
+    assert pe.md_html(sec["SUBJECT LINES"]).count("<li>") == 5 and "<ol>" in pe.md_html(sec["SUBJECT LINES"])
+    with pytest.raises(ValueError, match="SUBJECT LINES"):
+        pe.split(md[:md.index("=== SUBJECT LINES ===")])
+
+    text, page = pe.email_bodies(dict(brief, site="https://example.com/"), md, ["note one", "note two"])
+    order = ["Subject line ideas", "Three shots in the third", "<p>The Stars outshot", "<h1>No Filter</h1>",
+             '<p>Here are the "No Filter" questions I would have liked to see at the postgame presser.</p>',
+             "Why was Johnston", "<h1>Some stats that stood out</h1>", "<strong>Seguin</strong> scored",
+             "Check out the player grades", "note two"]
+    at = [page.index(x) for x in order]
+    assert at == sorted(at), "subject ideas, intro, No Filter, stats, site link, notes"
+    assert ('at the <a href="https://example.com/">Stick Language Stats page</a>.' in page)
+    assert "Stick Language Stats page (https://example.com/)" in text and text.index("NO FILTER") < text.index("SOME STATS")
     assert pe.subject(brief).startswith(f"Game {brief['game']['number']}: ")
 
 
@@ -100,7 +120,7 @@ def test_send_once_per_game(brief, tmp_path, monkeypatch):
     assert pe.send(path, state, out, force=False, dry_run=False) is False, "no Claude token in GitHub Actions: skips"
     monkeypatch.setenv("CLAUDE_CODE_OAUTH_TOKEN", "test")
     calls = []
-    monkeypatch.setattr(pe, "ask_claude", lambda b: (calls.append(b["game"]["id"]) or ANSWER[ANSWER.index("=== STATS ==="):],
+    monkeypatch.setattr(pe, "ask_claude", lambda b: (calls.append(b["game"]["id"]) or ANSWER[START:],
                                                         {"turns": 3, "model": "claude-opus-5-5"}))
     mails = []
     monkeypatch.setattr(pe, "send_mail", lambda *a: mails.append(a) or "me@example.com")
@@ -124,7 +144,7 @@ def test_ask_claude_runs_claude_code(brief, monkeypatch):
         return pe.subprocess.CompletedProcess(cmd, 0, json.dumps(res), "")
     monkeypatch.setattr(pe.subprocess, "run", fake_run)
     md, usage = pe.ask_claude(brief)
-    assert md.startswith("=== STATS ===") and "Let me check" not in md
+    assert md.startswith("=== INTRO ===") and "Let me check" not in md
     assert usage == {"turns": 4, "model": "claude-opus-5-5"}
     assert seen["cmd"][:2] == ["claude", "-p"] and "--system-prompt" in seen["cmd"] and "WebSearch,WebFetch" in seen["cmd"]
     assert '"siteHeadline"' in seen["input"]

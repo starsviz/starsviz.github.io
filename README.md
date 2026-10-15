@@ -27,10 +27,14 @@ The season switches over on its own: until the Stars play a regular-season game,
 
 ## The post-game email
 
-After each game, the workflow also emails you two things to paste into Substack:
+After each game, the workflow also emails you a draft of that game's **No Filter** post, in the order it runs:
 
-1. **Noteworthy stats**: 8 to 14 bullets on the game's most interesting numbers.
-2. **No Filter**: a one-paragraph recap, then the questions a reporter would ask the coach if they could ask anything, each followed by a paragraph on why it needs asking.
+1. **Subject line ideas**: five options for the post's email subject.
+2. **The intro**: one paragraph telling the story of the game.
+3. **No Filter**: the line "Here are the "No Filter" questions I would have liked to see at the postgame presser.", then the questions a reporter would ask the coach if they could ask anything, each followed by a paragraph on why it needs asking.
+4. **Some stats that stood out**: 8 to 14 one-sentence bullets, then "Check out the player grades, performance charts, and full stats for each skater at the Stick Language Stats page." with a link to the site.
+
+The two fixed lines are added exactly as written; Claude writes the rest.
 
 Claude writes both from the page's own numbers (the same player scores as the site) and a few web searches for things like injuries, what the coach said, and how fans and local media reacted. It sends once per game, right after the site update that brings in the game's final stats: when the NHL has made the game official and the on-ice numbers (the last stats to arrive) are on the page. That can be late at night or with the 3:30 am run. If the NHL still hasn't posted everything 18 hours after puck drop, it sends anyway and says what was missing. Each email ends with a note on that and on how much work Claude did.
 

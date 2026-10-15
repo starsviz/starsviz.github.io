@@ -81,6 +81,7 @@
   const sumOf = (arr, k) => sum(arr.map(x => x.adv[k]).filter(v => v != null && !isNaN(v)));
 
   return {
+    site: M.siteUrl || null,  // where the page is published (the email links to it)
     game: {
       id: g.id, number: g.n, date: g.date, start: g.start || null, opponent: g.oppName, opponentAbbrev: g.opp,
       // the NHL's last numbers to arrive: the game made official, and on-ice shot attempts and ice time by situation

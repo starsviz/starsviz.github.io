@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
-postgame_email.py - after each game, emails the owner two things to paste into
-Substack: (1) the game's noteworthy stats as bullets, and (2) "No Filter": a
-one-paragraph recap and the questions a reporter would ask the coach if they
-could ask anything, each with a paragraph on why it needs asking. Claude writes
-both from the page's own numbers and a few web searches (injuries, what the
-coach said, how fans and local media reacted).
+postgame_email.py - after each game, emails the owner a draft of his "No Filter"
+Substack post, in the order it runs: 5 subject line ideas, a one-paragraph intro
+telling the story of the game, the No Filter questions a reporter would ask the
+coach if they could ask anything (each with a paragraph on why it needs asking),
+then "Some stats that stood out" (one sentence each) and a link to the stats site.
+Claude writes it from the page's own numbers and a few web searches (injuries,
+what the coach said, how fans and local media reacted).
 
     # 1. pull one game's numbers out of the built page (default: the latest game)
     python tools/postgame_email.py brief _site/index.html --out postgame/brief.json [--game 2026020075]
@@ -73,17 +74,16 @@ on few games, so say "so far" where that matters. The on-ice 5-on-5 attempt shar
 in plain words when you use it. PDO is 5-on-5 shooting percentage plus save percentage; 1.000 is average, and \
 a game far from it was mostly about bounces and goaltending. Null means the NHL hasn't posted that number yet.
 
-Write two things.
+Write four things. They go into one Substack post in the "No Filter" series: an intro, the No Filter questions, \
+then the stats that stood out. The subject lines are for the email that sends the post.
 
-PART 1, NOTEWORTHY STATS: 8 to 14 bullets with the most interesting and noteworthy numbers from this game, one or \
-two sentences each, leading with the fact. Favor what a fan won't get from the box score: player scores against the \
-player's normal, streaks and droughts, season highs and lows, ice-time changes that show who the coach trusts, \
-special teams, shot quality (slot attempts), the period where the game turned, the goalie against his season. Every \
-number must come from the game data, exactly as given. Anything from web search must be fact, not opinion.
+INTRO: one paragraph, 4 to 6 sentences, that tells the story of the game at a high level: how it went, who had \
+control and when, the moment it turned, how it ended and what it means for where the team is. Write it as a \
+narrative with a through-line, the way a columnist opens a game story, not as a list of facts. Use only the few \
+details that carry the story; don't walk through every goal, and keep numbers to a minimum (the stats come later).
 
-PART 2, NO FILTER: first a one-paragraph recap of the game (4 to 6 sentences). Then 4 to 6 questions a reporter \
-would ask the head coach after this game if they could ask anything, with no worry about access or press \
-credentials: the questions fans wish someone had the nerve to ask. Pointed, specific and \
+NO FILTER: 4 to 6 questions a reporter would ask the head coach after this game if they could ask anything, with no \
+worry about access or press credentials: the questions fans wish someone had the nerve to ask. Pointed, specific and \
 fair. They can be about players, the team, this game, or a trend over several games: lineup and ice-time decisions, \
 line combinations, the goalie, special-teams units, systems, effort and accountability. No cheap shots, nothing \
 personal. Each question is one or two sentences, phrased the way you'd ask it in the room (address the coach as \
@@ -92,8 +92,18 @@ where it helps, by what you found: what the coach said, what fans and writers ar
 puzzled about something, check it against the numbers and say whether the numbers back them up. Pick only the best \
 questions.
 
-Put what other writers said in your own words rather than copying their sentences. Never invent quotes. If you mention something a coach or player said, it \
-must come from a source you found.
+STATS: 8 to 14 bullets with the most interesting numbers from this game, each exactly one sentence, leading with the \
+fact. Favor what a fan won't get from the box score: player scores against the player's normal, streaks and \
+droughts, season highs and lows, ice-time changes that show who the coach trusts, special teams, shot quality (slot \
+attempts), the period where the game turned, the goalie against his season. Don't repeat a point the questions \
+already made with the same number. Every number must come from the game data, exactly as given. Anything from web \
+search must be fact, not opinion.
+
+SUBJECT LINES: 5 ideas for the email subject line of the post, each under 60 characters, specific to this game, \
+each from a different angle (the result, a player, the sharpest question). No clickbait, no emoji, no hashtags.
+
+Put what other writers said in your own words rather than copying their sentences. Never invent quotes. If you \
+mention something a coach or player said, it must come from a source you found.
 
 Style: plain, direct American English, like a sharp beat writer. Short sentences. No hype, no clichés, no em dashes, \
 no "it's not X, it's Y", no lists of three for rhythm, no closing summaries or morals. The writer is wary of anything \
@@ -101,18 +111,26 @@ that reads as AI-written.
 
 Reply in exactly this format, with nothing after it:
 
-=== STATS ===
-- First bullet.
-- Second bullet.
+=== INTRO ===
+Intro paragraph.
 
 === NO FILTER ===
-Recap paragraph.
-
 ## First question?
 Context paragraph.
 
 ## Second question?
 Context paragraph.
+
+=== STATS ===
+- One sentence.
+- One sentence.
+
+=== SUBJECT LINES ===
+1. First idea
+2. Second idea
+3. Third idea
+4. Fourth idea
+5. Fifth idea
 
 Plain text apart from **bold** for emphasis, used sparingly. No links, no citation markers, no other headings."""
 
@@ -175,7 +193,7 @@ def ask_claude(brief: dict) -> tuple[str, dict]:
     on a Mac where `claude` is logged in, it just works."""
     g = brief["game"]
     parts = [f"<game_data>\n{json.dumps(brief, indent=1, ensure_ascii=False)}\n</game_data>",
-             f"Write both parts for game {g['number']} of the season, the Stars' {g['result']} against the "
+             f"Write all four for game {g['number']} of the season, the Stars' {g['result']} against the "
              f"{g['opponent']} on {g['date']}."]
     cmd = ["claude", "-p", "--model", MODEL, "--effort", "high", "--system-prompt", SYSTEM,
            "--tools", "WebSearch,WebFetch", "--allowedTools", "WebSearch", "WebFetch",
@@ -194,14 +212,24 @@ def ask_claude(brief: dict) -> tuple[str, dict]:
     # (Claude Code doesn't report how many web searches it ran, so the email doesn't claim a number)
     usage = {"turns": res.get("num_turns", 0), "model": next(iter(res.get("modelUsage") or {}), MODEL)}
     out = res.get("result") or ""
-    if "=== STATS ===" not in out or "=== NO FILTER ===" not in out:
-        raise SystemExit("Claude's answer didn't come back in the expected format:\n\n" + out)
-    return out[out.index("=== STATS ==="):].strip(), usage
+    try:
+        split(out)
+    except ValueError as e:
+        raise SystemExit(f"Claude's answer didn't come back in the expected format ({e}):\n\n" + out)
+    return out[out.index("=== INTRO ==="):].strip(), usage
 
 
-def split(md: str) -> tuple[str, str]:
-    stats, nofilter = md.split("=== NO FILTER ===", 1)
-    return stats.replace("=== STATS ===", "").strip(), nofilter.strip()
+SECTIONS = ("INTRO", "NO FILTER", "STATS", "SUBJECT LINES")
+
+
+def split(md: str) -> dict[str, str]:
+    """Claude's answer by section ("INTRO", "NO FILTER", "STATS", "SUBJECT LINES"), in any order."""
+    parts = re.split(r"^=== ([A-Z ]+) ===[ \t]*$", md, flags=re.M)
+    found = {name: text.strip() for name, text in zip(parts[1::2], parts[2::2])}
+    missing = [n for n in SECTIONS if not found.get(n)]
+    if missing:
+        raise ValueError("missing " + ", ".join(missing))
+    return found
 
 
 def inline(s: str) -> str:
@@ -211,23 +239,29 @@ def inline(s: str) -> str:
 
 
 def md_html(md: str) -> str:
-    """Just the markdown Claude is asked for: "- " bullets, "## " headings, paragraphs, **bold**, *italics*."""
-    out, items = [], []
+    """Just the markdown Claude is asked for: "- " bullets, "1. " numbered lists, "## " headings, paragraphs,
+    **bold**, *italics*."""
+    out, items, tag = [], [], "ul"
     for block in re.split(r"\n\s*\n", md.strip()):
         for line in block.strip().splitlines():
             line = line.strip()
-            if line.startswith(("- ", "* ")):
-                items.append(f"<li>{inline(line[2:])}</li>")
+            num = re.match(r"\d+[.)]\s+", line)
+            if line.startswith(("- ", "* ")) or num:
+                if items and tag != ("ol" if num else "ul"):
+                    out.append(f"<{tag}>" + "".join(items) + f"</{tag}>")
+                    items = []
+                tag = "ol" if num else "ul"
+                items.append(f"<li>{inline(line[num.end() if num else 2:])}</li>")
                 continue
             if items:
-                out.append("<ul>" + "".join(items) + "</ul>")
+                out.append(f"<{tag}>" + "".join(items) + f"</{tag}>")
                 items = []
             if line.startswith("#"):
                 out.append(f"<h2>{inline(line.lstrip('#').strip())}</h2>")
             elif line:
                 out.append(f"<p>{inline(line)}</p>")
     if items:
-        out.append("<ul>" + "".join(items) + "</ul>")
+        out.append(f"<{tag}>" + "".join(items) + f"</{tag}>")
     return "\n".join(out)
 
 
@@ -238,19 +272,38 @@ def subject(brief: dict) -> str:
     return f"Game {g['number']}: {res} {g['score']['DAL']}-{g['score'][g['opponentAbbrev']]} {where} {g['opponent']} · stats + No Filter"
 
 
+# The owner's own wording, added as written (not left to Claude)
+NO_FILTER_LEAD = 'Here are the "No Filter" questions I would have liked to see at the postgame presser.'
+STATS_HEADING = "Some stats that stood out"
+SITE_LINK_TEXT = "Stick Language Stats page"
+SITE_LINE = "Check out the player grades, performance charts, and full stats for each skater at the {link}."
+DEFAULT_SITE = "https://sticklanguagestats.com/"  # only when the page was built without --site-url
+
+
 def email_bodies(brief: dict, md: str, notes: list[str]) -> tuple[str, str]:
-    stats, nofilter = split(md)
+    """In the order the post runs: subject line ideas, the intro, No Filter, the stats, the link to the site."""
+    sec = split(md)
     g = brief["game"]
-    head = f"{brief['game']['siteHeadline']} ({g['date']}, record {g['recordAfter']})"
-    text = f"{head}\n\nNOTEWORTHY STATS\n\n{stats}\n\n\nNO FILTER\n\n{nofilter}\n\n--\n" + "\n".join(notes)
+    site = brief.get("site") or DEFAULT_SITE
+    head = f"{g['siteHeadline']} ({g['date']}, record {g['recordAfter']})"
+    text = (f"{head}\n\nSUBJECT LINE IDEAS\n\n{sec['SUBJECT LINES']}\n\n\n{sec['INTRO']}\n\n\nNO FILTER\n\n"
+            f"{NO_FILTER_LEAD}\n\n{sec['NO FILTER']}\n\n\n{STATS_HEADING.upper()}\n\n{sec['STATS']}\n\n"
+            f"{SITE_LINE.format(link=f'{SITE_LINK_TEXT} ({site})')}\n\n--\n" + "\n".join(notes))
+    link = f'<a href="{html.escape(site)}">{SITE_LINK_TEXT}</a>'
     style = ("font-family: Georgia, serif; font-size: 17px; line-height: 1.55; color: #1a1a1a; max-width: 680px")
+    small = "font-family: Arial, sans-serif; font-size: 13px; color: #666"
     page = f"""<!doctype html><html><body style="{style}">
-<p style="font-family: Arial, sans-serif; font-size: 13px; color: #666">{html.escape(head)}</p>
-<h1>Noteworthy stats</h1>
-{md_html(stats)}
+<p style="{small}">{html.escape(head)}</p>
+<h3 style="font-family: Arial, sans-serif">Subject line ideas</h3>
+{md_html(sec['SUBJECT LINES'])}
 <hr>
+{md_html(sec['INTRO'])}
 <h1>No Filter</h1>
-{md_html(nofilter)}
+<p>{html.escape(NO_FILTER_LEAD, quote=False)}</p>
+{md_html(sec['NO FILTER'])}
+<h1>{STATS_HEADING}</h1>
+{md_html(sec['STATS'])}
+<p>{SITE_LINE.format(link=link)}</p>
 <hr>
 <p style="font-family: Arial, sans-serif; font-size: 12px; color: #888">{'<br>'.join(html.escape(n) for n in notes)}</p>
 </body></html>"""
