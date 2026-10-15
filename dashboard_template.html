@@ -545,10 +545,10 @@ function rankTable(rows, grp, g) {
       <td class="l">${scoreCell(r)}</td>${cols.map(c => statCell(r, c)).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
 const howItWorks = () => `<details class="how"><summary>How the player score works</summary>
-  <p>Every stat in a game is compared with how Stars players at the same position usually do in a game, then weighted and added up. It mixes what a player did himself (goals, assists, shots) with what happened while he was on the ice: "on-ice shot attempts" counts every Dallas shot attempt at 5-on-5 during his shifts, minus the opponent's, which is the best public measure of which way the play was going. The total is scaled like a school grade: <b>70 is a typical game</b> for that position, the 80s are a B, the 90s are an A and 100 is the most a player can get. About two out of three games land between 60 and 80, and an A comes along about once a game across the whole lineup. Forwards and defensemen are weighted differently but land on the same scale, so a 90 means the same thing for either.</p>
+  <p>Every stat in a game is compared with how Stars players at the same position usually do in a game, then weighted and added up. It mixes what a player did himself (goals, assists, shots) with what happened while he was on the ice: "on-ice shot attempts" (often called Corsi) counts every Dallas shot attempt at 5-on-5 during his shifts, minus the opponent's, which is the best public measure of which way the play was going. The total is scaled like a school grade: <b>70 is a typical game</b> for that position, the 80s are a B, the 90s are an A and 100 is the most a player can get. About two out of three games land between 60 and 80, and an A comes along about once a game across the whole lineup. Forwards and defensemen are weighted differently but land on the same scale, so a 90 means the same thing for either.</p>
   <div class="grid2">${[["F", "Forwards"], ["D", "Defensemen"]].map(([k, lab]) => `<div><p class="chapter-label">${lab}</p><ul class="wts">${WEIGHTS[k].map(([, w, name]) =>
     `<li><span>${esc(name)}</span><span class="wbar" aria-hidden="true"><i style="width:${Math.abs(w) / WMAX * 100}%" class="${w < 0 ? "neg" : ""}"></i></span><b class="num">${Math.round(Math.abs(w) * 100)}%</b></li>`).join("")}</ul></div>`).join("")}</div>
-  <p class="note">The chart splits that score in two, each on the same scale, and its axes are the same for every game, so a dot's spot means the same thing from one night to the next. <b>Offense</b> (left to right) is goals, assists and shots. <b>Two-way play</b> (bottom to top) is everything else except ice time: on-ice shot attempts, plus-minus, takeaways and giveaways, blocks, hits, penalties and faceoffs. Ice time counts toward the full score only.</p></details>`;
+  <p class="note">The chart splits that score in two, each on the same scale, and its axes are the same for every game, so a dot's spot means the same thing from one night to the next. <b>Offense</b> (left to right) is goals, assists and shots. <b>Tilting the ice</b> (bottom to top) is everything else except ice time, the things that push the play toward the other team's net: on-ice shot attempts (Corsi), plus-minus, takeaways and giveaways, blocks, hits, penalties and faceoffs. Ice time counts toward the full score only.</p></details>`;
 
 // What the quadrant chart plots. x and y take a row ({ pid, s, grp, l }); sx/sy are where the quadrants split.
 // The axes are the same for every game (a reader pointed out that axes fitted to each game made a 40 one night sit where
@@ -558,10 +558,10 @@ const QUAD_DOMAIN = { x0: 55, x1: 104, y0: 40, y1: 104 };
 const quadDomain = () => QUAD_DOMAIN;
 const QUAD = {
   x: r => Math.max(QUAD_DOMAIN.x0 + 1.5, r.l.off), y: r => Math.max(QUAD_DOMAIN.y0 + 1.5, r.l.two), sx: MID, sy: MID, domain: quadDomain,
-  xLab: "Offense: goals, assists, shots →", yLab: "Two-way play: on-ice shots, defense, discipline →",
-  corners: ["Did it all", "Strong two-way", "Strong offense", "Room for more"],  // top right, top left, bottom right, bottom left
-  aria: "Each skater's offense score against his two-way score for this game",
-  tip: r => `Offense ${Math.round(r.l.off)} · Two-way ${Math.round(r.l.two)}<br>Player score ${Math.round(r.l.score)} (${pm(Math.round(r.l.dScore))} vs his average)`,
+  xLab: "Offense: goals, assists, shots →", yLab: "Tilting the ice: Corsi, defense, discipline →",
+  corners: ["Did it all", "Strong support", "Strong offense", "Room for more"],  // top right, top left, bottom right, bottom left
+  aria: "Each skater's offense score against how much he tilted the ice in this game",
+  tip: r => `Offense ${Math.round(r.l.off)} · Tilting the ice ${Math.round(r.l.two)}<br>Player score ${Math.round(r.l.score)} (${pm(Math.round(r.l.dScore))} vs his average)`,
 };
 function quadChart(el, rows, g, zoomUi) {
   // Zoomable: pinch (touch or trackpad), mouse-drag to pan, or the -/+/Reset buttons. Zooming changes the
@@ -1118,10 +1118,10 @@ function renderGame() {
   const offOnly = rows.filter(r => r.l.off >= at(2 / 3) && r.l.two <= at(-2 / 3)).sort((a, b) => (b.l.off - b.l.two) - (a.l.off - a.l.two))[0];
   const quiet = rows.filter(r => r.l.two >= at(1) && r.l.p === 0).sort((a, b) => b.l.two - a.l.two)[0];
   let qHead = best ? `${plast(best.pid)} led the way with ${aan(Math.round(best.l.score))}` : "Player scores";
-  if (best && topTwo && topTwo.pid !== best.pid && topTwo.l.two >= at(1)) qHead += `; ${plast(topTwo.pid)} had the best two-way game`;
+  if (best && topTwo && topTwo.pid !== best.pid && topTwo.l.two >= at(1)) qHead += `; ${plast(topTwo.pid)} tilted the ice the most`;
   let qCap = `${cap1(word(both))} ${both === 1 ? "skater" : "skaters"} landed in the top-right corner, above average on both.`;
-  if (offOnly) qCap += ` ${pname(offOnly.pid)} produced (offense ${Math.round(offOnly.l.off)}), but the play went against him (two-way ${Math.round(offOnly.l.two)}).`;
-  else if (quiet && (!best || quiet.pid !== best.pid)) qCap += ` ${pname(quiet.pid)} had a strong game without a point (two-way ${Math.round(quiet.l.two)}).`;
+  if (offOnly) qCap += ` ${pname(offOnly.pid)} produced (offense ${Math.round(offOnly.l.off)}), but the play went against him (tilting the ice ${Math.round(offOnly.l.two)}).`;
+  else if (quiet && (!best || quiet.pid !== best.pid)) qCap += ` ${pname(quiet.pid)} had a strong game without a point (tilting the ice ${Math.round(quiet.l.two)}).`;
   const gk = g.gk.map(r => ({ pid: r[0], sa: r[1], sv: r[2], ga: r[3], toi: r[4], dec: r[6], evSv: r[7], evSa: r[8], pkSv: r[9], pkSa: r[10], s: goalies[r[0]] }));
   const noOnIce = rows.length > 0 && rows.every(r => r.l.cfd == null);
   // the whole game's shot chart, both teams (blocked shots have no useful location, so they're left off)
@@ -1314,7 +1314,7 @@ function skaterGame(body, pid, s, g) {
     + `<div class="card"><p class="chapter-label">1 · Compared with his normal</p><h2>${l.dScore >= 0 ? "An above-average night for him" : "A below-average night for him"}</h2>
       <p class="cap">Bars are this game; green beats his average, gray falls short. The black tick is his season average per game.</p>
       ${vsRows([["Player score", Math.round(l.score), s.avgScore, v => Math.round(v), 100], ["Offense", Math.round(l.off), s.avgOff, v => Math.round(v), 100],
-        ["Two-way play", Math.round(l.two), s.avgTwo, v => Math.round(v), 100], ["Points", l.p, s.p / s.gp, v => +v.toFixed(2), maxOf("p")], ["Shots", l.sog, s.sog / s.gp, v => +v.toFixed(1), maxOf("sog")],
+        ["Tilting the ice", Math.round(l.two), s.avgTwo, v => Math.round(v), 100], ["Points", l.p, s.p / s.gp, v => +v.toFixed(2), maxOf("p")], ["Shots", l.sog, s.sog / s.gp, v => +v.toFixed(1), maxOf("sog")],
         ...(l.cf != null && s.cf != null ? [["Shot share", l.cf, s.cf, v => pct(v), 1]] : []), ["Ice time", l.toi, s.toigp, toi, maxOf("toi")], ["Hits", l.hits, s.hits / s.gp, v => +v.toFixed(1), maxOf("hits")], ["Blocks", l.blk, s.blk / s.gp, v => +v.toFixed(1), maxOf("blk")]])}</div>
     ${onIceGame(l, s, g, 2)}
     <div class="card"><p class="chapter-label">3 · When he showed up</p><h2>${inv.length ? `${plural(inv.length, "point")} and ${plural(att.length, "shot attempt")}` : `${plural(att.length, "shot attempt")}, no points`}</h2>
@@ -1603,7 +1603,7 @@ function cardQuad(C, rows, bx, by, bw, bh) {
   s += L(X(sx), Y(y1), X(sx), Y(y0), C.ink2, 2) + L(X(x0), Y(sy), X(x1), Y(sy), C.ink2, 2);
   s += T((X(x0) + X(x1)) / 2, by + bh - 2, "More offense →", { size: 22, w: 700, fill: C.ink2, anchor: "middle" });
   const my = (Y(y1) + Y(y0)) / 2;
-  s += T(bx + 16, my, "Better two-way play →", { size: 22, w: 700, fill: C.ink2, anchor: "middle", extra: `transform="rotate(-90 ${r1(bx + 16)} ${r1(my)})"` });
+  s += T(bx + 16, my, "Tilted the ice more →", { size: 22, w: 700, fill: C.ink2, anchor: "middle", extra: `transform="rotate(-90 ${r1(bx + 16)} ${r1(my)})"` });
   const boxes = [];
   const pts = rows.map(r => ({ r, x: X(QUAD.x(r)), y: Y(QUAD.y(r)) }));
   pts.forEach(p => boxes.push({ x: p.x - 14, y: p.y - 14, w: 28, h: 28 }));
@@ -1611,7 +1611,7 @@ function cardQuad(C, rows, bx, by, bw, bh) {
     s += p.r.grp === "D" ? `<rect x="${r1(p.x - 11)}" y="${r1(p.y - 11)}" width="22" height="22" rx="4" fill="${C.defc}" stroke="${C.bg}" stroke-width="3"/>`
       : `<circle cx="${r1(p.x)}" cy="${r1(p.y)}" r="12.5" fill="${C.accent}" stroke="${C.bg}" stroke-width="3"/>`;
   });
-  // names only for the players the story is about: the top three, the best two-way game, the roughest night
+  // names only for the players the story is about: the top three, whoever tilted the ice the most, the roughest night
   const byScore = rows.slice().sort((a, b) => b.l.score - a.l.score), named = new Set(byScore.slice(0, 3));
   const up = rows.slice().sort((a, b) => b.l.two - a.l.two)[0], down = byScore[byScore.length - 1];
   if (up && up.l.two >= at(1)) named.add(up);

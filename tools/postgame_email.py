@@ -68,8 +68,10 @@ fan blogs like Defending Big D) reacted. Look up who the Stars' head coach is ra
 
 About the player score: each stat is compared with how Stars players at the same position usually do in a game, \
 weighted, and scaled like a school grade. 70 is a typical game, the 80s a B, the 90s an A, 100 is the cap. The \
-median is about 68 and under 60 is a rough night. The offense score and two-way score are its two halves, on the \
-same scale. vsHisAverage is the score minus the player's own season average. Early in the season the averages rest \
+median is about 68 and under 60 is a rough night. The offense score and the tilting-the-ice score are its two \
+halves, on the same scale. Offense is the player's own goals, assists and shots. Tilting the ice is everything else \
+except ice time: on-ice shot attempts (Corsi), plus-minus, takeaways and giveaways, blocks, hits, penalties and \
+faceoffs. Call it "tilting the ice" (the site's name for it), never "two-way". vsHisAverage is the score minus the player's own season average. Early in the season the averages rest \
 on few games, so say "so far" where that matters. The on-ice 5-on-5 attempt share is often called Corsi; explain it \
 in plain words when you use it. PDO is 5-on-5 shooting percentage plus save percentage; 1.000 is average, and \
 a game far from it was mostly about bounces and goaltending. Null means the NHL hasn't posted that number yet.

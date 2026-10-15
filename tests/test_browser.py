@@ -249,7 +249,7 @@ def test_quadrant_names_stay_in_their_quadrants(browser, built_page, width, wide
       const v = ls.find(r => r.width < 3), hz = ls.find(r => r.height < 3);
       return [...svg.querySelectorAll('.qlab')].map(t => { const r = t.getBoundingClientRect();
         return [t.textContent, (r.left < v.left && r.right > v.left) || (r.top < hz.top && r.bottom > hz.top)]; }); }""")
-    assert " ".join(t for t, _ in crossing) == "DID IT ALL STRONG TWO-WAY STRONG OFFENSE ROOM FOR MORE"
+    assert " ".join(t for t, _ in crossing) == "DID IT ALL STRONG SUPPORT STRONG OFFENSE ROOM FOR MORE"
     assert [t for t, bad in crossing if bad] == []
     assert errors == []
     page.close()

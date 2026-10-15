@@ -35,7 +35,7 @@
       name: pname(s.pid), number: pl.num, pos: POS[pl.pos] || pl.pos, age: pl.age,
       teamRankTonight: i + 1,
       playerScore: r1(l.score), seasonAvgScore: r1(s.avgScore), vsHisAverage: r1(l.dScore),
-      offenseScore: r1(l.off), twoWayScore: r1(l.two),
+      offenseScore: r1(l.off), tiltingTheIceScore: r1(l.two),
       thisScoreRanksAmongHisGames: `${sorted.indexOf(l) + 1} of ${s.gp}`,
       seasonBestScore: best ? { score: r1(best.score), game: best.g.n, opp: best.g.opp } : null,
       tonight: {
