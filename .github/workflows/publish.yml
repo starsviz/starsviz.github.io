@@ -1,8 +1,10 @@
 # Rebuilds the player-rankings page from the NHL API and publishes it to GitHub Pages.
 #
 # When it runs (GitHub's clock is UTC; Dallas is UTC-5 in season, UTC-6 from November to March):
-#   - every night at 08:30 UTC (3:30 am Central in daylight time, 2:30 am in standard time)
-#   - every 30 minutes from 02:00 to 06:00 UTC, so a finished game shows up the same night
+#   - every night at 08:43 UTC (3:43 am Central in daylight time, 2:43 am in standard time)
+#   - every 30 minutes from 02:17 to 06:47 UTC, so a finished game shows up the same night
+#   Odd minutes on purpose: GitHub delays or drops scheduled runs when it's busy, worst at :00 and :30.
+#   In Sep-Oct 2026, with the times on :00/:30, only about 2 of the 11 daily runs happened, hours late.
 #   - whenever you press "Run workflow" on the Actions tab
 #
 # If anything fails (NHL API down, a data change, a failed test), nothing is published:
@@ -17,8 +19,8 @@ name: Publish player rankings
 
 on:
   schedule:
-    - cron: "30 8 * * *"
-    - cron: "0,30 2-6 * * *"
+    - cron: "43 8 * * *"
+    - cron: "17,47 2-6 * * *"
   workflow_dispatch:
     inputs:
       resend_postgame_email:
