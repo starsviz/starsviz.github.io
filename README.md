@@ -39,7 +39,7 @@ After each game, the workflow also emails you a draft of that game's **No Filter
 2. **The summary**: two or three sentences on the game at a high level.
 3. **Story of the Stats**: the line "Let's count down the 10 most telling stats from the game.", then the 10 stats that best tell the game's story, from #10 to #1, each a one-sentence heading with two or three sentences under it.
 4. **No Filter**: the line "Here are the "No Filter" questions I would have liked to see at the postgame presser.", then the questions a reporter would want answered if they could ask anything, each followed by a paragraph on why it needs asking.
-5. **Some stats that stood out**: 8 to 14 one-sentence bullets, then "Check out the player grades, performance charts, and full stats for each skater at the Stick Language Stats page." with a link to the site.
+5. **Some stats that stood out**: every interesting and noteworthy stat from the game, one sentence each (it may repeat stats from the countdown),, then "Check out the player grades, performance charts, and full stats for each skater at the Stick Language Stats page." with a link to the site.
 
 The three fixed lines are added exactly as written; Claude writes the rest.
 

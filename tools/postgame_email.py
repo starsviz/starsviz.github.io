@@ -108,11 +108,12 @@ numbers and, where it helps, by what you found: what the coach said, what fans a
 angry or puzzled about something, check it against the numbers and say whether the numbers back them up. Pick only \
 the best questions.
 
-STATS: 8 to 14 bullets with other interesting numbers from this game, each exactly one sentence, leading with the \
-fact. Favor what a fan won't get from the box score: a player's game against his own season average, streaks and \
-droughts, season highs and lows, ice-time changes that show who the coach trusts, special teams, shot quality (slot \
-attempts), the period where the game turned, the goalie against his season. Don't repeat a stat the countdown or the \
-questions already used.
+STATS: every interesting and noteworthy number from this game, one bullet each, as many bullets as that takes \
+(usually 12 to 20). Each is exactly one sentence, leading with the fact. This section stands on its own and the \
+writer uses it for a different purpose, so include a stat even if the countdown or the questions already used it. \
+Cover the whole game: team and player numbers, both goalies, special teams, and what a fan won't get from the box \
+score: a player's game against his own season average, streaks and droughts, season highs and lows, ice-time \
+changes that show who the coach trusts, shot quality (slot attempts), the period where the game turned.
 
 Every number must come from the game data, exactly as given, or from a source you found. Anything from web search \
 must be fact, not opinion. Put what other writers said in your own words rather than copying their sentences. Never \
