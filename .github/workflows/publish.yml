@@ -10,7 +10,7 @@
 # If anything fails (NHL API down, a data change, a failed test), nothing is published:
 # the last good page stays live and GitHub emails you that the run failed.
 #
-# After a game is published, the last job emails the post-game notes (noteworthy stats + "No Filter"),
+# After a game is published, the last job emails the post-game notes (Story of the Stats + "No Filter"),
 # once per game, after the publish that has the game's final stats (official, on-ice numbers in). See tools/postgame_email.py. Claude runs as Claude Code
 # on the owner's Claude subscription (no paid API key). It needs these repo secrets: CLAUDE_CODE_OAUTH_TOKEN
 # (from `claude setup-token`), SMTP_USER, SMTP_PASSWORD, and optionally EMAIL_TO. Until they're set,

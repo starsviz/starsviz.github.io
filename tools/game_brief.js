@@ -1,6 +1,8 @@
 // Run inside the built page (tools/postgame_email.py does this with Playwright) to pull out everything the
-// post-game email needs about one game, using the page's own numbers: the player score, season averages,
-// streaks and the rule-based headline all come from dashboard_template.html, so the email can't disagree with the site.
+// post-game email needs about one game, using the page's own numbers: season averages, streaks and the rule-based
+// headline all come from dashboard_template.html, so the email can't disagree with the site. The player scores are left
+// out on purpose (the owner's rule, Oct 16, 2026): they shift as the season's games come in, so an email quoting one
+// could be out of date by the time the post goes up.
 (gameId) => {
   const g = gameId ? byId.get(+gameId) : G[G.length - 1];
   if (!g) return null;
@@ -26,18 +28,11 @@
   const rows = g.sk.map(r => {
     const s = skaters[r[0]], l = s.log.find(x => x.g === g);
     return { s, l };
-  }).sort((a, b) => b.l.score - a.l.score);
-  const skaterOut = rows.map(({ s, l }, i) => {
+  }).sort((a, b) => b.l.toi - a.l.toi);  // most ice time first
+  const skaterOut = rows.map(({ s, l }) => {
     const pl = P[s.pid] || {};
-    const sorted = s.log.slice().sort((a, b) => b.score - a.score);
-    const best = sorted[0];
     return {
       name: pname(s.pid), number: pl.num, pos: POS[pl.pos] || pl.pos, age: pl.age,
-      teamRankTonight: i + 1,
-      playerScore: r1(l.score), seasonAvgScore: r1(s.avgScore), vsHisAverage: r1(l.dScore),
-      offenseScore: r1(l.off), tiltingTheIceScore: r1(l.two),
-      thisScoreRanksAmongHisGames: `${sorted.indexOf(l) + 1} of ${s.gp}`,
-      seasonBestScore: best ? { score: r1(best.score), game: best.g.n, opp: best.g.opp } : null,
       tonight: {
         goals: l.gl, primaryAssists: l.a1, secondaryAssists: l.a2, points: l.p, ppGoals: l.ppg,
         shotsOnGoal: l.sog, shotAttempts: l.att, slotAttempts: l.slot, plusMinus: l.pm,
@@ -59,7 +54,7 @@
       form: { label: s.trend.label, why: s.trend.why, pointStreak: s.trend.streak, gamesWithoutGoal: s.trend.drought,
         pointsLast10: s.trend.p10, toiLast10: toi(s.trend.toi10) },
       last10: s.log.filter(x => x.g.n <= g.n).slice(-10).map(x => ({ game: x.g.n, opp: x.g.opp, res: x.g.res,
-        score: r1(x.score), g: x.gl, a: x.a, sog: x.sog, pm: x.pm, toi: toi(x.toi) })),
+        g: x.gl, a: x.a, sog: x.sog, pm: x.pm, toi: toi(x.toi) })),
     };
   });
 
@@ -100,7 +95,7 @@
       byPeriod: periods,
     },
     opponentGoalies: g.oppGk.map(([name, sa, sv]) => ({ name, shotsAgainst: sa, saves: sv })),
-    dallasSkatersRankedByPlayerScore: skaterOut,
+    dallasSkatersByIceTime: skaterOut,
     dallasGoalies: goalieOut,
     lineup: {
       outSinceLastGame: prev ? [...prevLineup].filter(p => !inLineup.has(p)).map(pname) : [],

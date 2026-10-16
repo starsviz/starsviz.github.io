@@ -14,10 +14,14 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 import postgame_email as pe  # noqa: E402
 
-ANSWER = """Let me check a couple of things first.
+COUNTDOWN = "\n\n".join(f"## #{n}: Stat number {n} tells the story.\nWhy it mattered.\nMore on it." for n in range(10, 0, -1))
+ANSWER = f"""Let me check a couple of things first.
 
-=== INTRO ===
+=== SUMMARY ===
 The Stars outshot Colorado and lost anyway.
+
+=== COUNTDOWN ===
+{COUNTDOWN}
 
 === NO FILTER ===
 ## Why was Johnston *not* in the lineup?
@@ -36,7 +40,7 @@ It's 2 for 14.
 3. Who sat Johnston?
 4. The power play is 2 for 14
 5. Outshot, outplayed, out of luck"""
-START = ANSWER.index("=== INTRO ===")
+START = ANSWER.index("=== SUMMARY ===")
 
 
 @pytest.fixture(scope="module")
@@ -50,10 +54,9 @@ def test_brief_matches_the_page(brief, sample_data):
     assert brief["game"]["start"] and brief["game"]["siteHeadline"]
     assert brief["game"]["official"] is True and brief["game"]["onIceStatsIn"] is True  # the sample season is complete
     assert brief["game"]["score"] == {"DAL": g["gf"], g["opp"]: g["ga"]}
-    sk = brief["dallasSkatersRankedByPlayerScore"]
+    sk = brief["dallasSkatersByIceTime"]
     assert len(sk) == len(g["sk"]) and len(brief["dallasGoalies"]) == len(g["gk"])
-    scores = [s["playerScore"] for s in sk]
-    assert scores == sorted(scores, reverse=True) and all(0 <= x <= 100 for x in scores)
+    assert "score" not in json.dumps(sk).lower(), "no player scores in the email: they shift as games come in"
     assert sum(s["tonight"]["goals"] for s in sk) == g["gf"] == sum(x["team"] == "DAL" for x in brief["goals"])
     assert len(brief["recentGames"]) == 10 and brief["recentGames"][-1]["game"] == brief["game"]["number"]
     json.dumps(brief)  # plain JSON all the way down
@@ -84,7 +87,13 @@ def test_when_it_sends():
 def test_email_format(brief):
     md = ANSWER[START:]
     sec = pe.split(md)
-    assert sec["STATS"].startswith("- **Seguin**") and sec["INTRO"].startswith("The Stars")
+    assert sec["STATS"].startswith("- **Seguin**") and sec["SUMMARY"].startswith("The Stars")
+    items = pe.countdown(sec["COUNTDOWN"])
+    assert [n for n, _, _ in items] == list(range(10, 0, -1))
+    assert items[0][1:] == ("Stat number 10 tells the story.", "Why it mattered. More on it.")
+    with pytest.raises(ValueError, match="#10 to #1"):
+        pe.countdown(sec["COUNTDOWN"].replace("## #4:", "## #11:"))
+    assert len(pe.countdown(sec["COUNTDOWN"].replace("## #", "## "))) == 10, "takes the number with or without #"
     h = pe.md_html(sec["STATS"])
     assert h.count("<li>") == 2 and "<strong>Seguin</strong>" in h and "&amp;" in h and "<ul>" in h
     h = pe.md_html(sec["NO FILTER"])
@@ -94,12 +103,14 @@ def test_email_format(brief):
         pe.split(md[:md.index("=== SUBJECT LINES ===")])
 
     text, page = pe.email_bodies(dict(brief, site="https://example.com/"), md, ["note one", "note two"])
-    order = ["Subject line ideas", "Three shots in the third", "<p>The Stars outshot", "<h1>No Filter</h1>",
+    order = ["Subject line ideas", "Three shots in the third", "<p>The Stars outshot",
+             "<p>Let's count down the 10 most telling stats from the game.</p>",
+             "<h2>#10: Stat number 10 tells the story.</h2>\n<p>Why it mattered. More on it.</p>", "<h2>#1: ", "<h1>No Filter</h1>",
              '<p>Here are the "No Filter" questions I would have liked to see at the postgame presser.</p>',
              "Why was Johnston", "<h1>Some stats that stood out</h1>", "<strong>Seguin</strong> scored",
              "Check out the player grades", "note two"]
     at = [page.index(x) for x in order]
-    assert at == sorted(at), "subject ideas, intro, No Filter, stats, site link, notes"
+    assert at == sorted(at), "subject ideas, summary, countdown, No Filter, stats, site link, notes"
     assert ('at the <a href="https://example.com/">Stick Language Stats page</a>.' in page)
     assert "Stick Language Stats page (https://example.com/)" in text and text.index("NO FILTER") < text.index("SOME STATS")
     assert pe.subject(brief).startswith(f"Game {brief['game']['number']}: ")
@@ -144,7 +155,7 @@ def test_ask_claude_runs_claude_code(brief, monkeypatch):
         return pe.subprocess.CompletedProcess(cmd, 0, json.dumps(res), "")
     monkeypatch.setattr(pe.subprocess, "run", fake_run)
     md, usage = pe.ask_claude(brief)
-    assert md.startswith("=== INTRO ===") and "Let me check" not in md
+    assert md.startswith("=== SUMMARY ===") and "Let me check" not in md
     assert usage == {"turns": 4, "model": "claude-opus-5-5"}
     assert seen["cmd"][:2] == ["claude", "-p"] and "--system-prompt" in seen["cmd"] and "WebSearch,WebFetch" in seen["cmd"]
     assert '"siteHeadline"' in seen["input"]

@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
 postgame_email.py - after each game, emails the owner a draft of his "No Filter"
-Substack post, in the order it runs: 5 subject line ideas, a one-paragraph intro
-telling the story of the game, the No Filter questions a reporter would ask the
-coach if they could ask anything (each with a paragraph on why it needs asking),
-then "Some stats that stood out" (one sentence each) and a link to the stats site.
-Claude writes it from the page's own numbers and a few web searches (injuries,
+Substack post, in the order it runs: 5 subject line ideas, a 2-3 sentence summary
+of the game, "Story of the Stats" (the 10 stats that best tell the game's story,
+counted down from #10 to #1, each with 2-3 sentences), the No Filter questions a
+reporter would want answered if they could ask anything (each with a paragraph on
+why it needs asking), then "Some stats that stood out" (one sentence each) and a
+link to the stats site. Claude writes it from the page's own numbers (without the
+player scores, which shift as games come in) and a few web searches (injuries,
 what the coach said, how fans and local media reacted).
 
     # 1. pull one game's numbers out of the built page (default: the latest game)
@@ -57,57 +59,68 @@ STALE_HOURS = 48    # a game older than this never sends (protects against repea
 
 SYSTEM = """\
 You write post-game material for Stick Language, a Substack about the Dallas Stars. Its writer is building a name as \
-"the visual storyteller": he uses stats to show how a game went, player by player. His stats site scores every Stars \
-skater after every game. He pastes what you write into his drafts and edits from there.
+"the visual storyteller": he uses stats to show how a game went, player by player. He pastes what you write into his \
+drafts and edits from there.
 
-You get the game's data (JSON) from his site: scoring, team stats, every Dallas skater ranked by player score with \
-his season context, the goalies, lineup changes, and the last 10 games. You also have web search. Use it up to six \
-times for what the data can't tell you: injuries, scratches and lineup decisions, what the coach and players said \
-after the game, line combinations, storylines from recent games, and how Stars fans and local media (beat writers, \
-fan blogs like Defending Big D) reacted. Look up who the Stars' head coach is rather than assuming.
+You get the game's data (JSON) from his stats site: scoring, team stats by period, every Dallas skater's numbers \
+with his season averages and recent form, the goalies, lineup changes, and the last 10 games. You also have web \
+search. Use it up to six times for what the data can't tell you: injuries, scratches and lineup decisions, what the \
+coach and players said after the game, line combinations, storylines from recent games, and how Stars fans and local \
+media (beat writers, fan blogs like Defending Big D) reacted. Look up who the Stars' head coach is rather than assuming.
 
-About the player score: each stat is compared with how Stars players at the same position usually do in a game, \
-weighted, and scaled like a school grade. 70 is a typical game, the 80s a B, the 90s an A, 100 is the cap. The \
-median is about 68 and under 60 is a rough night. The offense score and the tilting-the-ice score are its two \
-halves, on the same scale. Offense is the player's own goals, assists and shots. Tilting the ice is everything else \
-except ice time: on-ice shot attempts (Corsi), plus-minus, takeaways and giveaways, blocks, hits, penalties and \
-faceoffs. Call it "tilting the ice" (the site's name for it), never "two-way". vsHisAverage is the score minus the player's own season average. Early in the season the averages rest \
-on few games, so say "so far" where that matters. The on-ice 5-on-5 attempt share is often called Corsi; explain it \
-in plain words when you use it. PDO is 5-on-5 shooting percentage plus save percentage; 1.000 is average, and \
-a game far from it was mostly about bounces and goaltending. Null means the NHL hasn't posted that number yet.
+His site also gives every player a score for each game, but those scores change as the season's games come in, so \
+they are left out of the data. Never mention a player score, grade, rating or ranking from his site anywhere in what \
+you write. Compare players with their own season averages and with each other using the real stats instead.
 
-Write four things. They go into one Substack post in the "No Filter" series: an intro, the No Filter questions, \
-then the stats that stood out. The subject lines are for the email that sends the post.
+Reading the data: the on-ice 5-on-5 attempt share is often called Corsi; explain it in plain words when you use it. \
+PDO is 5-on-5 shooting percentage plus save percentage; 1.000 is average, and a game far from it was mostly about \
+bounces and goaltending. Slot attempts are shots from the area in front of the net, between the faceoff dots. Early \
+in the season the averages rest on few games, so say "so far" where that matters. Null means the NHL hasn't posted \
+that number yet.
 
-INTRO: one paragraph of 4 or 5 sentences and no more than 120 words that tells the story of the game at a high \
-level: how it went, who had control and when, the moment it turned, how it ended and what it means for where the \
-team is. Write it as a narrative with a through-line, the way a columnist opens a game story, not as a list of \
-facts. Keep only the details that carry the story: name two or three players at most, don't walk through the goals \
-one by one, leave out side details (reviews, posts, who assisted), and keep numbers to a minimum (the stats come \
-later).
+Write five things. They go into one Substack post in the "No Filter" series, in this order: the summary, the \
+countdown, the No Filter questions, then the stats that stood out. The subject lines are for the email that sends \
+the post.
 
-NO FILTER: 4 to 6 questions a reporter would ask the head coach after this game if they could ask anything, with no \
-worry about access or press credentials: the questions fans wish someone had the nerve to ask. Pointed, specific and \
-fair. They can be about players, the team, this game, or a trend over several games: lineup and ice-time decisions, \
-line combinations, the goalie, special-teams units, systems, effort and accountability. No cheap shots, nothing \
-personal. Each question is one or two sentences, phrased the way you'd ask it in the room (address the coach as \
-"you", name the players). Under each question, one paragraph on why it needs asking, backed by specific numbers and, \
-where it helps, by what you found: what the coach said, what fans and writers are asking. When fans are angry or \
-puzzled about something, check it against the numbers and say whether the numbers back them up. Pick only the best \
-questions.
+SUMMARY: 2 or 3 sentences that sum up the game at the highest level, the way a writer for The Athletic would open a \
+game story: what kind of night it was, what decided it, what it says about the team right now. A point of view and a \
+through-line, not a sequence of events. No play-by-play, no "then this happened", no walking through the goals, at \
+most one or two names and almost no numbers (the stats come next).
 
-STATS: 8 to 14 bullets with the most interesting numbers from this game, each exactly one sentence, leading with the \
-fact. Favor what a fan won't get from the box score: player scores against the player's normal, streaks and \
+COUNTDOWN ("Story of the Stats"): the 10 stats from this game that do the best job telling its story, counted down \
+from 10 to 1. #1 is the single number that explains the game best; #10 is the 10th best. Read in order, they should \
+build toward #1 and tell the story of the game on their own. Each one is a heading: the stat written as one full \
+sentence that delivers the story, the number inside it (for example "Dallas had 14 shots from the slot and scored on \
+none of them"), not a bare label like "Slot attempts: 14". Under each heading, 2 or 3 sentences on what the number \
+means for this game: why it mattered, what caused it, how it compares with the player's or team's normal. Write those \
+like The Athletic too: human, with a point of view, not a recap. Mix team and player stats, both ends of the ice, and \
+both teams. Use 10 different stats; don't count the same fact twice from two angles.
+
+NO FILTER: 4 to 6 questions a reporter would want answered after this game if they could ask anything, with no worry \
+about access or press credentials: the questions fans wish someone had the nerve to ask. Pointed, specific and fair. \
+They can be about players, the team, this game, or a trend over several games: lineup and ice-time decisions, line \
+combinations, the goalie, special-teams units, systems, effort and accountability. No cheap shots, nothing personal. \
+Each question is one short sentence, ideally under 20 words, and asks about the decision or the issue itself, not \
+the person: "Why did the fourth line play six minutes in a one-goal game?", not "Are you happy with..." or "Did you \
+choose to...". Never address the coach as "you". Put no setup or numbers in front of the question; the case for it \
+goes underneath. Under each question, one paragraph of 3 or 4 sentences on why it needs asking, backed by specific \
+numbers and, where it helps, by what you found: what the coach said, what fans and writers are asking. When fans are \
+angry or puzzled about something, check it against the numbers and say whether the numbers back them up. Pick only \
+the best questions.
+
+STATS: 8 to 14 bullets with other interesting numbers from this game, each exactly one sentence, leading with the \
+fact. Favor what a fan won't get from the box score: a player's game against his own season average, streaks and \
 droughts, season highs and lows, ice-time changes that show who the coach trusts, special teams, shot quality (slot \
-attempts), the period where the game turned, the goalie against his season. Don't repeat a point the questions \
-already made with the same number. Every number must come from the game data, exactly as given. Anything from web \
-search must be fact, not opinion.
+attempts), the period where the game turned, the goalie against his season. Don't repeat a stat the countdown or the \
+questions already used.
+
+Every number must come from the game data, exactly as given, or from a source you found. Anything from web search \
+must be fact, not opinion. Put what other writers said in your own words rather than copying their sentences. Never \
+invent quotes. If you mention something a coach or player said, it must come from a source you found.
 
 SUBJECT LINES: 5 ideas for the email subject line of the post, each under 60 characters, specific to this game, \
-each from a different angle (the result, a player, the sharpest question). No clickbait, no emoji, no hashtags.
-
-Put what other writers said in your own words rather than copying their sentences. Never invent quotes. If you \
-mention something a coach or player said, it must come from a source you found.
+each from a different angle (the result, a player, the #1 stat, the sharpest question). No clickbait, no emoji, no \
+hashtags.
 
 Style: plain, direct American English, like a sharp beat writer. Short sentences. No hype, no clichés, no em dashes, \
 no "it's not X, it's Y", no lists of three for rhythm, no closing summaries or morals. The writer is wary of anything \
@@ -115,8 +128,20 @@ that reads as AI-written.
 
 Reply in exactly this format, with nothing after it:
 
-=== INTRO ===
-Intro paragraph.
+=== SUMMARY ===
+Summary, 2 or 3 sentences.
+
+=== COUNTDOWN ===
+## #10: The 10th stat, as a full sentence.
+Two or three sentences.
+
+## #9: The 9th stat, as a full sentence.
+Two or three sentences.
+
+(and so on down to)
+
+## #1: The stat that tells the story best, as a full sentence.
+Two or three sentences.
 
 === NO FILTER ===
 ## First question?
@@ -197,7 +222,7 @@ def ask_claude(brief: dict) -> tuple[str, dict]:
     on a Mac where `claude` is logged in, it just works."""
     g = brief["game"]
     parts = [f"<game_data>\n{json.dumps(brief, indent=1, ensure_ascii=False)}\n</game_data>",
-             f"Write all four for game {g['number']} of the season, the Stars' {g['result']} against the "
+             f"Write all five for game {g['number']} of the season, the Stars' {g['result']} against the "
              f"{g['opponent']} on {g['date']}."]
     cmd = ["claude", "-p", "--model", MODEL, "--effort", "high", "--system-prompt", SYSTEM,
            "--tools", "WebSearch,WebFetch", "--allowedTools", "WebSearch", "WebFetch",
@@ -217,23 +242,33 @@ def ask_claude(brief: dict) -> tuple[str, dict]:
     usage = {"turns": res.get("num_turns", 0), "model": next(iter(res.get("modelUsage") or {}), MODEL)}
     out = res.get("result") or ""
     try:
-        split(out)
+        countdown(split(out)["COUNTDOWN"])
     except ValueError as e:
         raise SystemExit(f"Claude's answer didn't come back in the expected format ({e}):\n\n" + out)
-    return out[out.index("=== INTRO ==="):].strip(), usage
+    return out[re.search(r"^=== [A-Z ]+ ===", out, flags=re.M).start():].strip(), usage
 
 
-SECTIONS = ("INTRO", "NO FILTER", "STATS", "SUBJECT LINES")
+SECTIONS = ("SUMMARY", "COUNTDOWN", "NO FILTER", "STATS", "SUBJECT LINES")
 
 
 def split(md: str) -> dict[str, str]:
-    """Claude's answer by section ("INTRO", "NO FILTER", "STATS", "SUBJECT LINES"), in any order."""
+    """Claude's answer by section ("SUMMARY", "COUNTDOWN", "NO FILTER", "STATS", "SUBJECT LINES"), in any order."""
     parts = re.split(r"^=== ([A-Z ]+) ===[ \t]*$", md, flags=re.M)
     found = {name: text.strip() for name, text in zip(parts[1::2], parts[2::2])}
     missing = [n for n in SECTIONS if not found.get(n)]
     if missing:
         raise ValueError("missing " + ", ".join(missing))
     return found
+
+
+def countdown(md: str) -> list[tuple[int, str, str]]:
+    """The "Story of the Stats" countdown as (number, stat sentence, the 2-3 sentences under it), #10 first.
+    Raises ValueError unless it runs 10, 9, ... 1."""
+    items = re.findall(r"^#+\s*#?(\d+)\s*[:.)]\s*(.+?)\s*\n(.*?)(?=^#|\Z)", md.strip() + "\n", flags=re.M | re.S)
+    nums = [int(n) for n, _, _ in items]
+    if nums != list(range(10, 0, -1)) or not all(body.strip() for _, _, body in items):
+        raise ValueError(f"the countdown should run #10 to #1, each with a few sentences under it (got {nums})")
+    return [(int(n), head, " ".join(body.split())) for n, head, body in items]
 
 
 def inline(s: str) -> str:
@@ -273,10 +308,11 @@ def subject(brief: dict) -> str:
     g = brief["game"]
     res = {"W": "W", "L": "L", "OTL": f"{'SO' if g['decidedIn'] == 'SO' else 'OT'}L"}[g["result"]]
     where = "vs" if g["homeOrAway"] == "home" else "at"
-    return f"Game {g['number']}: {res} {g['score']['DAL']}-{g['score'][g['opponentAbbrev']]} {where} {g['opponent']} · stats + No Filter"
+    return f"Game {g['number']}: {res} {g['score']['DAL']}-{g['score'][g['opponentAbbrev']]} {where} {g['opponent']} · Story of the Stats + No Filter"
 
 
 # The owner's own wording, added as written (not left to Claude)
+COUNTDOWN_LEAD = "Let's count down the 10 most telling stats from the game."
 NO_FILTER_LEAD = 'Here are the "No Filter" questions I would have liked to see at the postgame presser.'
 STATS_HEADING = "Some stats that stood out"
 SITE_LINK_TEXT = "Stick Language Stats page"
@@ -285,12 +321,17 @@ DEFAULT_SITE = "https://sticklanguagestats.com/"  # only when the page was built
 
 
 def email_bodies(brief: dict, md: str, notes: list[str]) -> tuple[str, str]:
-    """In the order the post runs: subject line ideas, the intro, No Filter, the stats, the link to the site."""
+    """In the order the post runs: subject line ideas, the summary, the countdown, No Filter, the stats,
+    the link to the site."""
     sec = split(md)
+    items = countdown(sec["COUNTDOWN"])
     g = brief["game"]
     site = brief.get("site") or DEFAULT_SITE
     head = f"{g['siteHeadline']} ({g['date']}, record {g['recordAfter']})"
-    text = (f"{head}\n\nSUBJECT LINE IDEAS\n\n{sec['SUBJECT LINES']}\n\n\n{sec['INTRO']}\n\n\nNO FILTER\n\n"
+    count_text = "\n\n".join(f"#{n}: {stat}\n{body}" for n, stat, body in items)
+    count_html = "\n".join(f"<h2>#{n}: {inline(stat)}</h2>\n<p>{inline(body)}</p>" for n, stat, body in items)
+    text = (f"{head}\n\nSUBJECT LINE IDEAS\n\n{sec['SUBJECT LINES']}\n\n\n{sec['SUMMARY']}\n\n{COUNTDOWN_LEAD}\n\n"
+            f"{count_text}\n\n\nNO FILTER\n\n"
             f"{NO_FILTER_LEAD}\n\n{sec['NO FILTER']}\n\n\n{STATS_HEADING.upper()}\n\n{sec['STATS']}\n\n"
             f"{SITE_LINE.format(link=f'{SITE_LINK_TEXT} ({site})')}\n\n--\n" + "\n".join(notes))
     link = f'<a href="{html.escape(site)}">{SITE_LINK_TEXT}</a>'
@@ -301,7 +342,9 @@ def email_bodies(brief: dict, md: str, notes: list[str]) -> tuple[str, str]:
 <h3 style="font-family: Arial, sans-serif">Subject line ideas</h3>
 {md_html(sec['SUBJECT LINES'])}
 <hr>
-{md_html(sec['INTRO'])}
+{md_html(sec['SUMMARY'])}
+<p>{html.escape(COUNTDOWN_LEAD, quote=False)}</p>
+{count_html}
 <h1>No Filter</h1>
 <p>{html.escape(NO_FILTER_LEAD, quote=False)}</p>
 {md_html(sec['NO FILTER'])}

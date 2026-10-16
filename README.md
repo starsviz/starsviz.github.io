@@ -36,13 +36,14 @@ Your Buy Me a Coffee page (https://buymeacoffee.com/essjayjay, `SUPPORT_URL` in 
 After each game, the workflow also emails you a draft of that game's **No Filter** post, in the order it runs:
 
 1. **Subject line ideas**: five options for the post's email subject.
-2. **The intro**: one paragraph telling the story of the game.
-3. **No Filter**: the line "Here are the "No Filter" questions I would have liked to see at the postgame presser.", then the questions a reporter would ask the coach if they could ask anything, each followed by a paragraph on why it needs asking.
-4. **Some stats that stood out**: 8 to 14 one-sentence bullets, then "Check out the player grades, performance charts, and full stats for each skater at the Stick Language Stats page." with a link to the site.
+2. **The summary**: two or three sentences on the game at a high level.
+3. **Story of the Stats**: the line "Let's count down the 10 most telling stats from the game.", then the 10 stats that best tell the game's story, from #10 to #1, each a one-sentence heading with two or three sentences under it.
+4. **No Filter**: the line "Here are the "No Filter" questions I would have liked to see at the postgame presser.", then the questions a reporter would want answered if they could ask anything, each followed by a paragraph on why it needs asking.
+5. **Some stats that stood out**: 8 to 14 one-sentence bullets, then "Check out the player grades, performance charts, and full stats for each skater at the Stick Language Stats page." with a link to the site.
 
-The two fixed lines are added exactly as written; Claude writes the rest.
+The three fixed lines are added exactly as written; Claude writes the rest.
 
-Claude writes both from the page's own numbers (the same player scores as the site) and a few web searches for things like injuries, what the coach said, and how fans and local media reacted. It sends once per game, right after the site update that brings in the game's final stats: when the NHL has made the game official and the on-ice numbers (the last stats to arrive) are on the page. That can be late at night or with the 3:30 am run. If the NHL still hasn't posted everything 18 hours after puck drop, it sends anyway and says what was missing. Each email ends with a note on that and on how much work Claude did.
+Claude writes it from the page's own numbers and a few web searches for things like injuries, what the coach said, and how fans and local media reacted. The site's player scores are left out of the email, since they shift as more games come in. It sends once per game, right after the site update that brings in the game's final stats: when the NHL has made the game official and the on-ice numbers (the last stats to arrive) are on the page. That can be late at night or with the 3:30 am run. If the NHL still hasn't posted everything 18 hours after puck drop, it sends anyway and says what was missing. Each email ends with a note on that and on how much work Claude did.
 
 (Reading the r/DallasStars post-game thread was tried and dropped: Reddit now gives its API only to moderators and blocks scripts that read the site without it.)
 
