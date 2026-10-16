@@ -77,9 +77,10 @@ jobs:
       - name: Build the page from the live NHL API
         env:
           CREDIT: ${{ vars.CREDIT }}
+          FEEDBACK_KEY: ${{ vars.FEEDBACK_KEY }}   # Web3Forms key for the Bugs/Requests form (blank = no form)
           SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: |
-          python build_dashboard.py --credit "$CREDIT" --site-url "$SITE_URL/" --out _site/index.html
+          python build_dashboard.py --credit "$CREDIT" --feedback-key "$FEEDBACK_KEY" --site-url "$SITE_URL/" --out _site/index.html
           python tools/make_share_image.py _site/index.html _site/og-image.png
 
       - name: Smoke-test the real page

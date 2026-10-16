@@ -13,8 +13,8 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-# screenshot-only tweak: the game-picker strip is busy at thumbnail size
-HIDE = ".picker { display: none !important; }"
+# screenshot-only tweak: the game-picker strip is busy at thumbnail size, and the Bugs/Requests button is no part of the story
+HIDE = ".picker, .fb { display: none !important; }"
 
 
 def main(page_path: str, out_path: str) -> None:

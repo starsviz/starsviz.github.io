@@ -25,6 +25,12 @@ To change the footer credit, go to the repo's **Settings → Secrets and variabl
 
 The season switches over on its own: until the Stars play a regular-season game, the page shows last season.
 
+## Bugs / Requests form and "Buy me a beer"
+
+A small **Bugs / Requests** button sits in the bottom-right corner of the page. It opens a little form; each message is emailed to you by [Web3Forms](https://web3forms.com) (free up to 250 messages a month), along with the game the reader was looking at and their screen size and browser. The key that sends it is the repo **variable** `FEEDBACK_KEY` (Settings → Secrets and variables → Actions → Variables). The key is safe to have in the page: all it can do is send mail to you. Without it, the button doesn't show.
+
+Your Buy Me a Coffee page (https://buymeacoffee.com/essjayjay, `SUPPORT_URL` in `build_dashboard.py`) is linked as "Buy me a beer" in two places: the thank-you after someone sends the form, and a button centered at the end of the page.
+
 ## The post-game email
 
 After each game, the workflow also emails you a draft of that game's **No Filter** post, in the order it runs:

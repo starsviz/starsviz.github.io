@@ -329,6 +329,36 @@ ul.wts b { text-align: right; color: var(--ink); }
 .scorecell .dv { margin-top: 0; justify-self: start; }
 footer a { color: inherit; }
 footer { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 0 28px; font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 14px; }
+/* "Buy me a beer": the button alone, centered at the end of the page (the link is his Buy Me a Coffee page) */
+.support { display: flex; justify-content: center; padding-top: 6px; }
+.beer { display: inline-flex; align-items: center; gap: 7px; flex: none; padding: 7px 13px 7px 11px; border-radius: 999px; border: 1px solid var(--accent);
+  color: var(--accent); font-weight: 700; font-size: 13.5px; text-decoration: none; white-space: nowrap; }
+.beer:hover { background: var(--accent-soft); }
+.beer svg, .fb-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.fb-done a { color: var(--accent); font-weight: 700; }
+/* Bugs/Requests: a small pill pinned to the bottom right, opening a little form above it. Pop-ups (z 40+) cover it. */
+.fb { position: fixed; z-index: 30; right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  display: grid; justify-items: end; gap: 8px; }
+.fb-btn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 999px; padding: 8px 13px 8px 11px; cursor: pointer;
+  background: var(--tip-bg); color: var(--tip-fg); font-weight: 700; font-size: 13px; line-height: 1.2; box-shadow: 0 4px 16px rgba(0,0,0,.22); }
+.fb-btn:hover { filter: brightness(1.15); }
+.fb-panel { width: min(360px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 14px;
+  padding: 12px 14px 14px; box-shadow: 0 12px 40px rgba(0,0,0,.28); display: grid; gap: 10px; }
+.fb-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.fb-top h2 { font-family: var(--font-display); font-weight: 700; font-size: 21px; margin: 0; }
+.fb-top .close { width: 32px; height: 32px; font-size: 15px; }
+.fb form { display: grid; gap: 8px; margin: 0; }
+.fb textarea { font: inherit; font-size: 16px; width: 100%; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); color: var(--ink); padding: 9px 10px; }
+.fb textarea { resize: vertical; min-height: 110px; line-height: 1.4; }
+.fb textarea:focus { outline: 2px solid var(--accent); outline-offset: 0; border-color: transparent; }
+.fb .hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }  /* honeypot: only bots tick it */
+.fb-row { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.fb-err { margin: 0 auto 0 0; font-size: 13px; color: var(--bad); }
+.fb-send { border: 0; border-radius: 8px; padding: 8px 18px; background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; cursor: pointer; }
+.fb-send:disabled { opacity: .6; cursor: default; }
+.fb-done p { margin: 0 0 8px; color: var(--ink-2); } .fb-done p:last-child { margin: 0; }
+.fb-done p.fb-thanks { font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1.15; color: var(--ink); }
+body.has-fb footer { padding-bottom: 76px; }  /* the last line clears the pinned button */
 @media (prefers-reduced-motion: reduce) { .chips { scroll-behavior: auto; } }
 </style>
 </head>
@@ -346,8 +376,26 @@ footer { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 
 <main>
   <div class="banner" id="banner" hidden></div>
   <section id="games"></section>
+  <aside class="support" id="support" hidden>
+    <a class="beer" id="support-link" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 11h1a3 3 0 0 1 0 6h-1"/><path d="M9 12v6M13 12v6"/><path d="M14 7.5c-1 0-1.44.5-3 .5s-2-.5-3-.5-1.72.5-2.5.5a2.5 2.5 0 0 1 0-5c.78 0 1.57.5 2.5.5S9.44 2 11 2s2 1.5 3 1.5 1.72-.5 2.5-.5a2.5 2.5 0 0 1 0 5c-.78 0-1.5-.5-2.5-.5Z"/><path d="M5 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8"/></svg>Buy me a beer</a>
+  </aside>
 </main>
 <footer id="footer"></footer>
+<div class="fb" id="fb" hidden>
+  <div class="fb-panel" id="fb-panel" role="dialog" aria-labelledby="fb-h" hidden>
+    <div class="fb-top"><h2 id="fb-h">Bugs / Requests</h2><button class="close" type="button" data-x aria-label="Close">✕</button></div>
+    <form id="fb-form" novalidate>
+      <textarea name="message" rows="5" maxlength="5000" aria-label="Your message" placeholder="Notice a bug? Got an idea for an improvement? Let me know and I'll do my best to get to it."></textarea>
+      <input type="checkbox" name="botcheck" class="hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+      <div class="fb-row"><p class="fb-err" role="alert"></p><button type="submit" class="fb-send">Send</button></div>
+    </form>
+    <div class="fb-done" role="status" hidden>
+      <p class="fb-thanks">Thanks for letting me know! I'm on it.</p>
+      <p class="fb-love">Want to show some love for the project? You can do that <a target="_blank" rel="noopener">here</a>.</p>
+    </div>
+  </div>
+  <button class="fb-btn" id="fb-btn" type="button" aria-expanded="false" aria-controls="fb-panel"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg>Bugs / Requests</button>
+</div>
 <div class="tip" id="tip" hidden></div>
 <div id="sheet-root"></div>
 
@@ -1241,7 +1289,7 @@ function openPlayer(pid, gameId = null) {
   sheet = { draw, close, open: s => { scope = s; draw(); } };
   draw(); $("#close").focus();
 }
-document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (shareUi) shareUi.close(); else if (sheet) sheet.close(); });
+document.addEventListener("keydown", e => { if (e.key !== "Escape") return; if (shareUi) shareUi.close(); else if (sheet) sheet.close(); else if (fbUi) fbUi.close(); });
 
 function vsRows(rows) {
   return `<div class="vs">${rows.map(([lab, v, avg, fmt, max]) => {
@@ -1916,6 +1964,43 @@ function openShare(kinds, startK) {
   q("[data-x]").focus();
 }
 
+/* ================= bugs / requests ================= */
+// The form posts to Web3Forms, which emails it to the owner (the address belongs to the access key, so it's not in the page).
+let fbUi = null;
+function feedback() {
+  const box = $("#fb"), panel = $("#fb-panel"), btn = $("#fb-btn"), form = $("#fb-form"), done = $(".fb-done", box), send = $(".fb-send", box);
+  const err = t => { $(".fb-err", box).textContent = t || ""; };
+  box.hidden = false; document.body.classList.add("has-fb");
+  if (M.supportUrl) $(".fb-love a", box).href = M.supportUrl; else $(".fb-love", box).remove();
+  const open = () => { if (!done.hidden) { done.hidden = true; form.hidden = false; } panel.hidden = false; btn.setAttribute("aria-expanded", "true"); form.message.focus(); };
+  const close = () => { panel.hidden = true; btn.setAttribute("aria-expanded", "false"); };
+  btn.onclick = () => panel.hidden ? open() : close();
+  $("[data-x]", box).onclick = () => { close(); btn.focus(); };
+  document.addEventListener("pointerdown", e => { if (!panel.hidden && !box.contains(e.target)) close(); });  // what he typed stays
+  form.onsubmit = async e => {
+    e.preventDefault();
+    const message = form.message.value.trim();
+    if (!message) { err("Write a few words first."); form.message.focus(); return; }
+    const thanks = () => { form.reset(); form.hidden = true; done.hidden = false; };
+    if (form.botcheck.checked) { thanks(); return; }
+    const g = byId.get(state.game);
+    const body = { access_key: M.feedbackKey, subject: "Stick Language Stats: bug or request", from_name: "Stick Language Stats", message,
+      "Game on screen": g ? `${fdate(g.date)} ${vs(g)} (${g.id})` : "", "Screen": `${innerWidth}x${innerHeight}`,
+      "Browser": navigator.userAgent, "Page": location.href };
+    err(""); send.disabled = true; send.textContent = "Sending…";
+    try {
+      const r = await fetch("https://api.web3forms.com/submit", { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify(body) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j.success) throw new Error(j.message || "HTTP " + r.status);
+      thanks();
+    } catch (x) {
+      console.warn("feedback not sent:", x);
+      err("Sorry, that didn't go through. Please try again in a minute.");
+    } finally { send.disabled = false; send.textContent = "Send"; }
+  };
+  fbUi = { close };
+}
+
 /* ================= boot ================= */
 const TTb = teamTrend();
 $("#season").textContent = `${NAME} ${M.seasonLabel}`;
@@ -1925,6 +2010,8 @@ if (M.brandUrl) {  // the owner's Substack: the logo opens it, the button opens 
   Object.assign($("#brand-link"), { href: M.brandUrl, target: "_blank", rel: "noopener" });
   Object.assign($("#subscribe"), { href: M.brandUrl + "/subscribe", hidden: false });
 }
+if (M.supportUrl) { $("#support-link").href = M.supportUrl; $("#support").hidden = false; }
+if (M.feedbackKey) feedback();
 $("#footer").innerHTML = `${M.brandUrl ? `<span><a href="${esc(M.brandUrl)}" target="_blank" rel="noopener">Stick Language</a>, a Dallas Stars Substack</span>` : ""}<span>Data: NHL.com public API</span><span>Updated ${esc(M.built)}</span>${M.credit ? `<span>${esc(M.credit)}</span>` : ""}`;
 let lastW = window.innerWidth;
 window.addEventListener("resize", () => { clearTimeout(window.__rz); window.__rz = setTimeout(() => {

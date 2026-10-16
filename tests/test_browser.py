@@ -510,3 +510,101 @@ def test_share_cards_in_safari_engine(webkit, built_page):
     assert pick(page, "kinds", "pseason") == [2400, 1350]
     assert errors == []
     ctx.close()
+
+
+FEEDBACK_HINT = "Notice a bug? Got an idea for an improvement? Let me know and I'll do my best to get to it."
+
+
+def web3forms(page, ok=True):
+    """Stand in for Web3Forms (which emails each message to the owner) and keep what the page sends."""
+    import json
+    sent = []
+
+    def handle(route):
+        sent.append(json.loads(route.request.post_data))
+        route.fulfill(status=200 if ok else 500, content_type="application/json",
+                      body=json.dumps({"success": ok, "message": "ok" if ok else "server error"}))
+    page.route("https://api.web3forms.com/**", handle)  # registered after `offline`, so it wins for this URL
+    return sent
+
+
+@pytest.mark.parametrize("width,scheme", [(1280, "light"), (390, "dark")])
+def test_feedback_form(browser, sample_page, sample_data, width, scheme):
+    """Bugs/Requests: a pinned button opens a small form; an empty message isn't sent; a sent one shows the thanks
+    and the Buy Me a Coffee link; the message reaches the email service with the page's key and the game on screen."""
+    page, errors = open_page(browser, sample_page, width=width, scheme=scheme)
+    sent = web3forms(page)
+    btn, panel = page.locator("#fb-btn"), page.locator("#fb-panel")
+    assert btn.is_visible() and btn.inner_text().strip() == "Bugs / Requests" and not panel.is_visible()
+    b = btn.bounding_box()
+    assert b["x"] + b["width"] <= width - 12 and b["y"] + b["height"] <= 900 - 12, "pinned to the bottom right"
+    btn.click()
+    assert panel.is_visible() and btn.get_attribute("aria-expanded") == "true"
+    box = panel.bounding_box()
+    assert box["x"] >= 0 and box["x"] + box["width"] <= width, "the form fits the screen"
+    assert page.locator("#fb-form textarea").get_attribute("placeholder") == FEEDBACK_HINT
+    assert page.locator("#fb-form input:not(.hp)").count() == 0, "just the message box: no email field (the owner's call)"
+    page.click(".fb-send")
+    assert page.locator(".fb-err").inner_text() and sent == [], "nothing sent without a message"
+    page.fill("#fb-form textarea", "The rankings table cuts off on my phone.")
+    page.click(".fb-send")
+    page.wait_for_selector(".fb-done:not([hidden])")
+    assert page.locator(".fb-thanks").inner_text() == "Thanks for letting me know! I'm on it."
+    love = page.locator(".fb-love")
+    assert love.inner_text() == "Want to show some love for the project? You can do that here."
+    assert love.locator("a").inner_text() == "here"
+    assert love.locator("a").get_attribute("href") == sample_data["meta"]["supportUrl"] == "https://buymeacoffee.com/essjayjay"
+    assert love.locator("a").get_attribute("target") == "_blank"
+    assert len(sent) == 1
+    msg = sent[0]
+    assert msg["access_key"] == "test-key" and msg["message"] == "The rankings table cuts off on my phone."
+    assert str(sample_data["games"][-1]["id"]) in msg["Game on screen"] and "email" not in msg
+    page.keyboard.press("Escape")
+    assert not panel.is_visible()
+    btn.click()
+    assert page.locator("#fb-form").is_visible() and page.locator("#fb-form textarea").input_value() == "", "a fresh form next time"
+    assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 0
+    assert errors == []
+    page.close()
+
+
+def test_feedback_form_when_sending_fails(browser, sample_page):
+    """If the email service fails, he's told so and keeps what he wrote."""
+    page, errors = open_page(browser, sample_page)
+    sent = web3forms(page, ok=False)
+    page.click("#fb-btn")
+    page.fill("#fb-form textarea", "Idea: a season view.")
+    page.click(".fb-send")
+    page.wait_for_function("document.querySelector('.fb-err').textContent.includes(\"didn't go through\")")
+    assert len(sent) == 1 and page.locator(".fb-done").is_hidden()
+    assert page.locator("#fb-form textarea").input_value() == "Idea: a season view."
+    assert page.locator(".fb-send").is_enabled()
+    assert errors == []
+    page.close()
+
+
+def test_feedback_button_needs_a_key(browser, sample_page, tmp_path):
+    """Built without an email-service key (--feedback-key), the button stays off: a form that can't send helps no one."""
+    page, errors = open_page(browser, page_with_first_games(sample_page, 82, tmp_path / "no-key.html",
+                                                            lambda d: d["meta"].update(feedbackKey="")))
+    assert page.locator("#fb").is_hidden()
+    assert errors == []
+    page.close()
+
+
+def test_buy_me_a_beer(browser, sample_page, sample_data):
+    """A lone, centered "Buy me a beer" button at the end of the page links to his Buy Me a Coffee page; the share dialog doesn't ask."""
+    ctx, page, errors = open_share_page(browser, sample_page)
+    link = page.locator("#support-link")
+    assert link.is_visible() and link.inner_text().strip() == "Buy me a beer"
+    assert link.get_attribute("href") == sample_data["meta"]["supportUrl"] and link.get_attribute("target") == "_blank"
+    b, main = link.bounding_box(), page.locator("main").bounding_box()
+    assert abs((b["x"] + b["width"] / 2) - (main["x"] + main["width"] / 2)) < 2, "the button sits alone, centered"
+    assert page.locator("#support").inner_text().strip() == "Buy me a beer"
+    page.click("#share-game")
+    preview_size(page)
+    with page.expect_download():
+        page.click('[data-a="download"]')
+    assert "buymeacoffee" not in page.locator(".sharebox").inner_html()
+    assert errors == []
+    ctx.close()
