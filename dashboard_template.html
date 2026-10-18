@@ -312,6 +312,8 @@ ul.wts b { text-align: right; color: var(--ink); }
 .rank-tbl td { vertical-align: top; padding-top: 8px; padding-bottom: 8px; }
 .rank-tbl th { vertical-align: bottom; }
 .rank-tbl .cv { display: block; font-weight: 600; font-size: 14px; line-height: 1.2; white-space: nowrap; }
+.rank-tbl .cw { display: flex; justify-content: flex-end; align-items: baseline; }
+.rank-tbl .cn { min-width: 3.4em; padding-left: 5px; text-align: left; font-size: 11px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; }
 .dv { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1.3; margin-top: 2px; border-radius: 4px; padding: 0 3px; white-space: nowrap; }
 .dv.up { color: var(--good); } .dv.down { color: var(--bad); } .dv.flat { color: var(--muted); font-weight: 600; }
 .dv.up.s2 { background: var(--good-soft); } .dv.down.s2 { background: var(--bad-soft); }
@@ -513,7 +515,7 @@ const STATCOLS = [
   { k: "hits", h: "HIT", title: "Hits" }, { k: "blk", h: "BLK", title: "Blocked shots" },
   { k: "tk", h: "TK", title: "Takeaways" }, { k: "gv", h: "GV", title: "Giveaways (fewer is better)", inv: true },
   { k: "toi", h: "TOI", title: "Ice time", fmt: toi, dfmt: v => toi(Math.abs(v)), afmt: toi },
-  { k: "fo", h: "FO%", title: "Faceoff win percentage", fOnly: true, fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v), eps: .005, note: l => `(${l.foW}/${l.foW + l.foL})` },
+  { k: "fo", h: "FO%", title: "Faceoff win percentage", fOnly: true, fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v), eps: .005, note: l => `${l.foW}/${l.foW + l.foL}` },
 ];
 const GSTATS = { F: {}, D: {} };
 (function buildScores() {
@@ -573,12 +575,16 @@ function scoreDelta(score, avg) {
   return { pc, tier: z < 1 / 3 || pc === 0 ? "flat" : pc > 0 ? "up" : "down", strong: z >= 1, text: pc === 0 ? "even" : (pc > 0 ? "▲" : "▼") + Math.abs(pc) + "%" };
 }
 function statCell(r, c) {
-  const v = r.l[c.k], avg = r.s.avg[c.k], f = c.fmt || (x => x), fmt = x => f(x) + (c.note ? " " + c.note(r.l) : "");
-  if (v == null) return `<td><span class="cv" style="color:var(--muted)">–</span></td>`;
-  if (avg == null) return `<td><span class="cv">${fmt(v)}</span></td>`;
+  const v = r.l[c.k], avg = r.s.avg[c.k], fmt = c.fmt || (x => x);
+  // a stat's small print (faceoffs won/taken) sits quietly in its own lane right of the number and its change,
+  // so the change lines up under the number; the tooltip spells it out
+  const note = v != null && c.note ? c.note(r.l) : "", said = fmt(v) + (note ? ` (${note})` : "");
+  const cell = (inner, title = "") => `<td${title}>${c.note ? `<div class="cw"><div>${inner}</div><span class="cn">${note}</span></div>` : inner}</td>`;
+  if (v == null) return cell(`<span class="cv" style="color:var(--muted)">–</span>`);
+  if (avg == null) return cell(`<span class="cv">${fmt(v)}</span>`);
   const dd = statDelta(v, avg, GSTATS[r.grp][c.k]?.sd, c), tier = dd.tier === "flat" ? "flat" : dd.tier + (dd.strong ? " s2" : ""), txt = dd.txt;
   const avgTxt = c.afmt ? c.afmt(avg) : avg.toFixed(1);
-  return `<td title="${esc(c.title)}: ${fmt(v)} this game, ${avgTxt} season average"><span class="cv">${fmt(v)}</span><span class="dv ${tier}">${txt}</span></td>`;
+  return cell(`<span class="cv">${fmt(v)}</span><span class="dv ${tier}">${txt}</span>`, ` title="${esc(c.title)}: ${said} this game, ${avgTxt} season average"`);
 }
 function scoreCell(r) {
   const sc = Math.round(r.l.score), avg = r.s.avgScore, d = scoreDelta(r.l.score, avg);
