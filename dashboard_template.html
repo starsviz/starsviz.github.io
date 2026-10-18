@@ -311,7 +311,7 @@ ul.wts b { text-align: right; color: var(--ink); }
 .wbar i { display: block; height: 100%; background: var(--accent); } .wbar i.neg { background: var(--bad); }
 .rank-tbl td { vertical-align: top; padding-top: 8px; padding-bottom: 8px; }
 .rank-tbl th { vertical-align: bottom; }
-.rank-tbl .cv { display: block; font-weight: 600; font-size: 14px; line-height: 1.2; }
+.rank-tbl .cv { display: block; font-weight: 600; font-size: 14px; line-height: 1.2; white-space: nowrap; }
 .dv { display: inline-block; font-size: 11px; font-weight: 700; line-height: 1.3; margin-top: 2px; border-radius: 4px; padding: 0 3px; white-space: nowrap; }
 .dv.up { color: var(--good); } .dv.down { color: var(--bad); } .dv.flat { color: var(--muted); font-weight: 600; }
 .dv.up.s2 { background: var(--good-soft); } .dv.down.s2 { background: var(--bad-soft); }
@@ -513,7 +513,7 @@ const STATCOLS = [
   { k: "hits", h: "HIT", title: "Hits" }, { k: "blk", h: "BLK", title: "Blocked shots" },
   { k: "tk", h: "TK", title: "Takeaways" }, { k: "gv", h: "GV", title: "Giveaways (fewer is better)", inv: true },
   { k: "toi", h: "TOI", title: "Ice time", fmt: toi, dfmt: v => toi(Math.abs(v)), afmt: toi },
-  { k: "fo", h: "FO%", title: "Faceoff win percentage", fOnly: true, fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v), eps: .005 },
+  { k: "fo", h: "FO%", title: "Faceoff win percentage", fOnly: true, fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v), eps: .005, note: l => `(${l.foW}/${l.foW + l.foL})` },
 ];
 const GSTATS = { F: {}, D: {} };
 (function buildScores() {
@@ -531,7 +531,7 @@ const GSTATS = { F: {}, D: {} };
       Object.assign(l, extra.get(l.g.id + ":" + s.pid) || blank());
       l.tkgv = l.tk - l.gv;
       if (l.a1 + l.a2 < l.a) l.a2 += l.a - l.a1 - l.a2;
-      l.fo = s.pos === "C" && l.foW + l.foL > 0 ? l.foW / (l.foW + l.foL) : null;
+      l.fo = s.grp === "F" && l.foW + l.foL > 0 ? l.foW / (l.foW + l.foL) : null;
       all[s.grp].push(l);
     });
   });
@@ -573,7 +573,7 @@ function scoreDelta(score, avg) {
   return { pc, tier: z < 1 / 3 || pc === 0 ? "flat" : pc > 0 ? "up" : "down", strong: z >= 1, text: pc === 0 ? "even" : (pc > 0 ? "▲" : "▼") + Math.abs(pc) + "%" };
 }
 function statCell(r, c) {
-  const v = r.l[c.k], avg = r.s.avg[c.k], fmt = c.fmt || (x => x);
+  const v = r.l[c.k], avg = r.s.avg[c.k], f = c.fmt || (x => x), fmt = x => f(x) + (c.note ? " " + c.note(r.l) : "");
   if (v == null) return `<td><span class="cv" style="color:var(--muted)">–</span></td>`;
   if (avg == null) return `<td><span class="cv">${fmt(v)}</span></td>`;
   const dd = statDelta(v, avg, GSTATS[r.grp][c.k]?.sd, c), tier = dd.tier === "flat" ? "flat" : dd.tier + (dd.strong ? " s2" : ""), txt = dd.txt;
