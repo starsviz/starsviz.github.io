@@ -594,7 +594,7 @@ function scoreCell(r) {
 }
 function rankTable(rows, grp, g) {
   const cols = STATCOLS.filter(c => !c.fOnly || (grp === "F" && rows.some(r => r.l.fo != null)));
-  return `<p class="swipe">Swipe the table for all stats →</p><div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Player</th><th class="l">Score</th>${cols.map(c => `<th title="${esc(c.title)}">${c.h}</th>`).join("")}</tr></thead><tbody>
+  return `<p class="swipe">Swipe the table for all stats →</p><div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Player</th><th class="l">Score</th>${cols.map(c => `<th title="${esc(c.title)}">${c.note ? `<div class="cw"><span>${c.h}</span><span class="cn"></span></div>` : c.h}</th>`).join("")}</tr></thead><tbody>
     ${rows.map((r, i) => `<tr data-pid="${r.pid}" data-gid="${g.id}"><td class="nm"><span class="rk">${i + 1}</span><button class="linkish who" aria-haspopup="dialog" aria-label="${esc(pname(r.pid))}, open player card"><span class="full">${esc(pname(r.pid))}</span><span class="short">${esc(plast(r.pid))}</span>${GO}</button></td>
       <td class="l">${scoreCell(r)}</td>${cols.map(c => statCell(r, c)).join("")}</tr>`).join("")}</tbody></table></div>`;
 }
