@@ -611,12 +611,18 @@ def test_buy_me_a_beer(browser, sample_page, sample_data):
 
 
 def test_team_score_card(browser, built_page, built_data):
-    """The team score sits between the player chart and the shot chart. Its parts add up to the score, the season chart has
-    one dot per game (the game on screen ringed), and tapping a dot opens that game."""
+    """The player chart's card has a button that switches it to the team score and back. The team score's parts add up
+    to the score, its season chart is a line with one dot per game (the game on screen ringed), tapping a dot opens that
+    game, and the card stays on the team score while the reader changes games."""
     page, errors = open_page(browser, built_page)
-    order = page.eval_on_selector_all("#games > *", "els => els.map(e => e.id || e.className)")
-    assert order.index("teamcard") == order.index("shotmap") - 1 and order.index("teamcard") > 0
-    assert page.locator("#games > .card").first.locator("#quad").count() == 1, "the player chart comes first"
+    switch = page.locator("#scorecard #pane-switch")
+    assert switch.inner_text().strip() == "Switch to Team Score" and page.locator("#teamcard").count() == 0
+    switch.click()
+    assert page.locator("#scorecard #teamcard").count() == 1 and page.locator("#quad").count() == 0
+    assert page.locator("#pane-switch").inner_text().strip() == "Switch to Player Scores"
+    assert page.locator("#teamcard .ts-grade").count() == 0, "no letter grade"
+    assert ":" not in page.locator("#teamcard h2").inner_text()
+    assert page.locator("#tchart path.ln-team").count() == 1, "the games are joined by a line"
     score = int(page.locator("#teamcard .ts-big .scv").inner_text())
     pts = [float(t.replace("−", "-")) for t in page.locator("#teamcard .ts-row:not(.ts-base):not(.ts-total) .ts-pts").all_inner_texts()]
     assert len(pts) == 3 and 0 <= score <= 100
@@ -632,6 +638,11 @@ def test_team_score_card(browser, built_page, built_data):
     assert page.locator("#tchart .tdot").first.get_attribute("class").endswith(" on")
     page.locator("#teamcard details.how summary").click()
     assert "70 is an average game" in page.locator("#teamcard details.how").inner_text()
+    page.locator(".chip").last.click()
+    assert page.locator("#teamcard").count() == 1
+    page.locator("#pane-switch").click()
+    page.wait_for_selector("#quad svg")
+    assert page.locator(".chip").last.get_attribute("aria-pressed") == "true"
     assert errors == []
     page.close()
 
@@ -721,7 +732,21 @@ def test_upcoming_games_in_the_picker(browser, sample_page, tmp_path, width):
     assert "TBD" in fut.nth(2).inner_text()
     fut.nth(1).click()
     assert page.locator(".chip").last.get_attribute("aria-pressed") == "true"
+    # at the latest game the right arrow keeps going along the schedule, then stops at its end
+    scroll = lambda: page.evaluate("document.querySelector('.chips').scrollLeft")
+    for _ in range(40):
+        if page.locator("#next").is_disabled():
+            break
+        before = scroll()
+        page.locator("#next").click()
+        page.wait_for_function(f"document.querySelector('.chips').scrollLeft > {before}")
+        page.evaluate("""() => new Promise(done => {  // until the smooth scroll has come to rest
+          const c = document.querySelector('.chips'); let last = -1;
+          const tick = () => { if (c.scrollLeft === last) return done(); last = c.scrollLeft; setTimeout(tick, 80); }; tick(); })""")
     assert page.locator("#next").is_disabled()
+    assert page.evaluate("(c => c.scrollLeft + c.clientWidth >= c.scrollWidth - 2)(document.querySelector('.chips'))")
+    assert page.locator(".chip").last.get_attribute("aria-pressed") == "true", "scrolling doesn't change the game"
+    assert not page.locator("#prev").is_disabled()
     assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 0
     assert errors == []
     page.close()

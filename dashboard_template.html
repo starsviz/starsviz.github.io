@@ -276,12 +276,18 @@ td.hot { font-weight: 700; }
 .qlab { fill: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; font-family: var(--font-body); }
 .axt { fill: var(--ink-2); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); }
 .dlab { fill: var(--ink); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+/* the player chart's card switches to the team score and back (state.pane) */
+.pane-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin: 0 0 6px; }
+.pane-top .chapter-label { margin: 0; }
+.pane-switch { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; padding: 8px 15px 8px 12px; cursor: pointer;
+  background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; line-height: 1.2; white-space: nowrap; box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.pane-switch:hover { filter: brightness(1.08); }
+.pane-switch svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 /* team score */
 .ts-head { display: flex; align-items: center; gap: 14px; margin: 2px 0 8px; }
 .ts-head h2 { margin: 0; }
 .ts-big { display: flex; align-items: baseline; gap: 6px; flex: none; }
 .ts-big .scv { font-size: 52px; color: var(--accent); }
-.ts-grade { font-family: var(--font-display); font-weight: 700; font-size: 20px; line-height: 1; padding: 3px 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); }
 .ts-parts { display: grid; border-top: 1px solid var(--line); margin: 4px 0 6px; }
 .ts-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(70px, 1fr) 3.4em; gap: 4px 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
 .ts-lab { display: grid; } .ts-lab small { color: var(--muted); font-size: 12px; }
@@ -301,6 +307,7 @@ td.hot { font-weight: 700; }
   .ts-head { flex-wrap: wrap; gap: 4px; } .ts-head h2 { flex-basis: 100%; }
   .ts-big .scv { font-size: 44px; }
 }
+.ln-team { stroke: var(--ink-2); stroke-width: 1.6; fill: none; stroke-linejoin: round; }
 .tdot { stroke: var(--surface); stroke-width: 1.5; } .tdot.W { fill: var(--accent); } .tdot.L { fill: var(--opp); } .tdot.OTL { fill: var(--otl); }
 .tdot.on { stroke: var(--ink); stroke-width: 2.5; }
 /* share image button + dialog */
@@ -986,9 +993,7 @@ function teamScore(g) {
   return { score: Math.max(0, Math.min(100, MID + sum(parts.map(p => p.pts)))), parts, board: parts[0].pts, play: parts[1].pts + parts[2].pts };
 }
 G.forEach(g => { g.team = teamScore(g); });
-const gradeWord = s => s >= 90 ? "An A-level game" : s >= 80 ? "A B-level game" : s >= 70 ? "A C-level game" : s >= 60 ? "A below-average game" : "A rough night";
-const gradeLetter = s => s >= 90 ? "A" : s >= 80 ? "B" : s >= 70 ? "C" : "";
-// the headline: the grade, then whether the result matched the play (the play half of the score within 3 points either way is even)
+// the headline: whether the result matched the play (the play half of the score within 3 points either way is even)
 function teamStory(g, T) {
   const opp = g.oppName, how = g.sfx === "SO" ? " in a shootout" : g.sfx === "OT" ? " in overtime" : "", even = Math.abs(T.play) < 3;
   let clause;
@@ -996,12 +1001,12 @@ function teamStory(g, T) {
     : `the ${NAME} beat the ${opp}${how}, but the play went the other way`;
   else clause = even ? `the ${NAME} lost to the ${opp}${how} in an even game` : T.play > 0 ? `the ${NAME} outplayed the ${opp} but lost${how}`
     : `the ${opp} were the better team${how ? `, though the ${NAME} got a point` : ""}`;
-  return `${gradeWord(T.score)}: ${clause}`;
+  return cap1(clause);
 }
 function teamCard(g) {
   const T = g.team;
-  if (!T) return `<div class="card" id="teamcard"><p class="chapter-label">Team score</p><h2>Not available for this game</h2></div>`;
-  const sc = Math.round(T.score), letter = gradeLetter(T.score), MAXP = 15;
+  if (!T) return `<div id="teamcard"><h2>Not available for this game</h2></div>`;
+  const sc = Math.round(T.score), MAXP = 15;
   const bar = pts => { const w = Math.min(MAXP, Math.abs(pts)) / MAXP * 50;
     return `<span class="ts-bar" aria-hidden="true"><span class="ts-fill ${pts >= 0 ? "pos" : "neg"}" style="${pts >= 0 ? "left:50%" : `left:${50 - w}%`};width:${w}%"></span></span>`; };
   const row = p => `<div class="ts-row"${p.tip ? ` title="${esc(p.tip)}"` : ""}><span class="ts-lab"><b>${p.lab}</b><small>${esc(p.sub)}</small></span>
@@ -1009,26 +1014,24 @@ function teamCard(g) {
   const vals = G.map(x => x.team && x.team.score).filter(v => v != null), avg = mean(vals);
   const rank = vals.filter(v => v > T.score).length + 1;
   const rankTxt = N >= 5 ? (rank === 1 ? "their best game of the season so far" : rank === N ? "their lowest of the season so far" : rank <= 3 ? `their ${ord(rank)}-best of the season` : "") : "";
-  return `<div class="card" id="teamcard">
-    <p class="chapter-label">Team score</p>
-    <div class="ts-head"><div class="ts-big"><span class="scv num">${sc}</span>${letter ? `<span class="ts-grade">${letter}</span>` : ""}</div>
+  return `<div id="teamcard">
+    <div class="ts-head"><div class="ts-big"><span class="scv num">${sc}</span></div>
       <h2>${esc(teamStory(g, T))}</h2></div>
     <p class="cap">Half of the team score is the scoreboard and half is how they played, both measured against an average NHL game (${MID}).${rankTxt ? ` This was ${rankTxt}.` : ""}</p>
     <div class="ts-parts"><div class="ts-row ts-base"><span class="ts-lab"><b>An average NHL game</b></span><span class="ts-val"></span><span></span><b class="ts-pts num">${MID}</b></div>
       ${T.parts.map(row).join("")}
       <div class="ts-row ts-total"><span class="ts-lab"><b>Team score</b></span><span class="ts-val"></span><span></span><b class="ts-pts num">${sc}</b></div></div>
     <p class="split-h">The season so far: averaging ${Math.round(avg)}${N >= 10 ? `, ${Math.round(mean(vals.slice(-10)))} over the last 10` : ""}</p>
-    <p class="cap" style="margin-top:4px">Each dot is a game: green a win, gray a loss, light gray an overtime or shootout loss. ${N >= 5 ? "The line is the 10-game average. " : ""}Tap a dot to open that game.</p>
+    <p class="cap" style="margin-top:4px">Tap a game to open it.</p>
     <div class="chart" id="tchart"></div>
-    <div class="legend"><span class="k"><span class="kbox us"></span>Win</span><span class="k"><span class="kbox them"></span>Loss</span><span class="k"><span class="kbox otl"></span>OT/SO loss</span>${N >= 5 ? `<span class="k"><svg width="16" height="10"><line x1="0" y1="5" x2="16" y2="5" class="ln-us"/></svg>10-game average</span>` : ""}<span class="k"><span class="kbox ref"></span>Average NHL game (${MID})</span></div>
+    <div class="legend"><span class="k"><span class="kbox us"></span>Win</span><span class="k"><span class="kbox them"></span>Loss</span><span class="k"><span class="kbox otl"></span>OT/SO loss</span><span class="k"><span class="kbox ref"></span>Average NHL game (${MID})</span></div>
     ${teamHow()}
   </div>`;
 }
 function teamChart(el, g, onPick) {
   const xs = G.map(x => x.n), v = G.map(x => x.team ? x.team.score : null), lo = Math.min(40, Math.floor(Math.min(...v.filter(x => x != null)) / 10) * 10);
   chart(el, { xs, xTicks: monthTicks(xs), yDomain: [lo, 100], yFmt: x => x, refs: [{ y: MID, label: String(MID) }],
-    series: [{ values: rolling(v, 10, mean), cls: "ln-us", end: x => Math.round(x) },
-      { values: v, line: false, dots: true, r: 4.5, dotCls: i => `tdot ${G[i].res}${G[i].id === g.id ? " on" : ""}` }],
+    series: [{ values: v, cls: "ln-team", dots: true, r: 4.5, dotCls: i => `tdot ${G[i].res}${G[i].id === g.id ? " on" : ""}` }],
     tip: i => { const x = G[i]; return x.team ? `<b>Game ${x.n} · ${fdate(x.date)} ${esc(vs(x))}</b> · ${resLabel(x)} ${scoreStr(x)}<br>Team score ${Math.round(x.team.score)}: goals ${pm1(x.team.parts[0].pts)}, chances ${pm1(x.team.parts[1].pts)}, attempts ${pm1(x.team.parts[2].pts)}` : null; },
     onClick: i => onPick(G[i]) });
 }
@@ -1383,8 +1386,8 @@ const shotTip = (g, s, oppLab) => {
 const mapShots = list => list.filter(e => e.s[2] !== 3 && e.s[3] != null).map(e => ({ x: e.s[3], y: e.s[4], us: !!e.s[1], kind: e.s[2], tip: shotTip(e.g, e.s) }));
 
 /* ================= state + tabs ================= */
-// shots: is the game shot chart open; view: the ranking tables show this game or the season; sort: each table's sort ({ k, dir }, null = default)
-const state = { game: G.length ? G[G.length - 1].id : null, shots: false, view: "game", sort: { F: null, D: null, G: null } };
+// shots: is the game shot chart open; pane: the score card shows player scores or the team score; view: the ranking tables show this game or the season; sort: each table's sort ({ k, dir }, null = default)
+const state = { game: G.length ? G[G.length - 1].id : null, shots: false, view: "game", sort: { F: null, D: null, G: null }, pane: "players" };
 function render() { hideTip(); renderGame(); }
 function setTab() { render(); window.scrollTo({ top: 0 }); }
 const lede = (kicker, head, dek, extra) => `<div class="lede"><p class="kicker">${esc(kicker)}</p><h2 class="headline">${esc(head)}</h2>${dek ? `<p class="dek">${esc(dek)}</p>` : ""}${extra || ""}</div>`;
@@ -1423,32 +1426,33 @@ function renderGame() {
   else if (quiet && (!best || quiet.pid !== best.pid)) qCap += ` ${pname(quiet.pid)} had a strong game without a point (tilting the ice ${Math.round(quiet.l.two)}).`;
   const gk = g.gk.map(r => ({ pid: r[0], sa: r[1], sv: r[2], ga: r[3], toi: r[4], dec: r[6], evSv: r[7], evSa: r[8], pkSv: r[9], pkSa: r[10], s: goalies[r[0]] }));
   // the whole game's shot chart, both teams (blocked shots have no useful location, so they're left off)
+  const team = state.pane === "team";
   const gameShots = g.shots.filter(x => x[2] !== 3 && x[3] != null).map(x => ({ x: x[3], y: x[4], us: !!x[1], kind: x[2], tip: shotTip(null, x, g.oppName) }));
   const slotOf = us => gameShots.filter(x => x.us === us && inSlot(x.x, x.y, us)).length;
   root.innerHTML = `
     <div class="picker">
-      <button class="step" id="prev" aria-label="Previous game" ${idx === 0 ? "disabled" : ""}>‹</button>
+      <button class="step" id="prev" aria-label="Previous game">‹</button>
       <div class="chips" role="group" aria-label="Pick a game">
         ${G.map(x => `<button class="chip ${x.res}" data-id="${x.id}" aria-pressed="${x.id === g.id}"><span class="d">${fdate(x.date)}</span><span class="o">${esc(vs(x))}</span><span class="r">${resLabel(x)} ${scoreStr(x)}</span></button>`).join("")}
         ${UPCOMING.map(futChip).join("")}
       </div>
-      <button class="step" id="next" aria-label="Next game" ${idx === G.length - 1 ? "disabled" : ""}>›</button>
+      <button class="step" id="next" aria-label="Next game">›</button>
     </div>
     ${lede(`Game ${g.n} · ${S.kicker}`, S.head, "", `
       <div class="score-strip"><span class="t"><span class="sw us"></span>${US}</span><span class="s num">${g.gf}</span><span class="s num" style="color:var(--muted)">–</span><span class="s num">${g.ga}</span><span class="t">${esc(g.opp)}<span class="sw them"></span></span><span class="st">Final${g.sfx ? " / " + g.sfx : ""}</span><button class="sharebtn" id="share-game">${SHARE_ICON}Share image</button></div>
       <div class="facts"><span>${fdate(g.date, true)}</span><span>${esc(g.venue)}</span><span>Shots <b>${g.st.sog[0]}-${g.st.sog[1]}</b></span>${g.st.pp ? `<span>Power play <b>${g.st.pp[0]}</b> vs <b>${g.st.pp[1]}</b></span>` : ""}</div>`)}
-    <div class="card">
-      <p class="chapter-label">Who produced, and who drove the play</p>
-      <h2>${esc(qHead)}</h2>
+    <div class="card" id="scorecard" data-pane="${state.pane}">
+      <div class="pane-top"><p class="chapter-label">${team ? "Team score" : "Who produced, and who drove the play"}</p>
+        <button class="pane-switch" id="pane-switch" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4 3 8l4 4M3 8h14M17 20l4-4-4-4M21 16H7"/></svg>${team ? "Switch to Player Scores" : "Switch to Team Score"}</button></div>
+      ${team ? teamCard(g) : `<h2>${esc(qHead)}</h2>
       <p class="cap">${esc(qCap)} Farther right means more offense. Higher means the play went Dallas's way with him on the ice.<br><br><b>70 is a typical game for his position.</b></p>
       <div class="chart" id="quad"></div>
       <div class="legend"><span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><circle r="5.5" class="dot-f"/></svg>Forward</span>
         <span class="k"><svg width="12" height="12" viewBox="-6 -6 12 12"><rect x="-5" y="-5" width="10" height="10" rx="2" class="dot-d"/></svg>Defenseman</span>
         <span class="k">Tap a dot for his night</span>
         <span class="zoom" id="quadzoom" role="group" aria-label="Zoom the chart"><span class="zhint" hidden>Drag or scroll to look around</span><button data-z="out" aria-label="Zoom out" title="Zoom out">−</button><button data-z="in" aria-label="Zoom in" title="Zoom in (or pinch the chart)">+</button><button data-z="reset" class="zr" hidden>Reset</button></span></div>
-      ${howItWorks()}
+      ${howItWorks()}`}
     </div>
-    ${teamCard(g)}
     <details class="more" id="shotmap"${state.shots ? " open" : ""}><summary>See the shot chart</summary>
       <p class="cap">Every goal, shot on goal and miss by both teams. Dallas shoots toward the right, the ${esc(g.oppName)} toward the left. From the shaded slot: Dallas <b>${slotOf(true)}</b>, ${esc(g.oppName)} <b>${slotOf(false)}</b>. Tap any shot for who and when.</p>
       <div id="gmap"></div>${rinkLegend(US, g.opp)}</details>
@@ -1460,11 +1464,22 @@ function renderGame() {
   if (sr.left < cr.left || sr.right > cr.right) chips.scrollLeft += sr.left - cr.left - cr.width / 2 + sr.width / 2;
   chips.style.scrollBehavior = "";
   chips.addEventListener("click", e => { const c = e.target.closest(".chip"); if (c) { state.game = +c.dataset.id; renderGame(); } });
-  $("#prev").onclick = () => { state.game = G[idx - 1].id; renderGame(); };
-  $("#next").onclick = () => { state.game = G[idx + 1].id; renderGame(); };
-  quad = quadChart($("#quad"), rows, g, $("#quadzoom"));
-  // tapping a game on the team chart opens it, keeping the chart where it was on screen
-  if ($("#tchart")) teamChart($("#tchart"), g, x => { const y0 = $("#teamcard").getBoundingClientRect().top; state.game = x.id; renderGame(); window.scrollBy(0, $("#teamcard").getBoundingClientRect().top - y0); });
+  // The arrows step through the games played; past the last one (or before the first), they scroll the strip,
+  // so the rest of the schedule can be looked through. They're off only when there's nowhere left to go.
+  const prev = $("#prev"), next = $("#next");
+  const room = dir => dir > 0 ? chips.scrollLeft + chips.clientWidth < chips.scrollWidth - 2 : chips.scrollLeft > 2;
+  const syncSteps = () => {
+    prev.disabled = idx === 0 && !room(-1); next.disabled = idx === G.length - 1 && !room(1);
+    prev.setAttribute("aria-label", idx > 0 ? "Previous game" : "Scroll back"); next.setAttribute("aria-label", idx < G.length - 1 ? "Next game" : "Later games");
+  };
+  syncSteps(); chips.addEventListener("scroll", syncSteps, { passive: true });
+  prev.onclick = () => { if (idx > 0) { state.game = G[idx - 1].id; renderGame(); } else chips.scrollBy({ left: -chips.clientWidth * .8 }); };
+  next.onclick = () => { if (idx < G.length - 1) { state.game = G[idx + 1].id; renderGame(); } else chips.scrollBy({ left: chips.clientWidth * .8 }); };
+  // the score card's switch: player scores or team score, keeping the card where it was on screen
+  const keepCard = fn => { const y0 = $("#scorecard").getBoundingClientRect().top; fn(); renderGame(); window.scrollBy(0, $("#scorecard").getBoundingClientRect().top - y0); };
+  $("#pane-switch").onclick = () => { keepCard(() => { state.pane = team ? "players" : "team"; }); $("#pane-switch").focus(); };
+  quad = team ? null : quadChart($("#quad"), rows, g, $("#quadzoom"));
+  if (team && $("#tchart")) teamChart($("#tchart"), g, x => keepCard(() => { state.game = x.id; }));  // tapping a game opens it
   // drawn when opened: the dot size depends on the chart's width, which is 0 while it's collapsed
   const shotmap = $("#shotmap"), drawShots = () => mountRink($("#gmap"), gameShots, { label: `Shot chart, ${US} ${vs(g)}` });
   shotmap.addEventListener("toggle", () => { state.shots = shotmap.open; if (shotmap.open) drawShots(); else hideTip(); });
