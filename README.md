@@ -62,6 +62,30 @@ Until `CLAUDE_CODE_OAUTH_TOKEN`, `SMTP_USER` and `SMTP_PASSWORD` are all set, th
 
 To get an email right now (to test it, or to re-send one), open **Actions → Publish player rankings → Run workflow**, tick **Email the latest game's post-game notes now**, and run it. If an email ever goes missing, a copy is on that run's page under **Artifacts** (`postgame-email`).
 
+## The daily team score picks
+
+A separate workflow (**Actions → Team score picks**) runs the betting system every day of the season: in every game, pick the team that had the higher team score in its previous game.
+
+- **Every morning after 6 am Central** it grades last night's picks and finds the rule (a range of lines, a range of differentials, home/away/either) that would have made the most units this season so far. That rule decides the day's picks.
+- **Two hours before the day's first game** it picks every game at DraftKings' line right then and emails you today's picks that fit the rule, the rule, and every game of the day, with the spreadsheet attached. Units are graded on the line in that email.
+- The spreadsheet's **Dynamic Bet Results** tab is your real record: only the picks that were emailed under each day's rule, at the emailed line.
+- Its data lives on the repo's `picks-data` branch, never on the site. The email uses the same `SMTP_USER` / `SMTP_PASSWORD` secrets as the post-game email.
+
+To re-send today's email, open **Actions → Team score picks → Run workflow**, tick **Pick today's games and send the email now**, and run it.
+
+### The timer (cron-job.org), one-time setup
+
+GitHub's own timer runs hours late on this repo, so a free cron-job.org account starts the workflow every 15 minutes instead. Each run only does what's due, so the extra runs are harmless.
+
+1. **Make a GitHub token** at github.com/settings/personal-access-tokens/new: name it "cron-job picks", set **Resource owner** to `starsviz`, pick an expiration (up to a year), choose **Only select repositories** → `starsviz.github.io`, and under **Repository permissions** set **Actions** to **Read and write**. Generate it and copy it. (If GitHub says the token is pending approval, approve it at github.com/organizations/starsviz/settings/personal-access-token-requests.)
+2. **Make the job** at cron-job.org (sign up, then **Create cronjob**):
+   - URL: `https://api.github.com/repos/starsviz/starsviz.github.io/actions/workflows/picks.yml/dispatches`
+   - Schedule: every 15 minutes
+   - Under **Advanced**: request method **POST**; headers `Authorization: Bearer YOUR_TOKEN`, `Accept: application/vnd.github+json` and `X-GitHub-Api-Version: 2022-11-28`; request body `{"ref":"main"}`
+3. Save it and use **Test run**. A response of **204** means it worked, and a new run shows up under **Actions → Team score picks**.
+
+When the token expires, cron-job.org's runs start failing (it emails you), and the workflow falls back to GitHub's hourly timer until you make a new token and paste it into the job.
+
 ## Running it on your own computer (optional)
 
 You need Python 3.9 or newer.
