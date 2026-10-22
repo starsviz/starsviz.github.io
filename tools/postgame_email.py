@@ -54,7 +54,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 
 MODEL = "opus"     # Claude Code's name for the newest Opus
-GIVE_UP_HOURS = 18  # send without the final stats if the NHL still hasn't posted them by then
+GIVE_UP_HOURS = 18  # send without the final stats if the NHL still hasn't posted them by then (= stars_viz.STATS_WAIT_HOURS, when the page stops waiting too)
 STALE_HOURS = 48    # a game older than this never sends (protects against repeats if --state is ever lost)
 
 SYSTEM = """\

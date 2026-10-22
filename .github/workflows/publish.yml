@@ -1,11 +1,13 @@
 # Rebuilds the player-rankings page from the NHL API and publishes it to GitHub Pages.
 #
 # When it runs (GitHub's clock is UTC; Dallas is UTC-5 in season, UTC-6 from November to March):
-#   - every night at 08:43 UTC (3:43 am Central in daylight time, 2:43 am in standard time)
-#   - every 30 minutes from 02:17 to 06:47 UTC, so a finished game shows up the same night
-#   Odd minutes on purpose: GitHub delays or drops scheduled runs when it's busy, worst at :00 and :30.
-#   In Sep-Oct 2026, with the times on :00/:30, only about 2 of the 11 daily runs happened, hours late.
-#   - whenever you press "Run workflow" on the Actions tab
+#   - after a game: site-check.yml (started every 5 minutes by cron-job.org) starts this as soon as the NHL has made
+#     the Stars' latest game official and posted every on-ice number. The builder holds a game back until then
+#     (or 18 hours after puck drop), whatever starts the run, so nothing goes up early.
+#   - every night at 08:43 UTC (3:43 am Central in daylight time, 2:43 am in standard time), as a backup.
+#     GitHub's own schedule is unreliable on this repo: in Oct 2026 the game-night runs (every 30 minutes from
+#     02:17 to 06:47 UTC) almost never fired and the nightly one ran 5-9 hours late, hence cron-job.org.
+#   - whenever you press "Run workflow" on the Actions tab, and on every push to main
 #
 # If anything fails (NHL API down, a data change, a failed test), nothing is published:
 # the last good page stays live and GitHub emails you that the run failed.
@@ -20,7 +22,6 @@ name: Publish player rankings
 on:
   schedule:
     - cron: "43 8 * * *"
-    - cron: "17,47 2-6 * * *"
   workflow_dispatch:
     inputs:
       resend_postgame_email:
@@ -80,7 +81,9 @@ jobs:
           FEEDBACK_KEY: ${{ vars.FEEDBACK_KEY }}   # Web3Forms key for the Bugs/Requests form (blank = no form)
           SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: |
-          python build_dashboard.py --credit "$CREDIT" --feedback-key "$FEEDBACK_KEY" --site-url "$SITE_URL/" --out _site/index.html
+          # --ttl 0: fetch the schedule and stats reports fresh (the restored cache can be up to 30 minutes old);
+          # finished games still come from the cache
+          python build_dashboard.py --credit "$CREDIT" --feedback-key "$FEEDBACK_KEY" --site-url "$SITE_URL/" --ttl 0 --out _site/index.html
           python tools/make_share_image.py _site/index.html _site/og-image.png
 
       - name: Smoke-test the real page

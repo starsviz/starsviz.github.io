@@ -17,9 +17,12 @@ Dallas Stars data tools built on the NHL's free public API:
 
 The page is published with GitHub Pages and rebuilt by GitHub Actions (`.github/workflows/publish.yml`):
 
-- every night at about 3:30 am Central, and every 30 minutes from about 9 pm to 1 am Central, so a finished game appears the same night;
+- **right after each game**, as soon as the NHL makes the game's stats official: a quick check (**Actions → Check for a finished game**, started every 5 minutes by cron-job.org) starts the rebuild the moment they're in, and the post-game email follows right after;
+- every night at about 3:30 am Central, as a backup;
 - whenever you press **Run workflow** on the repo's **Actions** tab;
 - whenever new code is pushed.
+
+A finished game never goes up early. The page waits until the NHL has made the game official and posted every skater's on-ice numbers (the last stats to arrive). Until then the game sits in the schedule strip as **Stats soon**. If the NHL still hasn't finished 18 hours after puck drop, the game goes up anyway, and the post-game email says what was missing.
 
 Each run tests the code, downloads any new games, builds the page, takes a fresh share-preview image (the picture Substack and X show when you post the link), checks the finished page in a real browser, and only then publishes it. **If any step fails, nothing is published: the last good page stays up and GitHub emails you.** Open the failed run on the Actions tab to see which step broke.
 
@@ -85,6 +88,10 @@ GitHub's own timer runs hours late on this repo, so a free cron-job.org account 
 3. Save it and use **Test run**. A response of **204** means it worked, and a new run shows up under **Actions → Team score picks**.
 
 When the token expires, cron-job.org's runs start failing (it emails you), and the workflow falls back to GitHub's hourly timer until you make a new token and paste it into the job.
+
+### The post-game timer (cron-job.org)
+
+A second cron-job.org job, set up like the picks one and using the same token, calls `https://api.github.com/repos/starsviz/starsviz.github.io/actions/workflows/site-check.yml/dispatches` every 5 minutes with the same headers and body.
 
 ## Running it on your own computer (optional)
 

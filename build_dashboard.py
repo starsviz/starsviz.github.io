@@ -85,11 +85,19 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
     except Exception as e:  # roster is nice-to-have; boxscores fill the gaps
         print(f"Roster unavailable ({e}); using boxscore names.")
 
-    games = []
+    games, held = [], set()
     for i, r in enumerate(rows, 1):
         gid = r["id"]
         print(f"\r  fetching game {i}/{len(rows)}", end="", flush=True)
         box = api.get(sv.url_game(gid, "boxscore"), final_only_cache=True)
+        # A finished game goes up only once the NHL has made it official and posted the on-ice numbers (the post-game
+        # email waits for the same), or STATS_WAIT_HOURS after puck drop if it never does. Until then it shows in the
+        # schedule strip as "Stats soon".
+        missing = sv.stats_missing(box, on_ice, team)
+        if missing and sv.hours_since(by_id.get(gid, {}).get("startTimeUTC")) < sv.STATS_WAIT_HOURS:
+            print(f"\n  holding back game {gid} until its stats are final: {missing}")
+            held.add(gid)
+            continue
         pbp = api.get(sv.url_game(gid, "play-by-play"), final_only_cache=True)
         try:
             rail = api.get(sv.url_game(gid, "right-rail"), official=box.get("gameState") == sv.OFFICIAL)
@@ -176,21 +184,23 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
                           built=dt.datetime.now().strftime("%b %-d, %Y %-I:%M %p"), color=color,
                           credit=credit, sample=sample),
                 players={str(k): v for k, v in players.items()}, games=games,
-                upcoming=upcoming_games(sched, team, {g["id"] for g in games}))
+                upcoming=upcoming_games(sched, team, {g["id"] for g in games}, held))
 
 
-def upcoming_games(sched: dict, team: str, done: set) -> list[dict]:
-    """The rest of the regular season, for the game picker: every game not played yet (one in progress included)."""
+def upcoming_games(sched: dict, team: str, done: set, held: set = frozenset()) -> list[dict]:
+    """The rest of the regular season, for the game picker: every game not played yet (one in progress included),
+    and any finished game held back until its stats are final (pending)."""
     out = []
     for g in sched.get("games", []):
-        if g.get("gameType") != 2 or g["id"] in done or g.get("gameState") in sv.FINAL_STATES:
+        if g.get("gameType") != 2 or g["id"] in done or (g.get("gameState") in sv.FINAL_STATES and g["id"] not in held):
             continue
         home = g["homeTeam"]["abbrev"] == team
         opp = g["awayTeam"] if home else g["homeTeam"]
         tv = [b["network"] for b in g.get("tvBroadcasts", []) if b.get("countryCode") == "US" and b.get("network")]
         out.append(dict(id=g["id"], date=g.get("gameDate"), start=g.get("startTimeUTC"), opp=opp.get("abbrev"),
                         oppName=sv.txt(opp.get("commonName"), opp.get("abbrev")), home=home,
-                        live=g.get("gameState") in ("LIVE", "CRIT"), tbd=g.get("gameScheduleState") != "OK", tv=tv))
+                        live=g.get("gameState") in ("LIVE", "CRIT"), tbd=g.get("gameScheduleState") != "OK", tv=tv,
+                        pending=g["id"] in held))
     return sorted(out, key=lambda x: (x["date"] or "", x["id"]))
 
 
@@ -296,11 +306,13 @@ def main(argv=None):
     ap.add_argument("--template", default=str(HERE / "dashboard_template.html"))
     ap.add_argument("--cache", default=".nhl_cache")
     ap.add_argument("--offline", action="store_true", help="use cached data only")
+    ap.add_argument("--ttl", type=int, default=1800, help="seconds before unfinished data (schedule, stats reports) is "
+                                                          "fetched again; finished games are kept for good either way")
     ap.add_argument("--sample", action="store_true", help=argparse.SUPPRESS)
     ap.add_argument("--fragment", action="store_true", help=argparse.SUPPRESS)
     args = ap.parse_args(argv)
 
-    api = sv.Api(Path(args.cache), offline=args.offline)
+    api = sv.Api(Path(args.cache), offline=args.offline, ttl=args.ttl)
     data = build_data(api, args.team.upper(), args.season, args.color, args.credit, sample=args.sample)
     data["meta"]["brandUrl"] = args.brand_url.rstrip("/")
     data["meta"]["supportUrl"] = args.support_url

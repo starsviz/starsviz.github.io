@@ -1399,10 +1399,12 @@ const UPCOMING = D.upcoming || [];
 function futChip(x) {
   const t = x.start ? new Date(x.start) : null, ok = t && !isNaN(t);
   const day = ok ? `${t.toLocaleDateString("en-US", { weekday: "short" })} ${MONTHS[t.getMonth()]} ${t.getDate()}` : fdate(x.date);
-  const time = x.live ? "Live now" : x.tbd || !ok ? "Time TBD" : t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  // pending: the game is over, but the page waits for the NHL to make its stats official before showing it
+  const time = x.pending ? "Stats soon" : x.live ? "Live now" : x.tbd || !ok ? "Time TBD" : t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
   const full = ok && !x.tbd ? t.toLocaleString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : fdate(x.date, true);
-  const tip = `${x.home ? "vs" : "at"} the ${x.oppName}, ${full}${x.tv && x.tv.length ? ` · TV: ${x.tv.join(", ")}` : ""}`;
-  return `<div class="fut${x.live ? " live" : ""}" role="note" title="${esc(tip)}" aria-label="Upcoming: ${esc(tip)}"><span class="d">${esc(day)}</span><span class="o">${esc(vs(x))}</span><span class="r">${esc(time)}</span></div>`;
+  const tip = x.pending ? `${x.home ? "vs" : "at"} the ${x.oppName}: final. The rankings go up as soon as the NHL makes the stats official.`
+    : `${x.home ? "vs" : "at"} the ${x.oppName}, ${full}${x.tv && x.tv.length ? ` · TV: ${x.tv.join(", ")}` : ""}`;
+  return `<div class="fut${x.live ? " live" : ""}" role="note" title="${esc(tip)}" aria-label="${x.pending ? "Finished" : "Upcoming"}: ${esc(tip)}"><span class="d">${esc(day)}</span><span class="o">${esc(vs(x))}</span><span class="r">${esc(time)}</span></div>`;
 }
 
 /* ================= GAME: player-first ================= */

@@ -718,14 +718,18 @@ def test_upcoming_games_in_the_picker(browser, sample_page, tmp_path, width):
     (in the reader's time zone) and TV in the tooltip."""
     def add(data):
         data["upcoming"] = [
+            dict(id=9, date="2026-04-19", start="2026-04-19T19:00:00Z", opp="CHI", oppName="Blackhawks", home=True, live=False, tbd=False, tv=[], pending=True),
             dict(id=1, date="2026-04-20", start="2026-04-21T00:00:00Z", opp="WPG", oppName="Jets", home=False, live=True, tbd=False, tv=[]),
             dict(id=2, date="2026-04-22", start="2026-04-23T00:30:00Z", opp="COL", oppName="Avalanche", home=True, live=False, tbd=False, tv=["KDFW 4"]),
             dict(id=3, date="2026-04-24", start="2026-04-24T23:00:00Z", opp="MIN", oppName="Wild", home=True, live=False, tbd=True, tv=[])]
 
     page, errors = open_page(browser, page_with_first_games(sample_page, 82, tmp_path / "upcoming.html", add), width=width)
     fut = page.locator(".chips .fut")
-    assert fut.count() == 3 and page.locator(".chip").count() == 82
+    assert fut.count() == 4 and page.locator(".chip").count() == 82
     assert page.locator(".chips .fut button, .chips button.fut").count() == 0
+    # a finished game whose stats aren't official yet waits in the strip
+    assert "Stats soon" in fut.nth(0).inner_text() and "officia" in fut.nth(0).get_attribute("title")
+    fut = page.locator(".chips .fut").filter(has_not_text="Stats soon")
     assert "Live" in fut.nth(0).inner_text() and "at WPG" in fut.nth(0).inner_text()
     assert "vs COL" in fut.nth(1).inner_text() and ("PM" in fut.nth(1).inner_text() or "AM" in fut.nth(1).inner_text())
     assert "KDFW 4" in fut.nth(1).get_attribute("title")
@@ -734,11 +738,14 @@ def test_upcoming_games_in_the_picker(browser, sample_page, tmp_path, width):
     assert page.locator(".chip").last.get_attribute("aria-pressed") == "true"
     # at the latest game the right arrow keeps going along the schedule, then stops at its end
     scroll = lambda: page.evaluate("document.querySelector('.chips').scrollLeft")
+    # the click above can jump the strip to its end; the arrows catch up on the next frame's scroll event
+    page.evaluate("() => new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)))")
     for _ in range(40):
-        if page.locator("#next").is_disabled():
-            break
         before = scroll()
-        page.locator("#next").click()
+        # check and click in one step: a late scroll event can switch the arrow off between a separate check and the
+        # click, which made this test flaky (a failed publish on Oct 20, 2026)
+        if not page.evaluate("() => { const b = document.querySelector('#next'); if (b.disabled) return false; b.click(); return true; }"):
+            break
         page.wait_for_function(f"document.querySelector('.chips').scrollLeft > {before}")
         page.evaluate("""() => new Promise(done => {  // until the smooth scroll has come to rest
           const c = document.querySelector('.chips'); let last = -1;

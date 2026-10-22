@@ -762,6 +762,30 @@ def load_skater_reports(api: Api, team_id: int, season_id: int) -> tuple[dict, d
     return by_game, {r["playerId"]: r for r in rows("percentages", False)}
 
 
+STATS_WAIT_HOURS = 18  # how long a finished game waits for the NHL's final stats before it goes up (and is emailed) anyway
+
+
+def stats_missing(box: dict, on_ice: dict, team: str) -> str:
+    """What the NHL still hasn't posted for a finished game, in words ("" once it's all in): the game made official,
+    and on-ice shot attempts and even-strength ice time for every one of our skaters, the last numbers to arrive
+    (on_ice from load_skater_reports). The page holds a game back until this is empty (or STATS_WAIT_HOURS have
+    passed), tools/site_check.py publishes the moment it is, and the post-game email waits for the same two things."""
+    side = "homeTeam" if box["homeTeam"]["abbrev"] == team else "awayTeam"
+    pids = [p["playerId"] for grp in ("forwards", "defense") for p in box.get("playerByGameStats", {}).get(side, {}).get(grp, [])]
+    on_ice_in = bool(pids) and all(on_ice.get((box["id"], pid), {}).get(k) is not None
+                                   for pid in pids for k in ("satFor", "evTimeOnIce"))
+    return " and ".join(x for x, ok in (("the game isn't official yet", box.get("gameState") == OFFICIAL),
+                                        ("on-ice numbers aren't in yet", on_ice_in)) if not ok)
+
+
+def hours_since(start_utc: str | None, now: dt.datetime | None = None) -> float:
+    """Hours since a schedule's startTimeUTC ("2026-10-22T00:00:00Z"); infinite if unknown."""
+    if not start_utc:
+        return math.inf
+    start = dt.datetime.fromisoformat(start_utc.replace("Z", "+00:00"))
+    return ((now or dt.datetime.now(dt.timezone.utc)) - start).total_seconds() / 3600
+
+
 def has(arr) -> bool:
     return bool(np.any(~np.isnan(np.asarray(arr, dtype=float))))
 

@@ -322,4 +322,34 @@ def test_upcoming_games():
     assert up[0]["live"] and up[0]["home"] and up[0]["opp"] == "NYI"
     assert up[1]["tbd"]
     assert up[2] == dict(id=5, date="2026-10-25", start="2026-10-25T00:00:00Z", opp="WPG", oppName="Wpg", home=False,
-                         live=False, tbd=False, tv=["KDFW 4"])
+                         live=False, tbd=False, tv=["KDFW 4"], pending=False)
+    # a finished game held back until its stats are final stays in the strip, marked pending
+    sched["games"].append(game(6, 2, "FINAL", "EDM", "DAL"))
+    assert [(x["id"], x["pending"]) for x in build_dashboard.upcoming_games(sched, "DAL", {2}, {6})][-1] == (6, True)
+    assert 6 not in [x["id"] for x in build_dashboard.upcoming_games(sched, "DAL", {2})]
+
+
+def test_stats_missing():
+    box = {"id": 9, "gameState": "FINAL", "homeTeam": {"abbrev": "DAL"}, "awayTeam": {"abbrev": "EDM"},
+           "playerByGameStats": {"homeTeam": {"forwards": [{"playerId": 1}], "defense": [{"playerId": 2}]}}}
+    on_ice = {(9, 1): {"satFor": 3, "evTimeOnIce": 900}, (9, 2): {"satFor": 0, "evTimeOnIce": 1100}}
+    assert sv.stats_missing(box, on_ice, "DAL") == "the game isn't official yet"
+    box["gameState"] = "OFF"
+    assert sv.stats_missing(box, on_ice, "DAL") == ""
+    on_ice[(9, 2)]["evTimeOnIce"] = None
+    assert sv.stats_missing(box, on_ice, "DAL") == "on-ice numbers aren't in yet"
+    assert sv.stats_missing(dict(box, gameState="FINAL"), {}, "DAL") == "the game isn't official yet and on-ice numbers aren't in yet"
+    assert sv.stats_missing(box, {}, "EDM") == "on-ice numbers aren't in yet"  # no skaters listed for that side yet
+
+
+def test_a_game_waits_for_its_final_stats(sample_api, monkeypatch):
+    rows, _, _ = sv.load_trend(sample_api, "DAL", "20252026")
+    last = rows[-1]["id"]
+    monkeypatch.setattr(sv, "stats_missing", lambda box, on_ice, team: "the game isn't official yet" if box["id"] == last else "")
+    monkeypatch.setattr(sv, "hours_since", lambda start, now=None: 2.0)
+    d = build_dashboard.build_data(sample_api, "DAL", "20252026", sv.TEAM_COLOR, "", sample=True)
+    assert last not in {g["id"] for g in d["games"]} and len(d["games"]) == len(rows) - 1
+    assert next(x for x in d["upcoming"] if x["id"] == last)["pending"]
+    monkeypatch.setattr(sv, "hours_since", lambda start, now=None: sv.STATS_WAIT_HOURS + 1)  # the NHL never finished: up anyway
+    d = build_dashboard.build_data(sample_api, "DAL", "20252026", sv.TEAM_COLOR, "", sample=True)
+    assert last in {g["id"] for g in d["games"]} and not any(x["id"] == last for x in d["upcoming"])

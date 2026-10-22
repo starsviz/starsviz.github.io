@@ -166,3 +166,9 @@ def test_ask_claude_runs_claude_code(brief, monkeypatch):
         {"type": "result", "subtype": "success", "is_error": True, "result": "Failed to authenticate"}), ""))
     with pytest.raises(SystemExit, match="Failed to authenticate"):
         pe.ask_claude(brief)
+
+
+def test_the_email_gives_up_waiting_when_the_page_does():
+    sys.path.insert(0, str(ROOT))
+    import stars_viz as sv
+    assert pe.GIVE_UP_HOURS == sv.STATS_WAIT_HOURS
