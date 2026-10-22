@@ -1,1 +1,19 @@
-[]
+[
+ {
+  "date": "2026-10-21",
+  "rule": {
+   "lo": -192,
+   "hi": 110,
+   "dlo": 0.0,
+   "dhi": 23.51,
+   "venue": "either",
+   "bets": 64,
+   "wins": 46,
+   "units": 23.02,
+   "all_bets": 108,
+   "all_wins": 66,
+   "all_units": 11.47
+  },
+  "emailed": false
+ }
+]

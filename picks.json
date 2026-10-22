@@ -1618,5 +1618,35 @@
   "fits": null,
   "result": "W",
   "final": "TBL 6, VGK 2"
+ },
+ {
+  "id": 2026020152,
+  "date": "2026-10-21",
+  "start": "2026-10-21T23:30:00Z",
+  "away": "PHI",
+  "home": "BUF",
+  "away_prev": 69.78,
+  "home_prev": 62.46,
+  "pick": "PHI",
+  "line": 180,
+  "source": "DraftKings closing (missed the pick-time run)",
+  "fits": null,
+  "result": "W",
+  "final": "PHI 3, BUF 1"
+ },
+ {
+  "id": 2026020153,
+  "date": "2026-10-21",
+  "start": "2026-10-21T23:30:00Z",
+  "away": "FLA",
+  "home": "OTT",
+  "away_prev": 99.62,
+  "home_prev": 69.39,
+  "pick": "FLA",
+  "line": -110,
+  "source": "DraftKings closing (missed the pick-time run)",
+  "fits": null,
+  "result": "L",
+  "final": "FLA 1, OTT 5"
  }
 ]

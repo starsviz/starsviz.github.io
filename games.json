@@ -1659,5 +1659,27 @@
   "home_goals": 2,
   "home_ts": 58.52,
   "away_ts": 81.48
+ },
+ {
+  "id": 2026020152,
+  "date": "2026-10-21",
+  "start": "2026-10-21T23:30:00Z",
+  "away": "PHI",
+  "home": "BUF",
+  "away_goals": 3,
+  "home_goals": 1,
+  "away_ts": 76.19,
+  "home_ts": 63.81
+ },
+ {
+  "id": 2026020153,
+  "date": "2026-10-21",
+  "start": "2026-10-21T23:30:00Z",
+  "away": "FLA",
+  "home": "OTT",
+  "away_goals": 1,
+  "home_goals": 5,
+  "away_ts": 53.95,
+  "home_ts": 86.05
  }
 ]
