@@ -207,7 +207,7 @@ def test_latest_game_without_on_ice_numbers(browser, sample_page, tmp_path, n):
                 p.pop("oi", None)
 
     page, errors = open_page(browser, page_with_first_games(sample_page, n, tmp_path / f"no-on-ice{n}.html", strip))
-    fwd = page.locator('.card:has(> .chapter-label:text-matches("^Forwards"))')
+    fwd = page.locator('[data-card="F"]')
     assert "on-ice numbers" in fwd.locator(".note").inner_text()
     scores = fwd.locator(".scv").all_inner_texts()
     assert scores and all(s.isdigit() for s in scores)
@@ -608,3 +608,120 @@ def test_buy_me_a_beer(browser, sample_page, sample_data):
     assert "buymeacoffee" not in page.locator(".sharebox").inner_html()
     assert errors == []
     ctx.close()
+
+
+def test_team_score_card(browser, built_page, built_data):
+    """The team score sits between the player chart and the shot chart. Its parts add up to the score, the season chart has
+    one dot per game (the game on screen ringed), and tapping a dot opens that game."""
+    page, errors = open_page(browser, built_page)
+    order = page.eval_on_selector_all("#games > *", "els => els.map(e => e.id || e.className)")
+    assert order.index("teamcard") == order.index("shotmap") - 1 and order.index("teamcard") > 0
+    assert page.locator("#games > .card").first.locator("#quad").count() == 1, "the player chart comes first"
+    score = int(page.locator("#teamcard .ts-big .scv").inner_text())
+    pts = [float(t.replace("−", "-")) for t in page.locator("#teamcard .ts-row:not(.ts-base):not(.ts-total) .ts-pts").all_inner_texts()]
+    assert len(pts) == 3 and 0 <= score <= 100
+    assert abs(70 + sum(pts) - score) <= 1 or score in (0, 100), (score, pts)
+    assert int(page.locator("#teamcard .ts-total .ts-pts").inner_text()) == score
+    assert page.locator("#tchart .tdot").count() == len(built_data["games"])
+    assert page.locator("#tchart .tdot.on").count() == 1
+    page.evaluate("document.querySelector('#tchart').scrollIntoView({ block: 'center' })")
+    box = page.locator("#tchart .tdot").first.bounding_box()
+    page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
+    page.wait_for_selector('.chip[aria-pressed="true"]')
+    assert page.locator(".chip").first.get_attribute("aria-pressed") == "true"
+    assert page.locator("#tchart .tdot").first.get_attribute("class").endswith(" on")
+    page.locator("#teamcard details.how summary").click()
+    assert "70 is an average game" in page.locator("#teamcard details.how").inner_text()
+    assert errors == []
+    page.close()
+
+
+def column(page, tbl, key):
+    """The numbers in one column of a ranking table, top to bottom (None for a dash)."""
+    idx = page.eval_on_selector_all(f'[data-tbl="{tbl}"] thead th', f'ths => ths.findIndex(th => th.querySelector(\'[data-sort="{key}"]\'))')
+    texts = page.eval_on_selector_all(f'[data-tbl="{tbl}"] tbody tr', f'rs => rs.map(r => (r.children[{idx}].querySelector(".cv, .scv") || r.children[{idx}]).textContent.trim())')
+
+    def num(t):
+        if t in ("–", ""):
+            return None
+        if ":" in t:
+            m, s = t.split(":")
+            return int(m) * 60 + int(s)
+        return float(t.replace("%", "").replace("+", ""))
+    return [num(t) for t in texts]
+
+
+def test_tables_switch_to_season_and_sort(browser, built_page, built_data):
+    """One switch flips all three tables between this game and the season. Any column sorts best to worst on the first click
+    and worst to best on the next; giveaways are best when lowest; blanks always go last. The view and the sort stay put
+    while the reader moves between games."""
+    page, errors = open_page(browser, built_page)
+    assert column(page, "F", "score") == sorted(column(page, "F", "score"), reverse=True)
+    page.locator('[data-card="D"] [data-view="season"]').click()
+    for c in "FDG":
+        assert page.locator(f'[data-card="{c}"] [data-view="season"]').get_attribute("aria-pressed") == "true"
+    fwds = {r[0] for g in built_data["games"] for r in g["sk"] if built_data["players"][str(r[0])]["pos"] != "D"}
+    assert page.locator('[data-tbl="F"] tbody tr').count() == len(fwds)
+    assert "season so far" in page.locator('[data-card="F"] .chapter-label').text_content()
+    gp = column(page, "F", "gp")
+    assert all(1 <= v <= len(built_data["games"]) for v in gp)
+    assert column(page, "F", "score") == sorted(column(page, "F", "score"), reverse=True)
+
+    page.locator('[data-tbl="F"] [data-sort="gl"]').click()
+    goals = column(page, "F", "gl")
+    assert goals == sorted(goals, reverse=True)
+    assert page.locator('[data-tbl="F"] th.on').get_attribute("aria-sort") == "descending"
+    assert "sorted by goals" in page.locator('[data-card="F"] .chapter-label').text_content()
+    page.locator('[data-tbl="F"] [data-sort="gl"]').click()
+    assert column(page, "F", "gl") == sorted(goals)
+    page.locator('[data-tbl="F"] [data-sort="gv"]').click()
+    assert column(page, "F", "gv") == sorted(column(page, "F", "gv")), "fewest giveaways first"
+    page.locator('[data-tbl="F"] [data-sort="fo"]').click()
+    for _ in range(2):
+        fo = column(page, "F", "fo")
+        blanks = [v is None for v in fo]
+        assert blanks == sorted(blanks), "players who took no faceoffs go last"
+        page.locator('[data-tbl="F"] [data-sort="fo"]').click()
+    page.locator('[data-tbl="G"] [data-sort="svp"]').click()
+    sv = column(page, "G", "svp")
+    assert sv == sorted(sv, reverse=True)
+    assert page.locator('[data-tbl="D"] th.on [data-sort="score"]').count() == 1, "each table keeps its own sort"
+
+    page.locator(".chip").first.click()
+    assert page.locator('[data-card="F"] [data-view="season"]').get_attribute("aria-pressed") == "true"
+    page.locator('[data-card="F"] [data-view="game"]').click()
+    assert page.locator('[data-tbl="F"] th.on [data-sort="fo"]').count() == 1
+    first = built_data["games"][0]
+    assert page.locator('[data-tbl="F"] tbody tr').count() + page.locator('[data-tbl="D"] tbody tr').count() == len(first["sk"])
+    page.locator('[data-tbl="F"] [data-sort="score"]').click()
+    assert column(page, "F", "score") == sorted(column(page, "F", "score"), reverse=True)
+    page.locator('[data-tbl="F"] tr[data-pid] .linkish').first.click()
+    page.wait_for_selector(".sheet")
+    assert errors == []
+    page.close()
+
+
+@pytest.mark.parametrize("width", [1280, 390])
+def test_upcoming_games_in_the_picker(browser, sample_page, tmp_path, width):
+    """The rest of the schedule follows the played games in the picker: dashed, not clickable, with the start time
+    (in the reader's time zone) and TV in the tooltip."""
+    def add(data):
+        data["upcoming"] = [
+            dict(id=1, date="2026-04-20", start="2026-04-21T00:00:00Z", opp="WPG", oppName="Jets", home=False, live=True, tbd=False, tv=[]),
+            dict(id=2, date="2026-04-22", start="2026-04-23T00:30:00Z", opp="COL", oppName="Avalanche", home=True, live=False, tbd=False, tv=["KDFW 4"]),
+            dict(id=3, date="2026-04-24", start="2026-04-24T23:00:00Z", opp="MIN", oppName="Wild", home=True, live=False, tbd=True, tv=[])]
+
+    page, errors = open_page(browser, page_with_first_games(sample_page, 82, tmp_path / "upcoming.html", add), width=width)
+    fut = page.locator(".chips .fut")
+    assert fut.count() == 3 and page.locator(".chip").count() == 82
+    assert page.locator(".chips .fut button, .chips button.fut").count() == 0
+    assert "Live" in fut.nth(0).inner_text() and "at WPG" in fut.nth(0).inner_text()
+    assert "vs COL" in fut.nth(1).inner_text() and ("PM" in fut.nth(1).inner_text() or "AM" in fut.nth(1).inner_text())
+    assert "KDFW 4" in fut.nth(1).get_attribute("title")
+    assert "TBD" in fut.nth(2).inner_text()
+    fut.nth(1).click()
+    assert page.locator(".chip").last.get_attribute("aria-pressed") == "true"
+    assert page.locator("#next").is_disabled()
+    assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 0
+    assert errors == []
+    page.close()

@@ -65,7 +65,7 @@ def test_blocked_shot_goes_to_shooter(owner_is_shooter):
 
 def test_page_shape(sample_data):
     D = sample_data
-    assert set(D) == {"meta", "players", "games"}
+    assert set(D) == {"meta", "players", "games", "upcoming"}
     assert D["meta"]["team"] == "DAL" and D["meta"]["sample"] is True
     assert len(D["games"]) == 82
     assert [g["n"] for g in D["games"]] == list(range(1, 83))
@@ -237,3 +237,89 @@ def test_cache_keeps_only_official_games(tmp_path, monkeypatch):
     os.utime(api._path(rail), (time.time() - 3600,) * 2)
     api.get(rail, official=True)
     assert calls.count(rail) == 1, "right-rail of an official game isn't re-fetched"
+
+
+def _game_of(plays):
+    """A Dallas home game made of the given plays (Dallas attacks the right-hand net)."""
+    team = lambda i, ab: {"id": i, "abbrev": ab, "commonName": {"default": ab}, "score": 0, "sog": 0}
+    box = {"id": 1, "homeTeam": team(25, "DAL"), "awayTeam": team(20, "CGY"), "playerByGameStats": {}}
+    return sv.parse_game(box, {"plays": plays, "rosterSpots": []}, {}, "DAL")
+
+
+def _play(kind, clock, team, x=None, y=None, sc="1551", **d):
+    det = dict(eventOwnerTeamId=team, **d)
+    if x is not None:
+        det.update(xCoord=x, yCoord=y)
+    return {"typeDescKey": kind, "periodDescriptor": {"number": 1, "periodType": "REG"}, "timeInPeriod": clock,
+            "situationCode": sc, "homeTeamDefendingSide": "left", "details": det}
+
+
+def test_shot_context_for_expected_goals():
+    """Distance and angle to the net, rebounds (same team shot in the last 3 seconds), rushes (the play before, within
+    4 seconds, was outside the shooter's attacking zone) and empty nets, which get no expected goals."""
+    g = _game_of([
+        _play("shot-on-goal", "01:00", 25, 60, 0, shotType="wrist", zoneCode="O", shootingPlayerId=1),
+        _play("shot-on-goal", "01:02", 25, 84, 3, shotType="backhand", zoneCode="O", shootingPlayerId=1),
+        _play("hit", "05:00", 25, 0, 0, zoneCode="N"),
+        _play("missed-shot", "05:03", 25, 70, -10, shotType="snap", zoneCode="O", shootingPlayerId=2),
+        _play("giveaway", "08:00", 20, 50, 0, zoneCode="O"),       # Calgary's giveaway in its attacking zone is Dallas's own end
+        _play("shot-on-goal", "08:02", 25, 30, 0, shotType="slap", zoneCode="O", shootingPlayerId=3),
+        _play("shot-on-goal", "10:00", 20, 70, 0, sc="1560", shotType="wrist", zoneCode="O", shootingPlayerId=9),  # Dallas's net empty
+        _play("shot-on-goal", "12:00", 25, 80, 2, shotType="wrist", zoneCode="O", shootingPlayerId=1),
+    ])
+    s1, s2, s3, s4, s5, s6 = g["shots"]
+    assert round(s1["dist"]) == 29 and s1["angle"] == 0 and not (s1["rebound"] or s1["rush"])
+    assert s2["rebound"] and s2["stype"] == "backhand"
+    assert s3["rush"] and not s3["rebound"]
+    assert s4["rush"], "a turnover in the shooter's own end, then a shot: off the rush"
+    assert s5["empty_net"] and s5["xg"] is None
+    assert all(0 < s["xg"] < 1 for s in (s1, s2, s3, s4, s6))
+    assert s6["xg"] > s1["xg"] > s4["xg"], "closer shots are more dangerous"
+
+
+def test_team_score_inputs():
+    """Goals without empty-netters, expected goals, and 5-on-5 attempts weighted for the score: an attempt counts for more
+    when the team that takes it is ahead (when teams usually sit back) and for less when it's behind."""
+    shot = lambda ours, kind="shot-on-goal", five=True, strength="EV", xg=.1: dict(ours=ours, kind=kind, five=five, strength=strength, xg=xg)
+    g = {"us_home": True, "shots": [
+        shot(True, "goal", xg=.3),                   # 1-0
+        shot(True, "blocked-shot", xg=None),         # Dallas ahead by one
+        shot(False),                                 # Calgary behind by one
+        shot(False, "goal", five=False, strength="EN", xg=None),  # empty-net goal against: not counted
+        shot(True, "missed-shot", five=False, strength="PP", xg=.05),
+    ]}
+    t = sv.team_score_inputs(g)
+    p0, p1 = sv.SCORE_STATE_CF[(0, True)], sv.SCORE_STATE_CF[(1, True)]
+    assert (t["gf"], t["ga"], t["cfRaw"], t["caRaw"]) == (1, 0, 2, 1)
+    assert t["xgf"] == .35 and t["xga"] == .1
+    assert t["cf"] == round(.5 / p0 + .5 / p1, 3) and t["ca"] == round(.5 / (1 - p1), 3)
+    assert .5 / p1 > 1 > .5 / (1 - p1)
+
+
+def test_page_has_team_score_inputs(sample_data):
+    for g in sample_data["games"]:
+        t = g["tm"]
+        assert t["gf"] == sum(1 for x in g["goals"] if x[1] and x[7] != "EN")
+        assert t["ga"] == sum(1 for x in g["goals"] if not x[1] and x[7] != "EN")
+        assert (t["cfRaw"], t["caRaw"]) == tuple(g["st"]["att5"])
+        assert t["xgf"] > 0 and t["xga"] > 0 and t["cf"] > 0 and t["ca"] > 0
+
+
+def test_upcoming_games():
+    team = lambda ab: {"abbrev": ab, "commonName": {"default": ab.title()}}
+    game = lambda gid, typ, state, home, away, **kw: dict(id=gid, gameType=typ, gameState=state, gameDate="2026-10-2" + str(gid % 10),
+                                                         startTimeUTC=f"2026-10-2{gid % 10}T00:00:00Z", homeTeam=team(home), awayTeam=team(away),
+                                                         **{"gameScheduleState": "OK", **kw})
+    sched = {"games": [
+        game(1, 1, "FUT", "DAL", "STL"),                     # preseason
+        game(2, 2, "OFF", "DAL", "CHI"),                     # played
+        game(5, 2, "FUT", "WPG", "DAL", tvBroadcasts=[{"network": "KDFW 4", "countryCode": "US"}, {"network": "SN", "countryCode": "CA"}]),
+        game(3, 2, "LIVE", "DAL", "NYI"),
+        game(4, 2, "FUT", "DAL", "COL", gameScheduleState="TBD"),
+    ]}
+    up = build_dashboard.upcoming_games(sched, "DAL", {2})
+    assert [x["id"] for x in up] == [3, 4, 5]
+    assert up[0]["live"] and up[0]["home"] and up[0]["opp"] == "NYI"
+    assert up[1]["tbd"]
+    assert up[2] == dict(id=5, date="2026-10-25", start="2026-10-25T00:00:00Z", opp="WPG", oppName="Wpg", home=False,
+                         live=False, tbd=False, tv=["KDFW 4"])

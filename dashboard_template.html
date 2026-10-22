@@ -102,7 +102,7 @@ button:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:fo
 
 main { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; display: grid; gap: 14px; }
 .banner { background: var(--surface-2); border: 1px dashed var(--muted); color: var(--ink-2); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; }
-#games { display: grid; gap: 14px; min-width: 0; }
+#games, #tables { display: grid; gap: 14px; min-width: 0; }
 
 /* ---------- story blocks ---------- */
 .lede { padding: 6px 2px 4px; }
@@ -134,11 +134,15 @@ details.more[open] { padding-bottom: 14px; }
 /* ---------- game picker ---------- */
 .picker { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .chips { display: flex; gap: 6px; overflow-x: auto; scroll-behavior: smooth; padding: 2px 2px 8px; flex: 1; min-width: 0; scrollbar-width: thin; }
-.chip { flex: 0 0 auto; display: grid; gap: 1px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+.chip, .fut { flex: 0 0 auto; display: grid; gap: 1px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
   padding: 5px 9px 6px; cursor: pointer; min-width: 74px; border-bottom-width: 3px; }
-.chip .d { font-size: 11px; color: var(--muted); }
-.chip .o { font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.1; }
-.chip .r { font-size: 11.5px; font-weight: 600; }
+.chip .d, .fut .d { font-size: 11px; color: var(--muted); white-space: nowrap; }
+.chip .o, .fut .o { font-family: var(--font-display); font-weight: 600; font-size: 16px; line-height: 1.1; }
+.chip .r, .fut .r { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+/* games not played yet: dashed, quieter, not clickable */
+.fut { cursor: default; background: var(--surface-2); border-style: dashed; border-bottom-style: solid; border-bottom-color: var(--line); }
+.fut .o { color: var(--ink-2); } .fut .r { color: var(--muted); font-weight: 500; }
+.fut.live { border-color: var(--accent); border-style: solid; } .fut.live .r { color: var(--accent); font-weight: 700; }
 .chip.W { border-bottom-color: var(--accent); } .chip.L { border-bottom-color: var(--opp); } .chip.OTL { border-bottom-color: var(--otl); }
 .chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .chip[aria-pressed="true"] .d { color: var(--bg); opacity: .75; }
@@ -236,7 +240,7 @@ td.hot { font-weight: 700; }
 .band-hot { fill: var(--hot); opacity: .1; } .band-cold { fill: var(--cold); opacity: .1; }
 .dot-faint { fill: var(--otl); }
 .bar-us { fill: var(--accent); } .bar-them { fill: var(--opp); }
-.cross { stroke: var(--ink-2); stroke-width: 1; }
+.cross { stroke: var(--ink-2); stroke-width: 1; pointer-events: none; }  /* drawn under the pointer, it mustn't swallow the tap */
 .hit { fill: transparent; cursor: pointer; }
 .col-hl { fill: var(--surface-2); }
 .tl-axis { stroke: var(--rink); stroke-width: 2; }
@@ -272,6 +276,33 @@ td.hot { font-weight: 700; }
 .qlab { fill: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; font-family: var(--font-body); }
 .axt { fill: var(--ink-2); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); }
 .dlab { fill: var(--ink); font-size: 11.5px; font-weight: 600; font-family: var(--font-body); paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; pointer-events: none; }
+/* team score */
+.ts-head { display: flex; align-items: center; gap: 14px; margin: 2px 0 8px; }
+.ts-head h2 { margin: 0; }
+.ts-big { display: flex; align-items: baseline; gap: 6px; flex: none; }
+.ts-big .scv { font-size: 52px; color: var(--accent); }
+.ts-grade { font-family: var(--font-display); font-weight: 700; font-size: 20px; line-height: 1; padding: 3px 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); }
+.ts-parts { display: grid; border-top: 1px solid var(--line); margin: 4px 0 6px; }
+.ts-row { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(70px, 1fr) 3.4em; gap: 4px 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+.ts-lab { display: grid; } .ts-lab small { color: var(--muted); font-size: 12px; }
+.ts-val { color: var(--ink-2); white-space: nowrap; } .ts-val b { color: var(--ink); font-size: 15px; } .ts-dash { color: var(--muted); padding: 0 4px; }
+.ts-pts { text-align: right; font-size: 15px; }
+.ts-base .ts-lab b, .ts-base .ts-pts { color: var(--ink-2); font-weight: 600; }
+.ts-total { border-bottom: 0; } .ts-total .ts-pts { font-family: var(--font-display); font-size: 22px; }
+.ts-bar { position: relative; height: 12px; background: var(--surface-2); border-radius: 3px; }
+.ts-bar::after { content: ""; position: absolute; left: calc(50% - .5px); top: -3px; bottom: -3px; width: 1px; background: var(--ink-2); }
+.ts-fill { position: absolute; top: 2px; bottom: 2px; border-radius: 2px; }
+.ts-fill.pos { background: var(--accent); } .ts-fill.neg { background: var(--opp); }
+@media (max-width: 560px) {
+  .ts-row { grid-template-columns: minmax(0, 1fr) 3.4em; }
+  .ts-row .ts-val { grid-column: 1; grid-row: 2; } .ts-row .ts-bar { grid-column: 1 / -1; grid-row: 3; }
+  .ts-row .ts-pts { grid-column: 2; grid-row: 1 / span 2; }
+  .ts-base .ts-val, .ts-total .ts-val, .ts-base > span:nth-child(3), .ts-total > span:nth-child(3) { display: none; }
+  .ts-head { flex-wrap: wrap; gap: 4px; } .ts-head h2 { flex-basis: 100%; }
+  .ts-big .scv { font-size: 44px; }
+}
+.tdot { stroke: var(--surface); stroke-width: 1.5; } .tdot.W { fill: var(--accent); } .tdot.L { fill: var(--opp); } .tdot.OTL { fill: var(--otl); }
+.tdot.on { stroke: var(--ink); stroke-width: 2.5; }
 /* share image button + dialog */
 .sharebtn { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 12px 6px 10px; font: 600 13px/1 var(--font-body); letter-spacing: 0; text-transform: none; cursor: pointer; white-space: nowrap; }
 .sharebtn svg, .share-actions svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: 0 0 auto; }
@@ -320,6 +351,16 @@ ul.wts b { text-align: right; color: var(--ink); }
 .rk { display: inline-block; min-width: 1.7em; font-size: 12px; font-weight: 700; color: var(--muted); }
 .rank-tbl th, .rank-tbl td { padding-left: 6px; padding-right: 6px; }
 .rank-tbl .short { display: none; }
+/* "This Game" / "Season Stats" switch beside each table's label, and sortable column heads */
+.tbl-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; margin: 0 0 8px; }
+.tbl-top .chapter-label { margin: 0; }
+.sortb { position: relative; display: inline-flex; align-items: baseline; border: 0; background: none; padding: 0; margin: 0; cursor: pointer;
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; white-space: nowrap; }
+.sortb:hover, th.on .sortb { color: var(--ink); }
+.sortb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 3px; }
+/* the arrow hangs beside the label, so the label stays lined up with the numbers under it */
+.sarr { position: absolute; right: 100%; margin-right: 2px; font-size: 8px; color: var(--accent); }
+th.l .sarr, th.nm .sarr { right: auto; left: 100%; margin: 0 0 0 3px; }
 .swipe { display: none; font-size: 12px; color: var(--muted); margin: 0 0 4px; text-align: right; }
 @media (max-width: 700px) {
   .rank-tbl .full { display: none; } .rank-tbl .short { display: inline; }
@@ -418,6 +459,7 @@ const toi = s => `${Math.floor(s / 60)}:${String(Math.round(s % 60) % 60).padSta
 const pct = (x, d = 0) => x == null || isNaN(x) ? "–" : (x * 100).toFixed(d) + "%";
 const svp = x => x == null || isNaN(x) ? "–" : x.toFixed(3).replace(/^0/, "");
 const pm = x => (x > 0 ? "+" : "") + x;
+const pm1 = v => { const r = Math.round(v * 10) / 10 || 0; return (r > 0 ? "+" : "") + r.toFixed(1); };  // "+3.0", "0.0", never "-0.0"
 const sum = a => a.reduce((s, v) => s + (v || 0), 0);
 const mean = a => a.length ? sum(a) / a.length : null;
 const per = p => ({ 1: "1st", 2: "2nd", 3: "3rd" }[p] || (p === 4 ? "OT" : `${p - 3}OT`));
@@ -508,14 +550,14 @@ const AXES = { off: ["gl", "a1", "a2", "slot", "sog", "att"], two: ["cfd", "pm",
 const WMAX = Math.max(...Object.values(WEIGHTS).flat().map(w => Math.abs(w[1])));
 const sdDelta = v => (Math.abs(v) >= 10 ? Math.abs(v).toFixed(0) : Math.abs(v).toFixed(1));
 const STATCOLS = [
-  { k: "gl", h: "G", title: "Goals" }, { k: "a", h: "A", title: "Assists" }, { k: "p", h: "P", title: "Points" },
-  { k: "sog", h: "SOG", title: "Shots on goal" }, { k: "att", h: "ATT", title: "Shot attempts, including missed and blocked" },
-  { k: "cf", h: "CF%", title: "Dallas's share of 5-on-5 shot attempts while he was on the ice (Corsi)", fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v), eps: .005 },
-  { k: "pm", h: "+/-", title: "Plus-minus", fmt: pm }, { k: "pen", h: "PEN", title: "Penalties drawn minus penalties taken", fmt: pm },
-  { k: "hits", h: "HIT", title: "Hits" }, { k: "blk", h: "BLK", title: "Blocked shots" },
-  { k: "tk", h: "TK", title: "Takeaways" }, { k: "gv", h: "GV", title: "Giveaways (fewer is better)", inv: true },
-  { k: "toi", h: "TOI", title: "Ice time", fmt: toi, dfmt: v => toi(Math.abs(v)), afmt: toi },
-  { k: "fo", h: "FO%", title: "Faceoff win percentage", fOnly: true, fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v), eps: .005, note: l => `${l.foW}/${l.foW + l.foL}` },
+  { k: "gl", h: "G", name: "goals", title: "Goals" }, { k: "a", h: "A", name: "assists", title: "Assists" }, { k: "p", h: "P", name: "points", title: "Points" },
+  { k: "sog", h: "SOG", name: "shots on goal", title: "Shots on goal" }, { k: "att", h: "ATT", name: "shot attempts", title: "Shot attempts, including missed and blocked" },
+  { k: "cf", h: "CF%", name: "on-ice shot share", title: "Dallas's share of 5-on-5 shot attempts while he was on the ice (Corsi)", fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v), eps: .005 },
+  { k: "pm", h: "+/-", name: "plus-minus", title: "Plus-minus", fmt: pm }, { k: "pen", h: "PEN", name: "penalties drawn minus taken", title: "Penalties drawn minus penalties taken", fmt: pm },
+  { k: "hits", h: "HIT", name: "hits", title: "Hits" }, { k: "blk", h: "BLK", name: "blocked shots", title: "Blocked shots" },
+  { k: "tk", h: "TK", name: "takeaways", title: "Takeaways" }, { k: "gv", h: "GV", name: "giveaways", title: "Giveaways (fewer is better)", inv: true },
+  { k: "toi", h: "TOI", name: "ice time", title: "Ice time", fmt: toi, dfmt: v => toi(Math.abs(v)), afmt: toi },
+  { k: "fo", h: "FO%", name: "faceoff percentage", title: "Faceoff win percentage", fOnly: true, fmt: v => pct(v), dfmt: v => Math.abs(v * 100).toFixed(0), afmt: v => pct(v), eps: .005, note: l => `${l.foW}/${l.foW + l.foL}` },
 ];
 const GSTATS = { F: {}, D: {} };
 (function buildScores() {
@@ -574,29 +616,146 @@ function scoreDelta(score, avg) {
   const pc = avg > 0 ? Math.round((score - avg) / avg * 100) : 0, z = Math.abs(score - avg) / SD;
   return { pc, tier: z < 1 / 3 || pc === 0 ? "flat" : pc > 0 ? "up" : "down", strong: z >= 1, text: pc === 0 ? "even" : (pc > 0 ? "▲" : "▼") + Math.abs(pc) + "%" };
 }
+/* ---- ranking tables: "This Game" or "Season Stats" (state.view, one switch for all three tables), sortable by any column ---- */
+// A season row holds totals, except the stats in SEASON_RATE, which are his rate over the season. The small print under each
+// one is how far ahead of or behind an average Stars player at his position he is over the same number of games.
+const SEASON_RATE = new Set(["cf", "toi", "fo"]);
+const rv = r => r.season ? r.v : r.l;  // the row's numbers: this game, or his season
+function seasonRow(s) {
+  const v = {};
+  STATCOLS.forEach(c => { v[c.k] = SEASON_RATE.has(c.k) ? null : sum(s.log.map(l => l[c.k])); });
+  v.foW = sum(s.log.map(l => l.foW)); v.foL = sum(s.log.map(l => l.foL));
+  v.cf = s.cf; v.toi = s.toigp; v.fo = s.grp === "F" && v.foW + v.foL > 0 ? v.foW / (v.foW + v.foL) : null;
+  return { pid: s.pid, s, grp: s.grp, season: true, v };
+}
+// how much per-game averages differ from player to player (regulars only): what shades a season number
+const PSD = { F: {}, D: {} };
+Object.keys(PSD).forEach(grp => {
+  const reg = Object.values(skaters).filter(s => s.grp === grp && s.gp >= Math.min(10, Math.ceil(N / 4)));
+  STATCOLS.forEach(c => {
+    const v = reg.map(s => s.avg[c.k]).filter(x => x != null);
+    if (v.length >= 3) { const mu = mean(v); PSD[grp][c.k] = Math.sqrt(mean(v.map(x => (x - mu) ** 2))); }
+  });
+});
+function seasonDelta(r, c, v) {
+  const st = GSTATS[r.grp][c.k], avg = r.s.avg[c.k];
+  if (!st || avg == null) return null;
+  const rate = SEASON_RATE.has(c.k), per = (rate ? v : avg) - st.mu, d = rate ? per : per * r.s.gp;
+  const z = Math.abs(per) / (PSD[r.grp][c.k] || st.sd || 1), good = c.inv ? per < 0 : per > 0;
+  return { tier: z < .35 ? "flat" : good ? "up" : "down", strong: z >= 1, typical: rate ? st.mu : st.mu * r.s.gp,
+    txt: Math.abs(d) < (c.eps || .05) ? "even" : (d > 0 ? "▲" : "▼") + (c.dfmt ? c.dfmt(d) : sdDelta(d)) };
+}
 function statCell(r, c) {
-  const v = r.l[c.k], avg = r.s.avg[c.k], fmt = c.fmt || (x => x);
+  const v = rv(r)[c.k], fmt = c.fmt || (x => x);
   // a stat's small print (faceoffs won/taken) sits quietly in its own lane right of the number and its change,
   // so the change lines up under the number; the tooltip spells it out
-  const note = v != null && c.note ? c.note(r.l) : "", said = fmt(v) + (note ? ` (${note})` : "");
+  const note = v != null && c.note ? c.note(rv(r)) : "", said = fmt(v) + (note ? ` (${note})` : "");
   const cell = (inner, title = "") => `<td${title}>${c.note ? `<div class="cw"><div>${inner}</div><span class="cn">${note}</span></div>` : inner}</td>`;
   if (v == null) return cell(`<span class="cv" style="color:var(--muted)">–</span>`);
-  if (avg == null) return cell(`<span class="cv">${fmt(v)}</span>`);
-  const dd = statDelta(v, avg, GSTATS[r.grp][c.k]?.sd, c), tier = dd.tier === "flat" ? "flat" : dd.tier + (dd.strong ? " s2" : ""), txt = dd.txt;
-  const avgTxt = c.afmt ? c.afmt(avg) : avg.toFixed(1);
-  return cell(`<span class="cv">${fmt(v)}</span><span class="dv ${tier}">${txt}</span>`, ` title="${esc(c.title)}: ${said} this game, ${avgTxt} season average"`);
+  const afmt = c.afmt || (x => x.toFixed(1));
+  let dd, title;
+  if (r.season) {
+    dd = seasonDelta(r, c, v);
+    if (dd) title = ` title="${esc(c.title)}: ${said} ${SEASON_RATE.has(c.k) ? "this season" : `in ${plural(r.s.gp, "game")}`}; an average Stars ${r.grp === "D" ? "defenseman" : "forward"}: ${afmt(dd.typical)}"`;
+  } else {
+    const avg = r.s.avg[c.k];
+    if (avg != null) { dd = statDelta(v, avg, GSTATS[r.grp][c.k]?.sd, c); title = ` title="${esc(c.title)}: ${said} this game, ${afmt(avg)} season average"`; }
+  }
+  if (!dd) return cell(`<span class="cv">${fmt(v)}</span>`);
+  const tier = dd.tier === "flat" ? "flat" : dd.tier + (dd.strong ? " s2" : "");
+  return cell(`<span class="cv">${fmt(v)}</span><span class="dv ${tier}">${dd.txt}</span>`, title);
 }
 function scoreCell(r) {
-  const sc = Math.round(r.l.score), avg = r.s.avgScore, d = scoreDelta(r.l.score, avg);
+  // this game: compared with his season average; his season: his average game compared with a typical game (70)
+  const score = r.season ? r.s.avgScore : r.l.score, base = r.season ? MID : r.s.avgScore, sc = Math.round(score), d = scoreDelta(score, base);
   const t = d.tier === "flat" ? "flat" : d.tier + (d.strong ? " s2" : "");
-  return `<div class="scorecell" title="Player score ${sc}; his season average is ${Math.round(avg)}"><span class="scv num">${sc}</span>
+  const title = r.season ? `Average player score ${sc} over ${plural(r.s.gp, "game")}; ${MID} is a typical game` : `Player score ${sc}; his season average is ${Math.round(base)}`;
+  return `<div class="scorecell" title="${title}"><span class="scv num">${sc}</span>
     <span class="dv ${t}">${d.text}</span></div>`;
 }
-function rankTable(rows, grp, g) {
-  const cols = STATCOLS.filter(c => !c.fOnly || (grp === "F" && rows.some(r => r.l.fo != null)));
-  return `<p class="swipe">Swipe the table for all stats →</p><div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Player</th><th class="l">Score</th>${cols.map(c => `<th title="${esc(c.title)}">${c.note ? `<div class="cw"><span>${c.h}</span><span class="cn"></span></div>` : c.h}</th>`).join("")}</tr></thead><tbody>
-    ${rows.map((r, i) => `<tr data-pid="${r.pid}" data-gid="${g.id}"><td class="nm"><span class="rk">${i + 1}</span><button class="linkish who" aria-haspopup="dialog" aria-label="${esc(pname(r.pid))}, open player card"><span class="full">${esc(pname(r.pid))}</span><span class="short">${esc(plast(r.pid))}</span>${GO}</button></td>
-      <td class="l">${scoreCell(r)}</td>${cols.map(c => statCell(r, c)).join("")}</tr>`).join("")}</tbody></table></div>`;
+// Sorting. A column sorts best to worst on its first click and worst to best on the next ("best" is lowest for giveaways and
+// goals against, A first for names). A blank (no faceoffs taken, on-ice numbers not in yet) always goes to the bottom.
+function sortRows(rows, cols, sort, val, tie) {
+  const c = cols.find(x => x.k === sort.k), sign = (c.alpha || c.inv ? 1 : -1) * sort.dir;
+  return rows.slice().sort((a, b) => {
+    const x = val(a, c.k), y = val(b, c.k);
+    if (x == null || y == null) return x == null && y == null ? tie(a, b) : x == null ? 1 : -1;
+    return (typeof x === "string" ? x.localeCompare(y) : x - y) * sign || tie(a, b);
+  });
+}
+const sortOf = (key, cols, dflt) => { const s = state.sort[key]; return s && cols.some(c => c.k === s.k) ? s : dflt; };
+const sortPhrase = (sort, cols, dflt) => sort.k === dflt.k && sort.dir === dflt.dir ? "" : `sorted by ${cols.find(c => c.k === sort.k).name}${sort.dir < 0 ? ", reversed" : ""}`;
+function sortHead(c, sort, inner) {
+  const on = c.k === sort.k, up = (c.alpha || c.inv ? 1 : -1) * sort.dir > 0;
+  return `<th class="${c.cls || ""}${on ? " on" : ""}"${on ? ` aria-sort="${up ? "ascending" : "descending"}"` : ""}${c.title ? ` title="${esc(c.title)}"` : ""}>`
+    + `<button class="sortb" type="button" data-sort="${c.k}" aria-label="Sort by ${esc(c.name)}">${inner}${on ? `<span class="sarr" aria-hidden="true">${up ? "▲" : "▼"}</span>` : ""}</button></th>`;
+}
+const NAMECOL = { k: "name", h: "Player", name: "name", cls: "nm", alpha: true }, SCORECOL = { k: "score", h: "Score", name: "player score", cls: "l" };
+const GPCOL = { k: "gp", h: "GP", name: "games played", title: "Games played" };
+function skaterVal(r, k) {
+  if (k === "name") return plast(r.pid);
+  if (k === "score") return r.season ? r.s.avgScore : r.l.score;
+  if (k === "gp") return r.s.gp;
+  return rv(r)[k];
+}
+function rankTable(rows, grp, g, season) {
+  const cols = [NAMECOL, SCORECOL, ...(season ? [GPCOL] : []), ...STATCOLS.filter(c => !c.fOnly || (grp === "F" && rows.some(r => rv(r).fo != null)))];
+  const dflt = { k: "score", dir: 1 }, sort = sortOf(grp, cols, dflt);
+  rows = sortRows(rows, cols, sort, skaterVal, (a, b) => skaterVal(b, "score") - skaterVal(a, "score"));
+  const head = cols.map(c => sortHead(c, sort, c.note ? `<div class="cw"><span>${c.h}</span><span class="cn"></span></div>` : c.h)).join("");
+  return { phrase: sortPhrase(sort, cols, dflt), html: `<p class="swipe">Swipe the table for all stats →</p><div class="tbl-wrap"><table class="rank-tbl" data-tbl="${grp}"><thead><tr>${head}</tr></thead><tbody>
+    ${rows.map((r, i) => `<tr data-pid="${r.pid}"${season ? "" : ` data-gid="${g.id}"`}><td class="nm"><span class="rk">${i + 1}</span><button class="linkish who" aria-haspopup="dialog" aria-label="${esc(pname(r.pid))}, open player card"><span class="full">${esc(pname(r.pid))}</span><span class="short">${esc(plast(r.pid))}</span>${GO}</button></td>
+      <td class="l">${scoreCell(r)}</td>${season ? `<td><span class="cv">${r.s.gp}</span></td>` : ""}${cols.filter(c => STATCOLS.includes(c)).map(c => statCell(r, c)).join("")}</tr>`).join("")}</tbody></table></div>` };
+}
+// goalies: this game (compared with his season) or his season so far
+const DEC_RANK = { W: 3, OTL: 2, L: 1 };
+const GOALIE_COLS = {
+  game: [{ k: "name", h: "Goalie", name: "name", cls: "nm", alpha: true }, { k: "dec", h: "Dec", name: "decision", cls: "l", title: "Decision" },
+    { k: "svp", h: "SV%", name: "save percentage", title: "Save percentage" }, { k: "sv", h: "Saves", name: "saves" }, { k: "sa", h: "Shots", name: "shots faced", title: "Shots faced" },
+    { k: "ga", h: "GA", name: "goals against", title: "Goals against", inv: true }, { k: "ev", h: "EV SV%", name: "even-strength save percentage", title: "Save percentage at even strength" },
+    { k: "pk", h: "PK", name: "penalty-kill save percentage", title: "Saves and shots faced on the penalty kill" }, { k: "toi", h: "TOI", name: "ice time", title: "Ice time" }],
+  season: [{ k: "name", h: "Goalie", name: "name", cls: "nm", alpha: true }, { k: "gp", h: "GP", name: "games played", title: "Games played" },
+    { k: "rec", h: "Record", name: "wins", cls: "l", title: "Wins, regulation losses, overtime and shootout losses" },
+    { k: "svp", h: "SV%", name: "save percentage", title: "Save percentage" }, { k: "sv", h: "Saves", name: "saves" }, { k: "sa", h: "Shots", name: "shots faced", title: "Shots faced" },
+    { k: "ga", h: "GA", name: "goals against", title: "Goals against", inv: true }, { k: "gaa", h: "GAA", name: "goals-against average", title: "Goals against per 60 minutes", inv: true },
+    { k: "ev", h: "EV SV%", name: "even-strength save percentage", title: "Save percentage at even strength" },
+    { k: "pk", h: "PK", name: "penalty-kill save percentage", title: "Saves and shots faced on the penalty kill" }, { k: "so", h: "SO", name: "shutouts", title: "Shutouts" },
+    { k: "toi", h: "TOI", name: "ice time per game", title: "Ice time per game" }],
+};
+function goalieVal(x, k) {
+  if (k === "name") return plast(x.pid);
+  if (x.season) {
+    const s = x.s;
+    return { gp: s.gp, rec: s.w * 1e4 - s.l * 100 - s.otl, svp: s.svp, sv: s.sv, sa: s.sa, ga: s.ga, gaa: s.gaa, ev: s.evSvp, pk: s.pkSvp, so: s.so, toi: s.toi / s.gp }[k];
+  }
+  return { dec: DEC_RANK[x.dec] || 0, svp: x.sa ? x.sv / x.sa : null, sv: x.sv, sa: x.sa, ga: x.ga, ev: x.evSa ? x.evSv / x.evSa : null, pk: x.pkSa ? x.pkSv / x.pkSa : null, toi: x.toi }[k];
+}
+function goalieTable(gk, g, season) {
+  const cols = GOALIE_COLS[season ? "season" : "game"], dflt = { k: season ? "gp" : "toi", dir: 1 }, sort = sortOf("G", cols, dflt);
+  const rows = sortRows(gk, cols, sort, goalieVal, (a, b) => goalieVal(b, "toi") - goalieVal(a, "toi"));
+  const tierOf = d => d == null || Math.abs(d) < .01 ? "flat" : (d > 0 ? "up" : "down") + (Math.abs(d) >= .03 ? " s2" : "");
+  const dTxt = d => d == null ? "" : Math.abs(d) < .0005 ? "even" : (d > 0 ? "▲" : "▼") + Math.abs(d).toFixed(3).replace(/^0/, "");
+  const nameCell = x => `<td class="nm"><button class="linkish who" aria-haspopup="dialog" aria-label="${esc(pname(x.pid))}, open player card"><span class="full">${esc(pname(x.pid))}</span><span class="short">${esc(plast(x.pid))}</span>${GO}</button></td>`;
+  const body = rows.map(x => {
+    if (season) {
+      const s = x.s;
+      return `<tr data-pid="${x.pid}">${nameCell(x)}<td><span class="cv">${s.gp}</span></td><td class="l"><span class="cv">${s.w}-${s.l}-${s.otl}</span></td>
+        <td><span class="cv">${svp(s.svp)}</span></td><td><span class="cv">${s.sv}</span></td><td><span class="cv">${s.sa}</span></td><td><span class="cv">${s.ga}</span></td>
+        <td><span class="cv">${s.gaa == null ? "–" : s.gaa.toFixed(2)}</span></td><td><span class="cv">${svp(s.evSvp)}</span></td>
+        <td title="Penalty kill: ${s.pkSv}/${s.pkSa}"><span class="cv">${svp(s.pkSvp)}</span></td><td><span class="cv">${s.so}</span></td><td><span class="cv">${toi(s.toi / s.gp)}</span></td></tr>`;
+    }
+    const v = x.sa ? x.sv / x.sa : null, sv = x.s ? x.s.svp : null, d = v != null && sv != null ? v - sv : null;
+    const ev = x.evSa ? x.evSv / x.evSa : null, evAvg = x.s ? x.s.evSvp : null, dEv = ev != null && evAvg != null ? ev - evAvg : null;
+    const sa = x.s ? x.s.sa / x.s.gp : null, dsa = sa != null ? x.sa - sa : null;
+    return `<tr data-pid="${x.pid}" data-gid="${g.id}">${nameCell(x)}
+      <td class="l">${x.dec ? `<span class="pill ${x.dec}">${x.dec}</span>` : "–"}</td>
+      <td title="Season average ${svp(sv)}"><span class="cv">${svp(v)}</span><span class="dv ${tierOf(d)}">${dTxt(d)}</span></td>
+      <td><span class="cv">${x.sv}</span></td><td title="Season average ${sa == null ? "–" : sa.toFixed(1)}"><span class="cv">${x.sa}</span>${dsa == null ? "" : `<span class="dv flat">${dsa > 0 ? "▲" : dsa < 0 ? "▼" : ""}${sdDelta(dsa)}</span>`}</td>
+      <td><span class="cv">${x.ga}</span></td>
+      <td title="Season average ${svp(evAvg)}"><span class="cv">${svp(ev)}</span><span class="dv ${tierOf(dEv)}">${dTxt(dEv)}</span></td>
+      <td><span class="cv">${x.pkSa == null ? "–" : `${x.pkSv}/${x.pkSa}`}</span></td><td><span class="cv">${toi(x.toi)}</span></td></tr>`;
+  }).join("");
+  return { phrase: sortPhrase(sort, cols, dflt), html: `<div class="tbl-wrap"><table class="rank-tbl" data-tbl="G"><thead><tr>${cols.map(c => sortHead(c, sort, c.h)).join("")}</tr></thead><tbody>${body}</tbody></table></div>` };
 }
 const howItWorks = () => `<details class="how"><summary>How the player score works</summary>
   <p>Every stat in a game is compared with how Stars players at the same position usually do in a game, then weighted and added up. It mixes what a player did himself (goals, assists, shots) with what happened while he was on the ice: "on-ice shot attempts" (often called Corsi) counts every Dallas shot attempt at 5-on-5 during his shifts, minus the opponent's, which is the best public measure of which way the play was going. The total is scaled like a school grade: <b>70 is a typical game</b> for that position, the 80s are a B, the 90s are an A and 100 is the most a player can get. About two out of three games land between 60 and 80, and an A comes along about once a game across the whole lineup. Forwards and defensemen are weighted differently but land on the same scale, so a 90 means the same thing for either.</p>
@@ -804,6 +963,81 @@ function quadChart(el, rows, g, zoomUi) {
 }
 
 
+/* ================= team score ================= */
+// How well Dallas played as a team, on the player score's school-grade scale (70 = an average game, the 80s a B, the 90s an A),
+// but measured against the whole league. Every part is Dallas minus the opponent, and the weights come from every game of the
+// 2025-26 NHL season, all 32 teams (tools/fit_team_score.py), so 70 is an evenly played game and 10 points is one standard
+// deviation. Half of it is the scoreboard, half is how they played:
+//   goals           the goal difference, without empty-net goals (the shootout, a skills contest, isn't counted at all)
+//   expected goals  the quality of each team's chances, from where and how every unblocked shot was taken (stars_viz.shot_xg)
+//   shot attempts   at 5-on-5, adjusted for the score (stars_viz.team_score_inputs): which way the play was going
+// TEAM holds points per unit of difference, so the parts simply add up: 70 + goals + expected goals + shot attempts.
+// Hits, faceoffs, takeaways, giveaways and penalties were tested and left out: across the league they said nothing about which
+// teams were good. Unlike the player score, the scale doesn't move as games come in, so a game's team score never changes.
+const TEAM = { goal: 2.896, xg: 1.997, cf: 0.294, season: "2025-26" };
+function teamScore(g) {
+  const t = g.tm; if (!t) return null;
+  const parts = [
+    { k: "goals", lab: "Goals", sub: "not counting empty-net goals", us: t.gf, them: t.ga, fmt: v => v, pts: TEAM.goal * (t.gf - t.ga) },
+    { k: "xg", lab: "Expected goals", sub: "the quality of the chances", us: t.xgf, them: t.xga, fmt: v => v.toFixed(1), pts: TEAM.xg * (t.xgf - t.xga) },
+    { k: "cf", lab: "Shot attempts", sub: "5-on-5, adjusted for the score", us: t.cf, them: t.ca, fmt: v => Math.round(v), pts: TEAM.cf * (t.cf - t.ca),
+      tip: `${t.cfRaw}-${t.caRaw} before the adjustment` },
+  ];
+  return { score: Math.max(0, Math.min(100, MID + sum(parts.map(p => p.pts)))), parts, board: parts[0].pts, play: parts[1].pts + parts[2].pts };
+}
+G.forEach(g => { g.team = teamScore(g); });
+const gradeWord = s => s >= 90 ? "An A-level game" : s >= 80 ? "A B-level game" : s >= 70 ? "A C-level game" : s >= 60 ? "A below-average game" : "A rough night";
+const gradeLetter = s => s >= 90 ? "A" : s >= 80 ? "B" : s >= 70 ? "C" : "";
+// the headline: the grade, then whether the result matched the play (the play half of the score within 3 points either way is even)
+function teamStory(g, T) {
+  const opp = g.oppName, how = g.sfx === "SO" ? " in a shootout" : g.sfx === "OT" ? " in overtime" : "", even = Math.abs(T.play) < 3;
+  let clause;
+  if (g.res === "W") clause = even ? `the ${NAME} beat the ${opp}${how} in an even game` : T.play > 0 ? `the ${NAME} beat the ${opp}${how} and earned it`
+    : `the ${NAME} beat the ${opp}${how}, but the play went the other way`;
+  else clause = even ? `the ${NAME} lost to the ${opp}${how} in an even game` : T.play > 0 ? `the ${NAME} outplayed the ${opp} but lost${how}`
+    : `the ${opp} were the better team${how ? `, though the ${NAME} got a point` : ""}`;
+  return `${gradeWord(T.score)}: ${clause}`;
+}
+function teamCard(g) {
+  const T = g.team;
+  if (!T) return `<div class="card" id="teamcard"><p class="chapter-label">Team score</p><h2>Not available for this game</h2></div>`;
+  const sc = Math.round(T.score), letter = gradeLetter(T.score), MAXP = 15;
+  const bar = pts => { const w = Math.min(MAXP, Math.abs(pts)) / MAXP * 50;
+    return `<span class="ts-bar" aria-hidden="true"><span class="ts-fill ${pts >= 0 ? "pos" : "neg"}" style="${pts >= 0 ? "left:50%" : `left:${50 - w}%`};width:${w}%"></span></span>`; };
+  const row = p => `<div class="ts-row"${p.tip ? ` title="${esc(p.tip)}"` : ""}><span class="ts-lab"><b>${p.lab}</b><small>${esc(p.sub)}</small></span>
+    <span class="ts-val num">${US} <b>${p.fmt(p.us)}</b><span class="ts-dash">–</span><b>${p.fmt(p.them)}</b> ${esc(g.opp)}</span>${bar(p.pts)}<b class="ts-pts num">${pm1(p.pts)}</b></div>`;
+  const vals = G.map(x => x.team && x.team.score).filter(v => v != null), avg = mean(vals);
+  const rank = vals.filter(v => v > T.score).length + 1;
+  const rankTxt = N >= 5 ? (rank === 1 ? "their best game of the season so far" : rank === N ? "their lowest of the season so far" : rank <= 3 ? `their ${ord(rank)}-best of the season` : "") : "";
+  return `<div class="card" id="teamcard">
+    <p class="chapter-label">Team score</p>
+    <div class="ts-head"><div class="ts-big"><span class="scv num">${sc}</span>${letter ? `<span class="ts-grade">${letter}</span>` : ""}</div>
+      <h2>${esc(teamStory(g, T))}</h2></div>
+    <p class="cap">Half of the team score is the scoreboard and half is how they played, both measured against an average NHL game (${MID}).${rankTxt ? ` This was ${rankTxt}.` : ""}</p>
+    <div class="ts-parts"><div class="ts-row ts-base"><span class="ts-lab"><b>An average NHL game</b></span><span class="ts-val"></span><span></span><b class="ts-pts num">${MID}</b></div>
+      ${T.parts.map(row).join("")}
+      <div class="ts-row ts-total"><span class="ts-lab"><b>Team score</b></span><span class="ts-val"></span><span></span><b class="ts-pts num">${sc}</b></div></div>
+    <p class="split-h">The season so far: averaging ${Math.round(avg)}${N >= 10 ? `, ${Math.round(mean(vals.slice(-10)))} over the last 10` : ""}</p>
+    <p class="cap" style="margin-top:4px">Each dot is a game: green a win, gray a loss, light gray an overtime or shootout loss. ${N >= 5 ? "The line is the 10-game average. " : ""}Tap a dot to open that game.</p>
+    <div class="chart" id="tchart"></div>
+    <div class="legend"><span class="k"><span class="kbox us"></span>Win</span><span class="k"><span class="kbox them"></span>Loss</span><span class="k"><span class="kbox otl"></span>OT/SO loss</span>${N >= 5 ? `<span class="k"><svg width="16" height="10"><line x1="0" y1="5" x2="16" y2="5" class="ln-us"/></svg>10-game average</span>` : ""}<span class="k"><span class="kbox ref"></span>Average NHL game (${MID})</span></div>
+    ${teamHow()}
+  </div>`;
+}
+function teamChart(el, g, onPick) {
+  const xs = G.map(x => x.n), v = G.map(x => x.team ? x.team.score : null), lo = Math.min(40, Math.floor(Math.min(...v.filter(x => x != null)) / 10) * 10);
+  chart(el, { xs, xTicks: monthTicks(xs), yDomain: [lo, 100], yFmt: x => x, refs: [{ y: MID, label: String(MID) }],
+    series: [{ values: rolling(v, 10, mean), cls: "ln-us", end: x => Math.round(x) },
+      { values: v, line: false, dots: true, r: 4.5, dotCls: i => `tdot ${G[i].res}${G[i].id === g.id ? " on" : ""}` }],
+    tip: i => { const x = G[i]; return x.team ? `<b>Game ${x.n} · ${fdate(x.date)} ${esc(vs(x))}</b> · ${resLabel(x)} ${scoreStr(x)}<br>Team score ${Math.round(x.team.score)}: goals ${pm1(x.team.parts[0].pts)}, chances ${pm1(x.team.parts[1].pts)}, attempts ${pm1(x.team.parts[2].pts)}` : null; },
+    onClick: i => onPick(G[i]) });
+}
+const teamHow = () => `<details class="how"><summary>How the team score works</summary>
+  <p>The team score grades the whole team's game on the same scale as the player score: <b>70 is an average game</b>, the 70s are a C, the 80s a B and the 90s an A. Unlike the player score, it's measured against the whole NHL, not just the Stars. It was set on every game of the ${TEAM.season} season, all 32 teams, so 70 is what an evenly played game looks like, and a game's team score never changes once it's final.</p>
+  <p><b>Half is the scoreboard:</b> the goal difference, not counting empty-net goals or the shootout. <b>Half is how they played</b>, from the two numbers analysts trust most. <b>Expected goals</b> rates every unblocked shot by how often a shot like it goes in (distance, angle, shot type, rebounds, rushes, power plays), so it counts the quality of the chances, not just the number. <b>Shot attempts at 5-on-5</b> (often called Corsi) show which way the play was going; they're adjusted for the score, because teams that are ahead sit back and teams that are behind press.</p>
+  <p>Each goal of difference is worth ${TEAM.goal.toFixed(1)} points, each expected goal ${TEAM.xg.toFixed(1)} and every 10 shot attempts ${(TEAM.cf * 10).toFixed(1)}. Hits, faceoffs, takeaways, giveaways and penalties were tested and left out: across the league they said nothing about which teams were good.</p>
+  <p>Does it work? Across the ${TEAM.season} season, a team's average team score over half its games predicted its goal difference in the other half better than its goal difference, its wins, or its shot attempts did, and a little better than expected goals alone.</p></details>`;
+
 /* ================= story engine ================= */
 function scoreTrack(g) {
   let u = 0, t = 0; const out = [{ m: 0, u: 0, t: 0 }];
@@ -977,7 +1211,7 @@ function frame(el, h) {
   el.appendChild(svg);
   return { svg, W, H };
 }
-/* opts: xs, xDomain, series[{values, cls, step, stepTo, dots, dotCls, r, line, end}], area{values, step, stepTo}, bands[{x0,x1,cls,label}],
+/* opts: xs, xDomain, series[{values, cls, step, stepTo, dots, dotCls (a class, or i => class), r, line, end}], area{values, step, stepTo}, bands[{x0,x1,cls,label}],
    annots[{x,y,text,dy,dot}], refs[{y|line,label,labelX}], bars{values,clsOf,stack2,cls2}, xTicks, pLines, yFmt, yDomain, zeroBase, symmetric, zeroLine, tip(i), onClick(i), h */
 function chart(el, o) {
   const { svg, W, H } = frame(el, o.h);
@@ -1051,7 +1285,7 @@ function chart(el, o) {
   });
   (o.series || []).forEach(s => {
     if (s.line !== false) { const d = pathOf(s.values, s.step); if (d) add(svg, "path", { class: s.cls, d: d + (s.stepTo != null ? `H${X(s.stepTo)}` : "") }); }
-    if (s.dots) s.values.forEach((v, i) => { if (v != null && !isNaN(v)) add(svg, "circle", { class: s.dotCls || "dot-faint", cx: X(xs[i]), cy: Y(v), r: s.r || 3 }); });
+    if (s.dots) s.values.forEach((v, i) => { if (v != null && !isNaN(v)) add(svg, "circle", { class: (typeof s.dotCls === "function" ? s.dotCls(i) : s.dotCls) || "dot-faint", cx: X(xs[i]), cy: Y(v), r: s.r || 3 }); });
     if (s.end && o.endLabels !== false) {
       let li = s.values.length - 1; while (li >= 0 && (s.values[li] == null || isNaN(s.values[li]))) li--;
       if (li >= 0) ends.push(add(svg, "text", { class: "lbl end", x: (s.stepTo != null ? X(s.stepTo) : X(xs[li])) + 6, y: Y(s.values[li]) + 4 }, s.end(s.values[li])));
@@ -1149,11 +1383,24 @@ const shotTip = (g, s, oppLab) => {
 const mapShots = list => list.filter(e => e.s[2] !== 3 && e.s[3] != null).map(e => ({ x: e.s[3], y: e.s[4], us: !!e.s[1], kind: e.s[2], tip: shotTip(e.g, e.s) }));
 
 /* ================= state + tabs ================= */
-const state = { game: G.length ? G[G.length - 1].id : null, shots: false };  // shots: is the game shot chart open
+// shots: is the game shot chart open; view: the ranking tables show this game or the season; sort: each table's sort ({ k, dir }, null = default)
+const state = { game: G.length ? G[G.length - 1].id : null, shots: false, view: "game", sort: { F: null, D: null, G: null } };
 function render() { hideTip(); renderGame(); }
 function setTab() { render(); window.scrollTo({ top: 0 }); }
 const lede = (kicker, head, dek, extra) => `<div class="lede"><p class="kicker">${esc(kicker)}</p><h2 class="headline">${esc(head)}</h2>${dek ? `<p class="dek">${esc(dek)}</p>` : ""}${extra || ""}</div>`;
 const wire = root => root.querySelectorAll("[data-pid]").forEach(n => n.addEventListener("click", () => openPlayer(n.dataset.pid, n.dataset.gid ? +n.dataset.gid : null)));
+
+/* ================= upcoming games (the rest of the schedule, at the end of the game picker) ================= */
+// Times are in the reader's own time zone. A chip for a game not played yet isn't a button: there's nothing to show for it.
+const UPCOMING = D.upcoming || [];
+function futChip(x) {
+  const t = x.start ? new Date(x.start) : null, ok = t && !isNaN(t);
+  const day = ok ? `${t.toLocaleDateString("en-US", { weekday: "short" })} ${MONTHS[t.getMonth()]} ${t.getDate()}` : fdate(x.date);
+  const time = x.live ? "Live now" : x.tbd || !ok ? "Time TBD" : t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  const full = ok && !x.tbd ? t.toLocaleString("en-US", { weekday: "long", month: "long", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" }) : fdate(x.date, true);
+  const tip = `${x.home ? "vs" : "at"} the ${x.oppName}, ${full}${x.tv && x.tv.length ? ` · TV: ${x.tv.join(", ")}` : ""}`;
+  return `<div class="fut${x.live ? " live" : ""}" role="note" title="${esc(tip)}" aria-label="Upcoming: ${esc(tip)}"><span class="d">${esc(day)}</span><span class="o">${esc(vs(x))}</span><span class="r">${esc(time)}</span></div>`;
+}
 
 /* ================= GAME: player-first ================= */
 let quad = null;
@@ -1164,9 +1411,7 @@ function renderGame() {
   const S = gameStory(g);
   const chipScroll = root.querySelector(".chips")?.scrollLeft;
   const rows = g.sk.map(r => { const s = skaters[r[0]]; return s ? { pid: r[0], s, grp: s.grp, l: s.log.find(x => x.g.id === g.id) } : null; }).filter(r => r && r.l);
-  const byScore = rows.slice().sort((a, b) => b.l.score - a.l.score);
-  const fw = byScore.filter(r => r.grp === "F"), dm = byScore.filter(r => r.grp === "D");
-  const best = byScore[0], topTwo = rows.slice().sort((a, b) => b.l.two - a.l.two)[0];
+  const best = rows.slice().sort((a, b) => b.l.score - a.l.score)[0], topTwo = rows.slice().sort((a, b) => b.l.two - a.l.two)[0];
   const both = rows.filter(r => r.l.off >= MID && r.l.two >= MID).length;
   // the clearest "scored, but the play went against him" and "strong game, no points" of the night, if there is one
   const offOnly = rows.filter(r => r.l.off >= at(2 / 3) && r.l.two <= at(-2 / 3)).sort((a, b) => (b.l.off - b.l.two) - (a.l.off - a.l.two))[0];
@@ -1177,7 +1422,6 @@ function renderGame() {
   if (offOnly) qCap += ` ${pname(offOnly.pid)} produced (offense ${Math.round(offOnly.l.off)}), but the play went against him (tilting the ice ${Math.round(offOnly.l.two)}).`;
   else if (quiet && (!best || quiet.pid !== best.pid)) qCap += ` ${pname(quiet.pid)} had a strong game without a point (tilting the ice ${Math.round(quiet.l.two)}).`;
   const gk = g.gk.map(r => ({ pid: r[0], sa: r[1], sv: r[2], ga: r[3], toi: r[4], dec: r[6], evSv: r[7], evSa: r[8], pkSv: r[9], pkSa: r[10], s: goalies[r[0]] }));
-  const noOnIce = rows.length > 0 && rows.every(r => r.l.cfd == null);
   // the whole game's shot chart, both teams (blocked shots have no useful location, so they're left off)
   const gameShots = g.shots.filter(x => x[2] !== 3 && x[3] != null).map(x => ({ x: x[3], y: x[4], us: !!x[1], kind: x[2], tip: shotTip(null, x, g.oppName) }));
   const slotOf = us => gameShots.filter(x => x.us === us && inSlot(x.x, x.y, us)).length;
@@ -1186,6 +1430,7 @@ function renderGame() {
       <button class="step" id="prev" aria-label="Previous game" ${idx === 0 ? "disabled" : ""}>‹</button>
       <div class="chips" role="group" aria-label="Pick a game">
         ${G.map(x => `<button class="chip ${x.res}" data-id="${x.id}" aria-pressed="${x.id === g.id}"><span class="d">${fdate(x.date)}</span><span class="o">${esc(vs(x))}</span><span class="r">${resLabel(x)} ${scoreStr(x)}</span></button>`).join("")}
+        ${UPCOMING.map(futChip).join("")}
       </div>
       <button class="step" id="next" aria-label="Next game" ${idx === G.length - 1 ? "disabled" : ""}>›</button>
     </div>
@@ -1203,31 +1448,11 @@ function renderGame() {
         <span class="zoom" id="quadzoom" role="group" aria-label="Zoom the chart"><span class="zhint" hidden>Drag or scroll to look around</span><button data-z="out" aria-label="Zoom out" title="Zoom out">−</button><button data-z="in" aria-label="Zoom in" title="Zoom in (or pinch the chart)">+</button><button data-z="reset" class="zr" hidden>Reset</button></span></div>
       ${howItWorks()}
     </div>
+    ${teamCard(g)}
     <details class="more" id="shotmap"${state.shots ? " open" : ""}><summary>See the shot chart</summary>
       <p class="cap">Every goal, shot on goal and miss by both teams. Dallas shoots toward the right, the ${esc(g.oppName)} toward the left. From the shaded slot: Dallas <b>${slotOf(true)}</b>, ${esc(g.oppName)} <b>${slotOf(false)}</b>. Tap any shot for who and when.</p>
       <div id="gmap"></div>${rinkLegend(US, g.opp)}</details>
-    ${fw.length ? `<div class="card"><p class="chapter-label">Forwards · ranked by player score</p>
-      <p class="cap">The percentage next to the player score is how this game's score compares to that player's season average player score. The small number under each stat is the difference from his season average per game.</p>
-      ${noOnIce ? `<p class="note" style="margin:-6px 0 10px">The NHL hasn't published this game's on-ice numbers (CF%) yet. Scores will shift a little when it does.</p>` : ""}
-      ${rankTable(fw, "F", g)}</div>` : ""}
-    ${dm.length ? `<div class="card"><p class="chapter-label">Defensemen · ranked by player score</p>
-      ${rankTable(dm, "D", g)}</div>` : ""}
-    ${gk.length ? `<div class="card"><p class="chapter-label">In goal</p>
-      <div class="tbl-wrap"><table class="rank-tbl"><thead><tr><th class="nm">Goalie</th><th class="l">Dec</th><th>SV%</th><th>Saves</th><th>Shots</th><th>GA</th><th title="Save percentage at even strength">EV SV%</th><th title="Saves and shots faced on the penalty kill">PK</th><th>TOI</th></tr></thead><tbody>
-      ${gk.map(x => { const v = x.sa ? x.sv / x.sa : null, sv = x.s ? x.s.svp : null, d = v != null && sv != null ? v - sv : null;
-        const tierOf = d => d == null || Math.abs(d) < .01 ? "flat" : (d > 0 ? "up" : "down") + (Math.abs(d) >= .03 ? " s2" : "");
-        const dTxt = d => d == null ? "" : Math.abs(d) < .0005 ? "even" : (d > 0 ? "▲" : "▼") + Math.abs(d).toFixed(3).replace(/^0/, "");
-        const ev = x.evSa ? x.evSv / x.evSa : null, evAvg = x.s ? x.s.evSvp : null, dEv = ev != null && evAvg != null ? ev - evAvg : null;
-        const t = tierOf(d);
-        const sa = x.s ? x.s.sa / x.s.gp : null, dsa = sa != null ? x.sa - sa : null;
-        return `<tr data-pid="${x.pid}" data-gid="${g.id}"><td class="nm"><button class="linkish who" aria-haspopup="dialog" aria-label="${esc(pname(x.pid))}, open player card"><span class="full">${esc(pname(x.pid))}</span><span class="short">${esc(plast(x.pid))}</span>${GO}</button></td>
-          <td class="l">${x.dec ? `<span class="pill ${x.dec}">${x.dec}</span>` : "–"}</td>
-          <td title="Season average ${svp(sv)}"><span class="cv">${svp(v)}</span><span class="dv ${t}">${dTxt(d)}</span></td>
-          <td><span class="cv">${x.sv}</span></td><td title="Season average ${sa == null ? "–" : sa.toFixed(1)}"><span class="cv">${x.sa}</span>${dsa == null ? "" : `<span class="dv flat">${dsa > 0 ? "▲" : dsa < 0 ? "▼" : ""}${sdDelta(dsa)}</span>`}</td>
-          <td><span class="cv">${x.ga}</span></td>
-          <td title="Season average ${svp(evAvg)}"><span class="cv">${svp(ev)}</span><span class="dv ${tierOf(dEv)}">${dTxt(dEv)}</span></td>
-          <td><span class="cv">${x.pkSa == null ? "–" : `${x.pkSv}/${x.pkSa}`}</span></td><td><span class="cv">${toi(x.toi)}</span></td></tr>`; }).join("")}
-      </tbody></table></div></div>` : ""}`;
+    <div id="tables"></div>`;
   const chips = root.querySelector(".chips");
   chips.style.scrollBehavior = "auto";
   if (chipScroll != null) chips.scrollLeft = chipScroll;
@@ -1238,16 +1463,55 @@ function renderGame() {
   $("#prev").onclick = () => { state.game = G[idx - 1].id; renderGame(); };
   $("#next").onclick = () => { state.game = G[idx + 1].id; renderGame(); };
   quad = quadChart($("#quad"), rows, g, $("#quadzoom"));
+  // tapping a game on the team chart opens it, keeping the chart where it was on screen
+  if ($("#tchart")) teamChart($("#tchart"), g, x => { const y0 = $("#teamcard").getBoundingClientRect().top; state.game = x.id; renderGame(); window.scrollBy(0, $("#teamcard").getBoundingClientRect().top - y0); });
   // drawn when opened: the dot size depends on the chart's width, which is 0 while it's collapsed
   const shotmap = $("#shotmap"), drawShots = () => mountRink($("#gmap"), gameShots, { label: `Shot chart, ${US} ${vs(g)}` });
   shotmap.addEventListener("toggle", () => { state.shots = shotmap.open; if (shotmap.open) drawShots(); else hideTip(); });
   if (shotmap.open) drawShots();
   $("#share-game").onclick = () => openShare(gameCards(g, rows), "game");
+  renderTables(g, rows, gk);
+}
+// The Forwards, Defensemen and In goal cards. Switching views or sorting redraws only these, keeping each table's sideways scroll.
+function renderTables(g, rows, gk) {
+  const root = $("#tables"), season = state.view === "season";
+  const scroll = {}; root.querySelectorAll("table[data-tbl]").forEach(t => { scroll[t.dataset.tbl] = t.parentNode.scrollLeft; });
+  const focused = document.activeElement?.closest?.("#tables [data-sort], #tables [data-view]");
+  const refocus = focused && (focused.dataset.sort ? `table[data-tbl="${focused.closest("table").dataset.tbl}"] [data-sort="${focused.dataset.sort}"]`
+    : `.card[data-card="${focused.closest(".card").dataset.card}"] [data-view="${focused.dataset.view}"]`);
+  const sk = season ? Object.values(skaters).map(seasonRow) : rows;
+  const gks = season ? Object.values(goalies).map(s => ({ pid: s.pid, s, season: true })) : gk;
+  const seg = `<div class="seg" role="group" aria-label="Show stats for"><button type="button" data-view="game" aria-pressed="${!season}">This Game</button><button type="button" data-view="season" aria-pressed="${season}">Season Stats</button></div>`;
+  const head = (lab, phrase, dflt = "") => { const t = [season ? "season so far" : "", phrase || dflt].filter(Boolean).join(", ");
+    return `<div class="tbl-top"><p class="chapter-label">${lab}${t ? ` · ${t}` : ""}</p>${seg}</div>`; };
+  const byScore = season ? "ranked by average player score" : "ranked by player score";
+  const noOnIce = !season && rows.length > 0 && rows.every(r => r.l.cfd == null);
+  const fwT = rankTable(sk.filter(r => r.grp === "F"), "F", g, season), dmT = rankTable(sk.filter(r => r.grp === "D"), "D", g, season), gkT = goalieTable(gks, g, season);
+  root.innerHTML = `
+    ${sk.some(r => r.grp === "F") ? `<div class="card" data-card="F">${head("Forwards", fwT.phrase, byScore)}
+      ${season ? `<p class="cap">Season totals through ${plural(N, "game")}, except CF%, TOI and FO%, which are his averages. The score is his average game, and the percentage beside it compares that with a typical game (${MID}). The small number under each stat is how far ahead of or behind an average Stars forward he is over the same number of games.</p>`
+        : `<p class="cap">The percentage next to the player score is how this game's score compares to that player's season average player score. The small number under each stat is the difference from his season average per game.</p>`}
+      ${noOnIce ? `<p class="note" style="margin:-6px 0 10px">The NHL hasn't published this game's on-ice numbers (CF%) yet. Scores will shift a little when it does.</p>` : ""}
+      ${fwT.html}</div>` : ""}
+    ${sk.some(r => r.grp === "D") ? `<div class="card" data-card="D">${head("Defensemen", dmT.phrase, byScore)}
+      ${dmT.html}</div>` : ""}
+    ${gks.length ? `<div class="card" data-card="G">${head("In goal", gkT.phrase)}
+      ${gkT.html}</div>` : ""}`;
+  root.querySelectorAll("table[data-tbl]").forEach(t => { if (scroll[t.dataset.tbl]) t.parentNode.scrollLeft = scroll[t.dataset.tbl]; });
+  root.querySelectorAll("[data-view]").forEach(b => b.onclick = () => { if (state.view === b.dataset.view) return; state.view = b.dataset.view; hideTip(); renderTables(g, rows, gk); });
+  root.querySelectorAll("table[data-tbl]").forEach(t => t.querySelector("thead").addEventListener("click", e => {
+    const b = e.target.closest("[data-sort]"); if (!b) return;
+    const key = t.dataset.tbl, k = b.dataset.sort, on = t.querySelector("th.on [data-sort]")?.dataset.sort;
+    const cur = on === k ? (state.sort[key] && state.sort[key].k === k ? state.sort[key] : { k, dir: 1 }) : null;
+    state.sort[key] = { k, dir: cur ? -cur.dir : 1 };
+    renderTables(g, rows, gk);
+  }));
   root.querySelectorAll("tr[data-pid]").forEach(tr => {
     tr.addEventListener("mouseenter", () => quad && quad.highlight(tr.dataset.pid));
     tr.addEventListener("mouseleave", () => quad && quad.highlight(null));
   });
   wire(root);
+  if (refocus) root.querySelector(refocus)?.focus();
 }
 /* ================= SEASON STORY ================= */
 /* ================= PLAYERS ================= */

@@ -154,6 +154,7 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
             sk=skaters, gk=goalies,
             oppGk=[[x["name"], x["sa"], x["saves"]] for x in g["them_goalies"]],
             adv=dict(sat=r["sat"], pdo=r["pdo"], ppg=r["ppg"], ppo=r["ppo"], ppga=r["ppga"], tsh=r["tsh"]),
+            tm=sv.team_score_inputs(g),
         ))
     print()
 
@@ -174,7 +175,23 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
     return dict(meta=dict(team=team, teamName=team_name, season=season_id, seasonLabel=sv.season_label(season_id),
                           built=dt.datetime.now().strftime("%b %-d, %Y %-I:%M %p"), color=color,
                           credit=credit, sample=sample),
-                players={str(k): v for k, v in players.items()}, games=games)
+                players={str(k): v for k, v in players.items()}, games=games,
+                upcoming=upcoming_games(sched, team, {g["id"] for g in games}))
+
+
+def upcoming_games(sched: dict, team: str, done: set) -> list[dict]:
+    """The rest of the regular season, for the game picker: every game not played yet (one in progress included)."""
+    out = []
+    for g in sched.get("games", []):
+        if g.get("gameType") != 2 or g["id"] in done or g.get("gameState") in sv.FINAL_STATES:
+            continue
+        home = g["homeTeam"]["abbrev"] == team
+        opp = g["awayTeam"] if home else g["homeTeam"]
+        tv = [b["network"] for b in g.get("tvBroadcasts", []) if b.get("countryCode") == "US" and b.get("network")]
+        out.append(dict(id=g["id"], date=g.get("gameDate"), start=g.get("startTimeUTC"), opp=opp.get("abbrev"),
+                        oppName=sv.txt(opp.get("commonName"), opp.get("abbrev")), home=home,
+                        live=g.get("gameState") in ("LIVE", "CRIT"), tbd=g.get("gameScheduleState") != "OK", tv=tv))
+    return sorted(out, key=lambda x: (x["date"] or "", x["id"]))
 
 
 def clean(o):

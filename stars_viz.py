@@ -21,6 +21,7 @@ import datetime as dt
 import hashlib
 import json
 import logging
+import math
 import sys
 import time
 from pathlib import Path
@@ -190,6 +191,137 @@ def swatch(fig, x, y, color, size=0.012):
 # --------------------------------------------------------------------------
 # Single game
 # --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Expected goals: how likely an unblocked shot was to go in, from where it was taken and how
+# --------------------------------------------------------------------------
+XG_TYPES = ("wrist", "snap", "slap", "backhand", "tip-in", "deflected", "wrap-around")  # anything else counts as "other"
+
+
+def shot_context(rec: dict, d: dict, before, shooter: int, sc: str, shooter_home: bool) -> dict:
+    """What the expected-goals model looks at for one unblocked shot: distance and angle to the net (from the
+    normalized coordinates, so the shooter always attacks the net at x = 89), shot type, whether it's a rebound
+    (his team shot within the previous 3 seconds) or off the rush (the play before, within 4 seconds, was in the
+    neutral or his own zone), and whether the other net was empty. Empty-net shots get no expected goals."""
+    x, y = rec["x"], rec["y"]
+    if x is not None and not rec["ours"]:
+        x, y = -x, -y  # the opponent's shots are stored shooting left; measure them as if shooting right
+    dist = angle = None
+    if x is not None and y is not None:
+        dist = math.hypot(89 - x, y)
+        angle = math.degrees(math.atan2(abs(y), 89 - x))
+    rebound = rush = False
+    if before is not None:
+        gap = (rec["minute"] - before[0]) * 60
+        if 0 <= gap <= 3 and before[1] in ("shot-on-goal", "missed-shot", "blocked-shot") and before[2] == shooter:
+            rebound = True
+        elif 0 <= gap <= 4 and before[3] in ("N", "D", "O"):
+            zone = before[3] if before[2] == shooter else {"O": "D", "D": "O"}.get(before[3], before[3])
+            rush = zone in ("N", "D")
+    empty = False
+    if len(sc) == 4 and sc.isdigit():
+        empty = (int(sc[3]) if not shooter_home else int(sc[0])) == 0  # the defending team's goalie is out
+    stype = d.get("shotType") if d.get("shotType") in XG_TYPES else "other"
+    ctx = dict(dist=dist, angle=angle, stype=stype, rebound=rebound, rush=rush, empty_net=empty)
+    ctx["xg"] = None if empty else shot_xg(ctx, rec["strength"])
+    return ctx
+
+
+def xg_features(ctx: dict, strength: str) -> dict:
+    """The expected-goals model's inputs for one shot (the fit in tools/fit_team_score.py uses this too). Distance gets
+    a bend every 10-15 feet, because danger falls off fast in close and slowly from the point; tips, deflections and
+    rebounds get extra weight in tight; angle matters more the farther out the shot is."""
+    d, a = min(ctx["dist"], 100.0), min(ctx["angle"], 180.0)
+    reb, t = float(ctx["rebound"]), ctx["stype"]
+    f = dict(const=1.0, dist=d, log_dist=math.log(max(d, 1.0)), angle=a, angle2=a * a / 100,
+             d10=max(0.0, d - 10), d20=max(0.0, d - 20), d30=max(0.0, d - 30), d45=max(0.0, d - 45),
+             rebound=reb, rush=float(ctx["rush"]), pp=float(strength in ("PP", "EA")), sh=float(strength == "SH"),
+             tip_close=float(t == "tip-in") * max(0.0, 20 - d), defl_close=float(t == "deflected") * max(0.0, 20 - d),
+             reb_close=reb * max(0.0, 15 - d), angle_dist=a * d / 100, reb_angle=reb * a / 10)
+    if t != "wrist":
+        f["type_" + t] = 1.0
+    return f
+
+
+def shot_xg(ctx: dict, strength: str) -> float | None:
+    """Probability (0-1) that an unblocked shot goes in: a logistic model fit by tools/fit_team_score.py on every
+    unblocked shot of a full regular season, all 32 teams (XG_COEF)."""
+    if ctx["dist"] is None:
+        return None
+    z = sum(XG_COEF.get(k, 0.0) * v for k, v in xg_features(ctx, strength).items())
+    return 1 / (1 + math.exp(-z))
+
+
+XG_COEF = {  # fit on 2025-26 by tools/fit_team_score.py
+    "const": 2.68402,
+    "dist": 0.413,
+    "log_dist": -3.56765,
+    "angle": 0.01019,
+    "angle2": -0.02272,
+    "d10": -0.1873,
+    "d20": -0.11578,
+    "d30": -0.09039,
+    "d45": -0.00356,
+    "type_snap": 0.26614,
+    "type_slap": 0.45114,
+    "type_backhand": -0.37218,
+    "type_tip-in": -1.14405,
+    "type_deflected": -0.61405,
+    "type_wrap-around": -1.29396,
+    "type_other": -0.116,
+    "rebound": -0.57121,
+    "rush": -0.04949,
+    "pp": 0.19219,
+    "sh": 0.11648,
+    "tip_close": 0.01995,
+    "defl_close": 0.01965,
+    "reb_close": -0.0207,
+    "angle_dist": -0.0551,
+    "reb_angle": 0.04986,
+}
+
+
+def team_score_inputs(g: dict) -> dict:
+    """What the page's team score is made from, for our team in one parsed game (the page does the weighing):
+      gf, ga     goals, not counting empty-net goals (the shootout isn't in the play-by-play at all)
+      xgf, xga   expected goals, every situation except an empty net
+      cf, ca     shot attempts at 5-on-5, adjusted for the score: a team that's ahead sits back and gives up more
+                 attempts, one that's behind presses, so each attempt is weighted by how a typical team does with
+                 that lead at home or on the road (SCORE_STATE_CF). cfRaw, caRaw are the plain counts."""
+    out = dict(gf=0, ga=0, xgf=0.0, xga=0.0, cf=0.0, ca=0.0, cfRaw=0, caRaw=0)
+    lead = 0  # our lead before each event
+    for s in g["shots"]:
+        ours = s["ours"]
+        if s["five"]:
+            p = SCORE_STATE_CF[(max(-3, min(3, lead)), g["us_home"])]
+            out["cf" if ours else "ca"] += .5 / p if ours else .5 / (1 - p)
+            out["cfRaw" if ours else "caRaw"] += 1
+        if s.get("xg") is not None:
+            out["xgf" if ours else "xga"] += s["xg"]
+        if s["kind"] == "goal":
+            if s["strength"] != "EN":
+                out["gf" if ours else "ga"] += 1
+            lead += 1 if ours else -1
+    return {k: round(v, 3) if isinstance(v, float) else v for k, v in out.items()}
+
+
+SCORE_STATE_CF = {  # fit on 2025-26 by tools/fit_team_score.py. (lead, home): share of 5-on-5 shot attempts
+    (-3, False): 0.5514,
+    (-3, True): 0.5739,
+    (-2, False): 0.5449,
+    (-2, True): 0.5605,
+    (-1, False): 0.53,
+    (-1, True): 0.541,
+    (0, False): 0.4884,
+    (0, True): 0.5116,
+    (1, False): 0.459,
+    (1, True): 0.47,
+    (2, False): 0.4395,
+    (2, True): 0.4551,
+    (3, False): 0.4261,
+    (3, True): 0.4486,
+}
+
+
 def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
     home, away = box["homeTeam"], box["awayTeam"]
     us_home = home["abbrev"] == team
@@ -210,6 +342,8 @@ def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
 
     shots, goals, faceoffs = [], [], {us_id: 0, them_id: 0}
     pen, fo = {}, {}  # per player: [penalties taken, drawn] and [faceoffs won, lost]
+    team_pen = {us_id: 0, them_id: 0}  # penalties that put the other team on a power play (fights mostly offset, so they don't count)
+    last = None  # the previous play (game minute, kind, team, zone from that team's side), for rebounds and rushes
     for p in pbp.get("plays", []):
         kind = p.get("typeDescKey")
         pd = p.get("periodDescriptor", {}) or {}
@@ -217,6 +351,7 @@ def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
             continue
         d = p.get("details", {}) or {}
         owner = d.get("eventOwnerTeamId")
+        before, last = last, (game_minute(pd.get("number", 1), p.get("timeInPeriod")), kind, owner, d.get("zoneCode"))
         if kind == "faceoff" and owner in faceoffs:
             faceoffs[owner] += 1
             for key, i in (("winningPlayerId", 0), ("losingPlayerId", 1)):
@@ -227,6 +362,8 @@ def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
             for key, i in (("committedByPlayerId", 0), ("drawnByPlayerId", 1)):
                 if d.get(key):
                     pen.setdefault(d[key], [0, 0])[i] += 1
+            if owner in team_pen and d.get("typeCode") in ("MIN", "BEN", "MAJ", "MAT", "PS") and d.get("descKey") != "fighting":
+                team_pen[owner] += 1
             continue
         if kind not in ("goal", "shot-on-goal", "missed-shot", "blocked-shot"):
             continue
@@ -268,6 +405,8 @@ def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
         rec = dict(kind=kind, ours=ours, minute=minute, period=period, x=x, y=y,
                    five=five_on_five, strength=strength, clock=p.get("timeInPeriod"),
                    pid=d.get("scoringPlayerId") if kind == "goal" else d.get("shootingPlayerId"))
+        if kind != "blocked-shot":
+            rec.update(shot_context(rec, d, before, shooter, sc, shooter == home["id"]))
         shots.append(rec)
         if kind == "goal":
             scorer = d.get("scoringPlayerId")
@@ -298,6 +437,7 @@ def parse_game(box: dict, pbp: dict, rail: dict, team: str) -> dict:
         stats[cat] = rail_pair(cat) or box_sum(key)
     stats["sog"] = (us.get("sog", stats["sog"][0]), them.get("sog", stats["sog"][1]))
     stats["faceoffs"] = (faceoffs[us_id], faceoffs[them_id])
+    stats["penalties"] = (team_pen[us_id], team_pen[them_id])
     pp = rail_pair("powerPlay")
     stats["powerPlay"] = pp if pp else None
     att = lambda ours, five=False: sum(1 for s in shots if s["ours"] == ours and (s["five"] or not five))
