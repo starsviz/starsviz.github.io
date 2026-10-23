@@ -1840,5 +1840,37 @@
   "result": "W",
   "final": "DET 5, VAN 2",
   "emailed": true
+ },
+ {
+  "id": 2026020166,
+  "date": "2026-10-23",
+  "start": "2026-10-24T00:00:00Z",
+  "away": "MTL",
+  "home": "CHI",
+  "away_prev": 76.81,
+  "home_prev": 54.49,
+  "pick": "MTL",
+  "line": null,
+  "source": "no line at pick time",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
+ },
+ {
+  "id": 2026020167,
+  "date": "2026-10-23",
+  "start": "2026-10-24T01:00:00Z",
+  "away": "TBL",
+  "home": "COL",
+  "away_prev": 81.48,
+  "home_prev": 69.5,
+  "pick": "TBL",
+  "line": null,
+  "source": "no line at pick time",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
  }
 ]
