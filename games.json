@@ -1813,5 +1813,27 @@
   "home_goals": 2,
   "away_ts": 93.63,
   "home_ts": 46.37
+ },
+ {
+  "id": 2026020166,
+  "date": "2026-10-23",
+  "start": "2026-10-24T00:00:00Z",
+  "away": "MTL",
+  "home": "CHI",
+  "away_goals": 4,
+  "home_goals": 1,
+  "away_ts": 82.6,
+  "home_ts": 57.4
+ },
+ {
+  "id": 2026020167,
+  "date": "2026-10-23",
+  "start": "2026-10-24T01:00:00Z",
+  "away": "TBL",
+  "home": "COL",
+  "away_goals": 3,
+  "home_goals": 6,
+  "away_ts": 71.16,
+  "home_ts": 68.84
  }
 ]

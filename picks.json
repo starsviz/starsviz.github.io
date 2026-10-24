@@ -1853,8 +1853,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "MTL 4, CHI 1",
   "emailed": false
  },
  {
@@ -1869,8 +1869,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "TBL 3, COL 6",
   "emailed": false
  }
 ]
