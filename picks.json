@@ -2144,5 +2144,53 @@
   "result": "W",
   "final": "MIN 4, VAN 2",
   "emailed": false
+ },
+ {
+  "id": 2026020185,
+  "date": "2026-10-26",
+  "start": "2026-10-26T23:00:00Z",
+  "away": "LAK",
+  "home": "NYR",
+  "away_prev": 58.48,
+  "home_prev": 71.31,
+  "pick": "NYR",
+  "line": -135,
+  "source": "DraftKings at pick time (4:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
+ },
+ {
+  "id": 2026020186,
+  "date": "2026-10-26",
+  "start": "2026-10-27T00:30:00Z",
+  "away": "TOR",
+  "home": "CGY",
+  "away_prev": 83.91,
+  "home_prev": 73.61,
+  "pick": "TOR",
+  "line": -135,
+  "source": "DraftKings at pick time (4:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
+ },
+ {
+  "id": 2026020187,
+  "date": "2026-10-26",
+  "start": "2026-10-27T01:30:00Z",
+  "away": "DET",
+  "home": "EDM",
+  "away_prev": 66.39,
+  "home_prev": 56.09,
+  "pick": "DET",
+  "line": 150,
+  "source": "DraftKings at pick time (4:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
  }
 ]
