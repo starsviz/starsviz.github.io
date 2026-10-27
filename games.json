@@ -2022,5 +2022,38 @@
   "home_goals": 2,
   "away_ts": 88.37,
   "home_ts": 51.63
+ },
+ {
+  "id": 2026020185,
+  "date": "2026-10-26",
+  "start": "2026-10-26T23:00:00Z",
+  "away": "LAK",
+  "home": "NYR",
+  "away_goals": 6,
+  "home_goals": 3,
+  "away_ts": 77.3,
+  "home_ts": 62.7
+ },
+ {
+  "id": 2026020186,
+  "date": "2026-10-26",
+  "start": "2026-10-27T00:30:00Z",
+  "away": "TOR",
+  "home": "CGY",
+  "away_goals": 2,
+  "home_goals": 5,
+  "away_ts": 57.98,
+  "home_ts": 82.02
+ },
+ {
+  "id": 2026020187,
+  "date": "2026-10-26",
+  "start": "2026-10-27T01:30:00Z",
+  "away": "DET",
+  "home": "EDM",
+  "away_goals": 4,
+  "home_goals": 3,
+  "away_ts": 69.64,
+  "home_ts": 70.36
  }
 ]
