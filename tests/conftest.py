@@ -40,7 +40,7 @@ def sample_page(sample_cache, tmp_path_factory) -> Path:
     out = tmp_path_factory.mktemp("site") / "index.html"
     build_dashboard.main(["--offline", "--cache", str(sample_cache), "--season", "20252026", "--sample",
                           "--credit", "test.substack.com", "--site-url", "https://example.com/stars", "--feedback-key", "test-key",
-                          "--out", str(out)])
+                          "--verify-google", "sample-code", "--out", str(out)])
     return out
 
 

@@ -30,6 +30,28 @@ To change the footer credit, go to the repo's **Settings → Secrets and variabl
 
 The season switches over on its own: until the Stars play a regular-season game, the page shows last season.
 
+## Being found on Google
+
+Everything a search engine needs is built with the page, every run, and none of it changes how the page looks:
+
+- The browser-tab title and the grey line under it in a Google result: **"Dallas Stars Player Rankings 2026-27 | Stick Language Stats"** and a sentence that ends with the latest score, so the result reads as current.
+- `robots.txt` and `sitemap.xml` beside the page, which is the first thing a crawler looks for.
+- A hidden description of the page in the code (schema.org): who publishes it, that it's about the Dallas Stars of the NHL, and which game it's showing. It's what lets Google connect the site to the team rather than to the word "stars".
+- The latest game written into the page as a plain table (the result, every skater's line, the goalies, and every game played so far). The page replaces it with the real thing the instant it loads, so no reader ever sees it — but search engines that don't run JavaScript, and most of the AI crawlers, read that instead of an empty page.
+- A heading that says what the page is, read by search engines and screen readers but not shown on screen.
+- **A page of its own for every game**, at addresses like `sticklanguagestats.com/game/2026-10-20-stars-vs-bruins/`. Each one opens on that game and carries its own title and description ("Dallas Stars vs Bruins, Oct 20, 2026: player ratings"), so someone searching for one night's game can land on it instead of on the latest one. They're all in the sitemap, and the date chips at the top of the page are now links to them: click as before and the page switches instantly, or right-click to copy a game's link for a post. On a game's page there's a small "All 2026-27 games" link back to the top.
+
+**What you have to do once** (10 minutes, and it's the part that matters most):
+
+1. Open [Google Search Console](https://search.google.com/search-console) and add **sticklanguagestats.com** as a *Domain* property. Google gives you a TXT record; add it at Namecheap (Advanced DNS → Add New Record → TXT, host `@`), then press Verify.
+   If you'd rather not touch DNS, choose *URL prefix* with `https://sticklanguagestats.com/` instead, pick the **HTML tag** method, copy the `content="..."` code out of it, and put that code in the repo variable `GOOGLE_VERIFY` (Settings → Secrets and variables → Actions → Variables). Run the workflow once and press Verify.
+2. In Search Console, go to **Sitemaps** and submit `sitemap.xml`. Then **URL Inspection** → paste the site address → **Request indexing**.
+3. [Bing Webmaster Tools](https://www.bing.com/webmasters) can import the whole thing from Search Console in two clicks. Worth doing: ChatGPT's search is built on Bing.
+
+After that, Search Console tells you what people typed to find you — which is the number a portfolio wants.
+
+**What helps most from here** isn't code: links. Every Substack post that links to the page, and anywhere the link gets shared (r/DallasStars, X, a reply on a Stars thread), is a vote Google counts. The site is new, so expect weeks, not days.
+
 ## Bugs / Requests form and "Buy me a beer"
 
 A small **Bugs / Requests** button sits in the bottom-right corner of the page. It opens a little form; each message is emailed to you by [Web3Forms](https://web3forms.com) (free up to 250 messages a month), along with the game the reader was looking at and their screen size and browser. The key that sends it is the repo **variable** `FEEDBACK_KEY` (Settings → Secrets and variables → Actions → Variables). The key is safe to have in the page: all it can do is send mail to you. Without it, the button doesn't show.

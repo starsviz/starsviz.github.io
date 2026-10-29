@@ -70,6 +70,31 @@ def fill_from_landing(api: sv.Api, pid: int, p: dict) -> None:
     p.update({k: v for k, v in info.items() if v})
 
 
+def slug(text: str) -> str:
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9]+", "-", text.lower())).strip("-")
+
+
+def game_slug(g: dict, team_name: str) -> str:
+    """The address of one game's page: "2026-10-20-stars-vs-bruins". Dated, so it sorts and can't collide."""
+    return slug(f"{g['date']}-{team_name}-{'vs' if g['home'] else 'at'}-{g['oppName']}")
+
+
+def team_full(side: dict, fallback: str = "") -> str:
+    """"Dallas Stars": the API keeps the city and the nickname in separate fields, and anyone
+    searching types both. Falls back to the nickname alone when there's no place name."""
+    common = sv.txt(side.get("commonName"), fallback)
+    place = sv.txt(side.get("placeName"))
+    return f"{place} {common}".strip() if place and not common.startswith(place) else common
+
+
+def full_team_name(sched: dict, team: str, fallback: str) -> str:
+    for g in sched.get("games", []):
+        for side in ("homeTeam", "awayTeam"):
+            if g.get(side, {}).get("abbrev") == team:
+                return team_full(g[side], fallback)
+    return fallback
+
+
 def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sample: bool = False) -> dict:
     rows, season_id, team_name = sv.load_trend(api, team, season)
     sched = api.get(sv.url_schedule(team, str(season_id)))
@@ -147,6 +172,7 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
         games.append(dict(
             id=gid, n=r["n"], date=r["date"], start=sched_g.get("startTimeUTC"), opp=r["opp"],
             oppName=sv.txt(opp_obj.get("commonName"), r["opp"]),
+            oppFull=team_full(opp_obj, r["opp"]),  # "New Jersey Devils", for titles and search engines
             home=g["us_home"], gf=r["gf"], ga=r["ga"], res=r["res"], sfx=r["suffix"], venue=g["venue"],
             official=box.get("gameState") == sv.OFFICIAL,  # the NHL has made the stats official (the post-game email waits for this)
             takeaway=sv.game_takeaway(g),
@@ -166,6 +192,9 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
         ))
     print()
 
+    for g in games:
+        g["slug"] = game_slug(g, team_name)
+
     for pid, p in players.items():
         if "born" not in p:
             fill_from_landing(api, pid, p)
@@ -180,9 +209,11 @@ def build_data(api: sv.Api, team: str, season: str, color: str, credit: str, sam
             today = dt.date.today()
             p["age"] = today.year - b.year - ((today.month, today.day) < (b.month, b.day))
 
-    return dict(meta=dict(team=team, teamName=team_name, season=season_id, seasonLabel=sv.season_label(season_id),
-                          built=dt.datetime.now().strftime("%b %-d, %Y %-I:%M %p"), color=color,
-                          credit=credit, sample=sample),
+    return dict(meta=dict(team=team, teamName=team_name, teamFull=full_team_name(sched, team, team_name),
+                          season=season_id, seasonLabel=sv.season_label(season_id),
+                          built=dt.datetime.now().strftime("%b %-d, %Y %-I:%M %p"),
+                          builtIso=dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
+                          color=color, credit=credit, sample=sample),
                 players={str(k): v for k, v in players.items()}, games=games,
                 upcoming=upcoming_games(sched, team, {g["id"] for g in games}, held))
 
@@ -217,6 +248,7 @@ def clean(o):
 
 BRAND_URL = "https://sticklanguage.substack.com"   # the owner's Substack: the header logo and Subscribe button go here
 SUPPORT_URL = "https://buymeacoffee.com/essjayjay"  # the owner's Buy Me a Coffee page ("Buy me a beer"): end-of-page note, feedback thanks
+SITE_NAME = "Stick Language Stats"  # the page's own name: the title's tail, og:site_name, the structured data
 SHARE_IMAGE = "og-image.png"      # made by tools/make_share_image.py after the build
 TOUCH_ICON = "apple-touch-icon.png"
 
@@ -237,48 +269,228 @@ def latest_line(data: dict) -> str:
     return f" Latest: {away} {as_}, {home} {hs}{' (' + g['sfx'] + ')' if g['sfx'] else ''} on {date}."
 
 
-def share_tags(title: str, desc: str, site_url: str, data: dict) -> str:
+def page_url(site_url: str, g: dict | None) -> str:
+    """Where a page lives: the site itself, or one game's page under /game/."""
+    base = site_url.rstrip("/") + "/" if site_url else ""
+    return base if g is None else f"{base}game/{g['slug']}/"
+
+
+def scoreline(data: dict, g: dict) -> tuple[str, str]:
+    """"Boston Bruins 2, Dallas Stars 3 (OT)", and the date it was played, the way a reader writes it."""
+    m, them = data["meta"], g["oppFull"]
+    home, away = (m["teamFull"], them) if g["home"] else (them, m["teamFull"])
+    hs, as_ = (g["gf"], g["ga"]) if g["home"] else (g["ga"], g["gf"])
+    line = f"{away} {as_}, {home} {hs}" + (f" ({g['sfx']})" if g["sfx"] else "")
+    return line, dt.date.fromisoformat(g["date"]).strftime("%b %-d, %Y")
+
+
+def page_head(data: dict, g: dict | None) -> tuple[str, str, str]:
+    """The title, the description and the heading, for the site's page (g is None) or for one game's.
+
+    A search result shows the first two, so they carry the city and the nickname both ("Dallas Stars", not
+    "Stars"), and a game's carries the matchup, the date and the score. Every game page has to say something
+    different here, or Google reads 80-odd near-identical pages as one and keeps whichever it likes."""
+    m = data["meta"]
+    if g is None:
+        return (f"{m['teamFull']} Player Rankings {m['seasonLabel']} | {SITE_NAME}",
+                f"{m['teamFull']} player ratings for {m['seasonLabel']}: a score for every skater from goals, "
+                f"shots, Corsi and ice time.{latest_line(data)}",
+                f"{m['teamFull']} player ratings, game by game")
+    line, date = scoreline(data, g)
+    return (f"{m['teamFull']} {'vs' if g['home'] else 'at'} {g['oppName']}, {date}: player ratings",
+            f"{line} on {date}. Every {m['teamFull']} skater scored and ranked: goals, shots, Corsi and ice time.",
+            f"{m['teamFull']} player ratings, {line}, {date}")
+
+
+def share_tags(title: str, desc: str, site_url: str, data: dict, g: dict | None = None) -> str:
     e = lambda s: htmlmod.escape(s, quote=True)
-    tags = [f'<meta property="og:type" content="website">',
+    # max-image-preview:large asks Google to show the share image full width in search results
+    tags = ['<meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1">',
+            f'<meta property="og:type" content="website">',
+            f'<meta property="og:site_name" content="{e(SITE_NAME)}">',
+            '<meta property="og:locale" content="en_US">',
             f'<meta property="og:title" content="{e(title)}">',
             f'<meta property="og:description" content="{e(desc)}">',
             f'<meta name="twitter:title" content="{e(title)}">',
             f'<meta name="twitter:description" content="{e(desc)}">']
-    if data["meta"].get("credit"):
-        tags.append(f'<meta property="og:site_name" content="{e(data["meta"]["credit"])}">')
     if site_url:
-        base = site_url.rstrip("/") + "/"
+        base, here = site_url.rstrip("/") + "/", page_url(site_url, g)
         # a new image URL after every game, so Substack and X don't show yesterday's cached preview
         version = data["games"][-1]["id"] if data["games"] else 0
         img = f"{base}{SHARE_IMAGE}?v={version}"
-        tags += [f'<link rel="canonical" href="{e(base)}">',
-                 f'<meta property="og:url" content="{e(base)}">',
+        tags += [f'<link rel="canonical" href="{e(here)}">',
+                 f'<meta property="og:url" content="{e(here)}">',
                  f'<meta property="og:image" content="{e(img)}">',
                  '<meta property="og:image:width" content="1200">',
                  '<meta property="og:image:height" content="630">',
-                 f'<meta property="og:image:alt" content="{e(data["meta"]["teamName"])} player rankings for the latest game">',
+                 '<meta property="og:image:type" content="image/png">',
+                 f'<meta property="og:image:alt" content="{e(data["meta"]["teamFull"])} player rankings for the latest game">',
                  '<meta name="twitter:card" content="summary_large_image">',
                  f'<meta name="twitter:image" content="{e(img)}">',
-                 f'<link rel="apple-touch-icon" href="{TOUCH_ICON}">']
+                 f'<link rel="apple-touch-icon" href="{e(base + TOUCH_ICON)}">']  # absolute: game pages sit a folder down
     else:
         tags.append('<meta name="twitter:card" content="summary">')
     return "\n".join(tags)
 
 
-def render(data: dict, template: Path, out: Path, fragment: bool = False, site_url: str = "") -> Path:
+# The pages a search engine should tie the team to, so "Dallas Stars" on this site means the NHL club.
+# Only used for the team the page is about; other teams simply get no sameAs.
+TEAM_LINKS = {"DAL": ["https://www.nhl.com/stars", "https://en.wikipedia.org/wiki/Dallas_Stars"]}
+
+
+def json_ld(data: dict, site_url: str, title: str, desc: str, g: dict | None = None) -> str:
+    """Structured data (schema.org, in the head): who publishes the page, what team it's about and which game
+    it's showing. Search engines read it to place the site in their index of things rather than words.
+    A game's page also gets a breadcrumb back to the site, which is what Google shows above a result."""
+    if not site_url or not data["games"]:
+        return ""
+    m, base = data["meta"], site_url.rstrip("/") + "/"
+    here = page_url(site_url, g)
+    org = {"@type": "Organization", "@id": f"{base}#publisher", "name": "Stick Language",
+           "url": m.get("brandUrl") or base,
+           "logo": {"@type": "ImageObject", "url": base + TOUCH_ICON, "width": 180, "height": 180}}
+    site = {"@type": "WebSite", "@id": f"{base}#website", "url": base, "name": SITE_NAME,
+            "inLanguage": "en-US", "publisher": {"@id": f"{base}#publisher"}}
+    team = {"@type": "SportsTeam", "@id": f"{base}#team", "name": m["teamFull"], "sport": "Ice hockey",
+            "memberOf": {"@type": "SportsOrganization", "name": "National Hockey League", "alternateName": "NHL"}}
+    if TEAM_LINKS.get(m["team"]):
+        team["sameAs"] = TEAM_LINKS[m["team"]]
+    shown = g or data["games"][-1]
+    home, away = ((m["teamFull"], shown["oppFull"]) if shown["home"] else (shown["oppFull"], m["teamFull"]))
+    sports_team = lambda n: {"@type": "SportsTeam", "name": n}
+    game = {"@type": "SportsEvent", "@id": f"{page_url(site_url, shown)}#event",
+            "name": f"{away} at {home}, {dt.date.fromisoformat(shown['date']).strftime('%B %-d, %Y')}",
+            "startDate": shown.get("start") or shown["date"], "sport": "Ice hockey",
+            "location": {"@type": "Place", "name": shown["venue"]},
+            "homeTeam": sports_team(home), "awayTeam": sports_team(away),
+            "organizer": {"@type": "SportsOrganization", "name": "National Hockey League"}}
+    page = {"@type": "WebPage", "@id": here, "url": here, "name": title, "description": desc,
+            "isPartOf": {"@id": f"{base}#website"}, "inLanguage": "en-US",
+            "about": [{"@id": f"{base}#team"}, {"@id": game["@id"]}],
+            "primaryImageOfPage": {"@type": "ImageObject", "url": base + SHARE_IMAGE},
+            "dateModified": m["builtIso"], "publisher": {"@id": f"{base}#publisher"}}
+    graph = [org, site, page, team, game]
+    if g is not None:
+        crumb = lambda n, name, url: {"@type": "ListItem", "position": n, "name": name, "item": url}
+        line, date = scoreline(data, g)
+        page["breadcrumb"] = {"@id": f"{here}#crumb"}
+        graph.append({"@type": "BreadcrumbList", "@id": f"{here}#crumb", "itemListElement": [
+            crumb(1, f"{m['teamFull']} player rankings {m['seasonLabel']}", base),
+            crumb(2, f"{'vs' if g['home'] else 'at'} the {g['oppName']}, {date}", here)]})
+    blob = json.dumps({"@context": "https://schema.org", "@graph": graph},
+                      separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
+    return f'<script type="application/ld+json">{blob}</script>'
+
+
+def static_summary(data: dict, g: dict | None = None, site_url: str = "") -> str:
+    """One game in plain HTML, baked into the page: the latest, or the game whose page this is.
+
+    The page draws itself from the baked JSON, so anything that doesn't run JavaScript - some search
+    engines, most AI crawlers, a reader with scripts off - would otherwise find an empty page. This fills
+    <section id="games"> with the result, every skater's boxscore line, the goalies, and every game played
+    (each one a link to its own page, so a crawler can walk the whole season). The page's own code replaces
+    it on load, before the first paint, so nobody with JavaScript ever sees it."""
+    m, games, P = data["meta"], data["games"], data["players"]
+    if not games:
+        return ""
+    e = lambda x: htmlmod.escape(str(x))
+    own_page = g is not None   # a game's own page gets the way back; the site's own page is already there
+    g = g or games[-1]
+    line, date = scoreline(data, g)
+    nm = lambda pid: P.get(str(pid), {}).get("name") or f"#{pid}"
+    pos = lambda pid: P.get(str(pid), {}).get("pos") or ""
+    mmss = lambda sec: f"{sec // 60}:{sec % 60:02d}"
+    plus = lambda n: f"{n:+d}" if n else "0"
+    rows = sorted(g["sk"], key=lambda r: (-(r[1] + r[2]), -r[8]))
+    body = "".join(f'<tr><td class="nm l">{e(nm(r[0]))}</td><td class="l">{e(pos(r[0]))}</td><td>{r[1]}</td>'
+                   f"<td>{r[2]}</td><td>{r[1] + r[2]}</td><td>{r[5]}</td><td>{r[6]}</td><td>{r[7]}</td>"
+                   f"<td>{r[11]}</td><td>{r[10]}</td><td>{plus(r[3])}</td><td>{mmss(r[8])}</td></tr>"
+                   for r in rows)
+    gk = "".join(f"<li>{e(nm(r[0]))}: {r[2]} saves on {r[1]} shots, {r[3]} against in {mmss(r[4])}</li>"
+                 for r in g["gk"])
+    w = sum(1 for x in games if x["res"] == "W")
+    otl = sum(1 for x in games if x["res"] == "OTL")
+    label = lambda x: (f"{dt.date.fromisoformat(x['date']).strftime('%b %-d')}: "
+                       f"{'vs' if x['home'] else 'at'} the {e(x['oppFull'])}, "
+                       f"{'won' if x['res'] == 'W' else 'lost'} {x['gf']}-{x['ga']}"
+                       f"{' (' + e(x['sfx']) + ')' if x['sfx'] else ''}")
+    played = "".join(f'<li><a href="{e(page_url(site_url, x))}">{label(x)}</a></li>' if site_url
+                     else f"<li>{label(x)}</li>" for x in reversed(games))
+    crumb = (f'<nav class="crumb" aria-label="Breadcrumb"><a href="{e(page_url(site_url, None))}">'
+             f"All {e(m['seasonLabel'])} games</a></nav>" if own_page and site_url else "")
+    return f"""{crumb}<div class="card">
+  <p class="chapter-label">{'The game' if own_page else 'Latest game'}</p>
+  <h2>{e(line)} &middot; {e(date)}</h2>
+  <p class="cap">Every {e(m['teamFull'])} skater's night at {e(g['venue'])}, from the NHL's public play-by-play.
+  The full page needs JavaScript: it scores and ranks these players, charts who produced and who drove the
+  play, maps every shot of the game and keeps every other game of {e(m['seasonLabel'])} a tap away.</p>
+  <div class="tbl-wrap"><table>
+    <caption class="vh">{e(m['teamFull'])} player stats, {e(line)}, {e(date)}</caption>
+    <thead><tr><th class="nm l">Player</th><th class="l">Pos</th><th>G</th><th>A</th><th>P</th><th>SOG</th>
+    <th>HIT</th><th>BLK</th><th>TK</th><th>GV</th><th>+/-</th><th>TOI</th></tr></thead>
+    <tbody>{body}</tbody></table></div>
+  {f'<p class="cap">In goal:</p><ul class="simple">{gk}</ul>' if gk else ''}
+</div>
+<div class="card">
+  <p class="chapter-label">The season so far</p>
+  <h2>{e(m['teamFull'])} are {w}-{len(games) - w - otl}-{otl} through {len(games)} games</h2>
+  <ul class="simple">{played}</ul>
+</div>"""
+
+
+def verify_tag(code: str) -> str:
+    """The tag Google Search Console asks for to prove the site is yours (see README)."""
+    code = (code or "").strip()
+    return f'<meta name="google-site-verification" content="{htmlmod.escape(code, quote=True)}">\n' if code else ""
+
+
+def seo_files(out: Path, site_url: str, data: dict) -> None:
+    """robots.txt and sitemap.xml beside the page: the two files a crawler looks for before anything else.
+    The sitemap lists the site's own page and every game page. A game's lastmod is the day it was played -
+    its numbers settle within a day, and saying "everything changed again today" every night only wastes
+    the crawler's time on 80-odd pages that didn't."""
+    base = site_url.rstrip("/") + "/"
+    (out.parent / "robots.txt").write_text(f"User-agent: *\nAllow: /\n\nSitemap: {base}sitemap.xml\n",
+                                           encoding="utf-8")
+    urls = [(base, data["meta"]["builtIso"], "daily", "1.0")]
+    urls += [(page_url(site_url, g), g["date"], "monthly", "0.7") for g in reversed(data["games"])]
+    body = "".join(f"  <url>\n    <loc>{loc}</loc>\n    <lastmod>{mod}</lastmod>\n"
+                   f"    <changefreq>{freq}</changefreq>\n    <priority>{pri}</priority>\n  </url>\n"
+                   for loc, mod, freq, pri in urls)
+    (out.parent / "sitemap.xml").write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f"{body}</urlset>\n", encoding="utf-8")
+
+
+def one_page(base_html: str, data: dict, site_url: str, verify: str, g: dict | None) -> str:
+    """One finished page from the template with the season's data already in it: the site's own page
+    (g is None) or one game's. Everything that differs between the two is in here."""
+    title, desc, h1 = page_head(data, g)
+    return (base_html.replace("__DASHBOARD_TITLE__", htmlmod.escape(title))
+                     .replace("__DASHBOARD_DESCRIPTION__", htmlmod.escape(desc, quote=True))
+                     .replace("__DASHBOARD_H1__", htmlmod.escape(h1))
+                     .replace("__DASHBOARD_OPEN_GAME__", str(g["id"]) if g else "null")
+                     .replace("<!--share-->", share_tags(title, desc, site_url, data, g))
+                     .replace("<!--seo-->", verify_tag(verify) + json_ld(data, site_url, title, desc, g))
+                     .replace("__DASHBOARD_FALLBACK__", static_summary(data, g, site_url)))
+
+
+def render(data: dict, template: Path, out: Path, fragment: bool = False, site_url: str = "",
+           verify: str = "") -> Path:
+    """Writes the page, and - once the site has an address - a page per game beside it.
+
+    Every game page is the same page opened on that game, with its own title, description, heading,
+    canonical link and plain-HTML summary, so each one can be found and shared on its own. The season's
+    data is baked in once and reused for all of them."""
     blob = json.dumps(clean(data), separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
-    html = template.read_text(encoding="utf-8")
-    assert "__DASHBOARD_DATA__" in html, "template is missing its data placeholder"
-    m = data["meta"]
-    title = f"{m['teamName']} Player Rankings {m['seasonLabel']}"
-    desc = f"Every {m['teamName']} skater, scored and ranked after every game.{latest_line(data)}"
-    html = (html.replace("__DASHBOARD_TITLE__", htmlmod.escape(title))
-                .replace("__DASHBOARD_DESCRIPTION__", htmlmod.escape(desc, quote=True))
-                .replace("__DASHBOARD_FAVICON__", asset_uri("favicon.png"))
-                .replace("__DASHBOARD_LOGO_LIGHT__", asset_uri("logo-light.png"))
-                .replace("__DASHBOARD_LOGO_DARK__", asset_uri("logo-dark.png"))
-                .replace("<!--share-->", share_tags(title, desc, site_url, data))
-                .replace("__DASHBOARD_DATA__", blob))
+    base_html = template.read_text(encoding="utf-8")
+    assert "__DASHBOARD_DATA__" in base_html, "template is missing its data placeholder"
+    base_html = (base_html.replace("__DASHBOARD_FAVICON__", asset_uri("favicon.png"))
+                          .replace("__DASHBOARD_LOGO_LIGHT__", asset_uri("logo-light.png"))
+                          .replace("__DASHBOARD_LOGO_DARK__", asset_uri("logo-dark.png"))
+                          .replace("__DASHBOARD_DATA__", blob))
+    html = one_page(base_html, data, site_url, verify, None)
     if fragment:  # no html/head/body wrapper: title, fonts and styles, then the page body
         head = re.search(r"<head>(.*?)</head>", html, re.S).group(1)
         body = re.search(r"<body>(.*?)</body>", html, re.S).group(1)
@@ -287,6 +499,11 @@ def render(data: dict, template: Path, out: Path, fragment: bool = False, site_u
     out.write_text(html, encoding="utf-8")
     if site_url and not fragment:
         shutil.copyfile(HERE / "assets" / "touch-icon.png", out.parent / TOUCH_ICON)  # phone home-screen icon
+        for g in data["games"]:
+            page = out.parent / "game" / g["slug"] / "index.html"
+            page.parent.mkdir(parents=True, exist_ok=True)
+            page.write_text(one_page(base_html, data, site_url, verify, g), encoding="utf-8")
+        seo_files(out, site_url, data)
     return out
 
 
@@ -303,6 +520,8 @@ def main(argv=None):
     ap.add_argument("--support-url", default=SUPPORT_URL, help='the "Buy me a beer" link ("" hides it)')
     ap.add_argument("--feedback-key", default="", help="Web3Forms access key for the Bugs/Requests form, which emails "
                                                          "each message to the address the key was made for (blank hides the form)")
+    ap.add_argument("--verify-google", default="", help="the google-site-verification code from Search "
+                                                       "Console, if you verify the site with a meta tag")
     ap.add_argument("--template", default=str(HERE / "dashboard_template.html"))
     ap.add_argument("--cache", default=".nhl_cache")
     ap.add_argument("--offline", action="store_true", help="use cached data only")
@@ -318,9 +537,11 @@ def main(argv=None):
     data["meta"]["supportUrl"] = args.support_url
     data["meta"]["feedbackKey"] = args.feedback_key.strip()  # public by design: it can only send mail to the owner
     data["meta"]["siteUrl"] = args.site_url.rstrip("/") + "/" if args.site_url else ""  # printed on share images
-    out = render(data, Path(args.template), Path(args.out), fragment=args.fragment, site_url=args.site_url)
+    out = render(data, Path(args.template), Path(args.out), fragment=args.fragment, site_url=args.site_url,
+                 verify=args.verify_google)
     kb = out.stat().st_size / 1024
-    print(f"Dashboard: {out}  ({len(data['games'])} games, {len(data['players'])} players, {kb:.0f} KB)")
+    pages = f", {len(data['games'])} game pages" if args.site_url else ""
+    print(f"Dashboard: {out}  ({len(data['games'])} games, {len(data['players'])} players, {kb:.0f} KB{pages})")
 
 
 if __name__ == "__main__":

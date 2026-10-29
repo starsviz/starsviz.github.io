@@ -337,7 +337,9 @@ for n in range(1, 83):
         gf = random.choice([0, 1, 1, 2, 2, 3, 3, 4]); ga = gf + random.choice([1, 1, 1, 2, 2, 3])
         if ga - gf == 1 and random.random() < 0.4: last = random.choice(["OT", "OT", "SO"])
     gid = 2025020000 + n * 7
-    g_home = {"id": 25, "abbrev": "DAL", "commonName": {"default": "Stars"}, "score": gf}
+    # placeName on our side only, so the builder's full-name fallback (nickname alone) gets exercised too
+    g_home = {"id": 25, "abbrev": "DAL", "commonName": {"default": "Stars"},
+              "placeName": {"default": "Dallas"}, "score": gf}
     g_opp = {"id": opp[0], "abbrev": opp[1], "commonName": {"default": opp[2]}, "score": ga}
     games.append({"id": gid, "season": SEASON, "gameType": 2, "gameDate": d.isoformat(), "startTimeUTC": d.isoformat() + "T01:00:00Z",
                   "gameState": "OFF", "homeTeam": g_home if home else g_opp, "awayTeam": g_opp if home else g_home,

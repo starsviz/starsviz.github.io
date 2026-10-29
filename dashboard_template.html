@@ -9,6 +9,7 @@
 <meta name="theme-color" content="#131b1f" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="__DASHBOARD_FAVICON__">
 <!--share-->
+<!--seo-->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
@@ -70,6 +71,9 @@ body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--f
 button { font: inherit; color: inherit; }
 button:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .num, table { font-variant-numeric: tabular-nums; }
+/* read by screen readers and search engines, not shown: the page's own h1, and the table captions in the no-JavaScript summary */
+.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+ul.simple { margin: 6px 0 0; padding-left: 18px; color: var(--ink-2); font-size: 14px; line-height: 1.6; }  /* the lists in that summary ("ul.plain" is taken, and styled quite differently) */
 
 /* ---------- top bar ---------- */
 .bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--surface); border-bottom: 1px solid var(--line); }
@@ -78,19 +82,19 @@ button:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:fo
    (the season, then the record) wraps onto a second line, which is cut off. */
 .brand { display: flex; flex-wrap: wrap; align-items: center; align-content: flex-start; gap: 30px 12px; height: 42px; overflow: hidden; margin-bottom: 10px; flex: 1 1 0; min-width: 0; }
 .brand > * { height: 42px; display: flex; align-items: center; }
-.brand h1 { display: flex; align-items: center; gap: 7px; margin: 0; line-height: 1; }
-.brand h1 img { height: 42px; width: auto; }
-.brand h1 img.l { display: var(--logo-l); } .brand h1 img.d { display: var(--logo-d); }
+.brand .wm { display: flex; align-items: center; gap: 7px; margin: 0; line-height: 1; }
+.brand .wm img { height: 42px; width: auto; }
+.brand .wm img.l { display: var(--logo-l); } .brand .wm img.d { display: var(--logo-d); }
 .brand .tag { font-family: var(--font-display); font-weight: 700; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; line-height: 1;
   background: var(--accent); color: var(--surface); border-radius: 999px; padding: 3px 6px 3px 7px; }
-@media (max-width: 480px) { .brand h1 img { height: 36px; } }
+@media (max-width: 480px) { .brand .wm img { height: 36px; } }
 .brand .season { font-family: var(--font-display); font-weight: 600; font-size: 17px; color: var(--muted); letter-spacing: .04em; }
-.brand h1 a { display: flex; border-radius: 4px; }
+.brand .wm a { display: flex; border-radius: 4px; }
 .subscribe { display: inline-flex; flex: none; align-items: center; align-self: center; margin: 0 0 10px auto; padding: 7px 12px; border-radius: 8px; white-space: nowrap;
   background: var(--accent); color: var(--surface); font-weight: 700; font-size: 13.5px; line-height: 1.2; text-decoration: none; }
 .subscribe:hover { filter: brightness(1.08); } .subscribe[hidden] { display: none; }
 .subscribe:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.brand h1 a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }  /* inside: the brand row clips what sticks out */
+.brand .wm a:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }  /* inside: the brand row clips what sticks out */
 .subscribe .short { display: none; }
 @media (max-width: 720px) { .subscribe .long { display: none; } .subscribe .short { display: inline; } }
 @media (max-width: 480px) { .bar-in { column-gap: 10px; } .brand { gap: 30px 9px; height: 36px; } .brand > * { height: 36px; } .subscribe { padding: 6px 9px; font-size: 12.5px; }
@@ -103,6 +107,12 @@ button:focus-visible, select:focus-visible, summary:focus-visible, [tabindex]:fo
 main { max-width: 980px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 40px; display: grid; gap: 14px; }
 .banner { background: var(--surface-2); border: 1px dashed var(--muted); color: var(--ink-2); border-radius: var(--radius); padding: 8px 12px; font-size: 13px; }
 #games, #tables { display: grid; gap: 14px; min-width: 0; }
+
+/* the way back to the whole season, on a single game's page */
+.crumb { font-size: 12.5px; font-weight: 600; margin: 0 0 6px; padding-left: 2px; }
+.crumb a { color: var(--muted); text-decoration: none; }
+.crumb a:hover { color: var(--accent); text-decoration: underline; }
+.crumb a::before { content: "\2039\00a0"; }
 
 /* ---------- story blocks ---------- */
 .lede { padding: 6px 2px 4px; }
@@ -144,8 +154,9 @@ details.more[open] { padding-bottom: 14px; }
 .fut .o { color: var(--ink-2); } .fut .r { color: var(--muted); font-weight: 500; }
 .fut.live { border-color: var(--accent); border-style: solid; } .fut.live .r { color: var(--accent); font-weight: 700; }
 .chip.W { border-bottom-color: var(--accent); } .chip.L { border-bottom-color: var(--opp); } .chip.OTL { border-bottom-color: var(--otl); }
-.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.chip[aria-pressed="true"] .d { color: var(--bg); opacity: .75; }
+a.chip { color: inherit; text-decoration: none; }  /* each game has a page of its own, so a chip is a link */
+.chip[aria-current="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.chip[aria-current="true"] .d { color: var(--bg); opacity: .75; }
 .step { flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); background: var(--surface); cursor: pointer; font-size: 16px; }
 .step:disabled { opacity: .35; cursor: default; }
 
@@ -416,16 +427,23 @@ body.has-fb footer { padding-bottom: 76px; }  /* the last line clears the pinned
 
 <script id="data" type="application/json">__DASHBOARD_DATA__</script>
 
+<!-- The one h1: what this page is, in words. It isn't shown (the wordmark and the game's headline carry the
+     design), but screen readers and search engines both want a heading that says what they are looking at. -->
+<h1 class="vh">__DASHBOARD_H1__</h1>
+
 <header class="bar">
   <div class="bar-in">
-    <div class="brand"><h1><a id="brand-link"><img class="l" src="__DASHBOARD_LOGO_LIGHT__" alt="Stick Language"><img class="d" src="__DASHBOARD_LOGO_DARK__" alt="Stick Language"></a><span class="tag">Stats</span></h1><span class="season" id="season"></span><span class="rec" id="rec"></span></div>
+    <div class="brand"><p class="wm"><a id="brand-link"><img class="l" src="__DASHBOARD_LOGO_LIGHT__" alt="Stick Language"><img class="d" src="__DASHBOARD_LOGO_DARK__" alt="Stick Language"></a><span class="tag">Stats</span></p><span class="season" id="season"></span><span class="rec" id="rec"></span></div>
     <a class="subscribe" id="subscribe" target="_blank" rel="noopener" title="Stick Language, a Dallas Stars Substack" hidden><span class="long">Subscribe to Stick Language on Substack</span><span class="short">Subscribe on Substack</span></a>
   </div>
 </header>
 
 <main>
   <div class="banner" id="banner" hidden></div>
-  <section id="games"></section>
+  <!-- One game in plain HTML, written by the builder: the latest, or the game whose page this is.
+       renderGame() replaces it before the first paint; it is what a reader with JavaScript off, or a
+       crawler that doesn't run it, gets instead. -->
+  <section id="games">__DASHBOARD_FALLBACK__</section>
   <aside class="support" id="support" hidden>
     <a class="beer" id="support-link" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17 11h1a3 3 0 0 1 0 6h-1"/><path d="M9 12v6M13 12v6"/><path d="M14 7.5c-1 0-1.44.5-3 .5s-2-.5-3-.5-1.72.5-2.5.5a2.5 2.5 0 0 1 0-5c.78 0 1.57.5 2.5.5S9.44 2 11 2s2 1.5 3 1.5 1.72-.5 2.5-.5a2.5 2.5 0 0 1 0 5c-.78 0-1.5-.5-2.5-.5Z"/><path d="M5 8v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8"/></svg>Buy me a beer</a>
   </aside>
@@ -1387,7 +1405,27 @@ const mapShots = list => list.filter(e => e.s[2] !== 3 && e.s[3] != null).map(e 
 
 /* ================= state + tabs ================= */
 // shots: is the game shot chart open; pane: the score card shows player scores or the team score; view: the ranking tables show this game or the season; sort: each table's sort ({ k, dir }, null = default)
-const state = { game: G.length ? G[G.length - 1].id : null, shots: false, view: "game", sort: { F: null, D: null, G: null }, pane: "players" };
+// The page a reader opened: the site's own page (null, which opens the latest game) or one game's page.
+const OPEN = __DASHBOARD_OPEN_GAME__;
+const state = { game: byId.has(OPEN) ? OPEN : (G.length ? G[G.length - 1].id : null), shots: false, view: "game", sort: { F: null, D: null, G: null }, pane: "players" };
+
+/* Every game played has a page of its own (/game/<slug>/, built whenever the site has an address), so the
+   game chips are real links: a search engine can follow them, and a reader can copy one. Clicking still
+   switches in place - nobody should wait for 700 KB to load again - so on a game's page the address bar is
+   moved to match, which also makes Back go to the game he came from. The site's own page stays at "/":
+   it is always "the latest game", and churning its history would only get in the reader's way. */
+const SITE = (() => { try { return M.siteUrl ? new URL(M.siteUrl) : null; } catch (e) { return null; } })();
+const gameUrl = g => g && g.slug && M.siteUrl ? `${M.siteUrl}game/${g.slug}/` : null;
+const routing = !!(OPEN && SITE && location.origin === SITE.origin);
+function pushUrl(id) {
+  const u = gameUrl(byId.get(id));
+  if (routing && u) { try { history.pushState({ game: id }, "", u); } catch (e) { /* a file:// copy */ } }
+}
+function setGame(id) { state.game = id; pushUrl(id); renderGame(); }
+window.addEventListener("popstate", e => {
+  const id = (e.state && e.state.game) || OPEN;
+  if (byId.has(id)) { state.game = id; renderGame(); }
+});
 function render() { hideTip(); renderGame(); }
 function setTab() { render(); window.scrollTo({ top: 0 }); }
 const lede = (kicker, head, dek, extra) => `<div class="lede"><p class="kicker">${esc(kicker)}</p><h2 class="headline">${esc(head)}</h2>${dek ? `<p class="dek">${esc(dek)}</p>` : ""}${extra || ""}</div>`;
@@ -1432,10 +1470,11 @@ function renderGame() {
   const gameShots = g.shots.filter(x => x[2] !== 3 && x[3] != null).map(x => ({ x: x[3], y: x[4], us: !!x[1], kind: x[2], tip: shotTip(null, x, g.oppName) }));
   const slotOf = us => gameShots.filter(x => x.us === us && inSlot(x.x, x.y, us)).length;
   root.innerHTML = `
+    ${OPEN ? `<nav class="crumb" aria-label="Breadcrumb"><a href="${esc(M.siteUrl || "/")}">All ${esc(M.seasonLabel)} games</a></nav>` : ""}
     <div class="picker">
       <button class="step" id="prev" aria-label="Previous game">‹</button>
       <div class="chips" role="group" aria-label="Pick a game">
-        ${G.map(x => `<button class="chip ${x.res}" data-id="${x.id}" aria-pressed="${x.id === g.id}"><span class="d">${fdate(x.date)}</span><span class="o">${esc(vs(x))}</span><span class="r">${resLabel(x)} ${scoreStr(x)}</span></button>`).join("")}
+        ${G.map(x => `<a class="chip ${x.res}" ${gameUrl(x) ? `href="${esc(gameUrl(x))}"` : 'href="#"'} data-id="${x.id}" aria-current="${x.id === g.id}"><span class="d">${fdate(x.date)}</span><span class="o">${esc(vs(x))}</span><span class="r">${resLabel(x)} ${scoreStr(x)}</span></a>`).join("")}
         ${UPCOMING.map(futChip).join("")}
       </div>
       <button class="step" id="next" aria-label="Next game">›</button>
@@ -1462,10 +1501,15 @@ function renderGame() {
   const chips = root.querySelector(".chips");
   chips.style.scrollBehavior = "auto";
   if (chipScroll != null) chips.scrollLeft = chipScroll;
-  const sel = chips.querySelector('[aria-pressed="true"]'), cr = chips.getBoundingClientRect(), sr = sel.getBoundingClientRect();
+  const sel = chips.querySelector('[aria-current="true"]'), cr = chips.getBoundingClientRect(), sr = sel.getBoundingClientRect();
   if (sr.left < cr.left || sr.right > cr.right) chips.scrollLeft += sr.left - cr.left - cr.width / 2 + sr.width / 2;
   chips.style.scrollBehavior = "";
-  chips.addEventListener("click", e => { const c = e.target.closest(".chip"); if (c) { state.game = +c.dataset.id; renderGame(); } });
+  // a plain click switches in place; ctrl/cmd/middle-click open the game's own page, as any link would
+  chips.addEventListener("click", e => {
+    const c = e.target.closest(".chip");
+    if (!c || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault(); setGame(+c.dataset.id);
+  });
   // The arrows step through the games played; past the last one (or before the first), they scroll the strip,
   // so the rest of the schedule can be looked through. They're off only when there's nowhere left to go.
   const prev = $("#prev"), next = $("#next");
@@ -1475,13 +1519,13 @@ function renderGame() {
     prev.setAttribute("aria-label", idx > 0 ? "Previous game" : "Scroll back"); next.setAttribute("aria-label", idx < G.length - 1 ? "Next game" : "Later games");
   };
   syncSteps(); chips.addEventListener("scroll", syncSteps, { passive: true });
-  prev.onclick = () => { if (idx > 0) { state.game = G[idx - 1].id; renderGame(); } else chips.scrollBy({ left: -chips.clientWidth * .8 }); };
-  next.onclick = () => { if (idx < G.length - 1) { state.game = G[idx + 1].id; renderGame(); } else chips.scrollBy({ left: chips.clientWidth * .8 }); };
+  prev.onclick = () => { if (idx > 0) setGame(G[idx - 1].id); else chips.scrollBy({ left: -chips.clientWidth * .8 }); };
+  next.onclick = () => { if (idx < G.length - 1) setGame(G[idx + 1].id); else chips.scrollBy({ left: chips.clientWidth * .8 }); };
   // the score card's switch: player scores or team score, keeping the card where it was on screen
   const keepCard = fn => { const y0 = $("#scorecard").getBoundingClientRect().top; fn(); renderGame(); window.scrollBy(0, $("#scorecard").getBoundingClientRect().top - y0); };
   $("#pane-switch").onclick = () => { keepCard(() => { state.pane = team ? "players" : "team"; }); $("#pane-switch").focus(); };
   quad = team ? null : quadChart($("#quad"), rows, g, $("#quadzoom"));
-  if (team && $("#tchart")) teamChart($("#tchart"), g, x => keepCard(() => { state.game = x.id; }));  // tapping a game opens it
+  if (team && $("#tchart")) teamChart($("#tchart"), g, x => keepCard(() => { state.game = x.id; pushUrl(x.id); }));  // tapping a game opens it
   // drawn when opened: the dot size depends on the chart's width, which is 0 while it's collapsed
   const shotmap = $("#shotmap"), drawShots = () => mountRink($("#gmap"), gameShots, { label: `Shot chart, ${US} ${vs(g)}` });
   shotmap.addEventListener("toggle", () => { state.shots = shotmap.open; if (shotmap.open) drawShots(); else hideTip(); });
@@ -1564,7 +1608,7 @@ function openPlayer(pid, gameId = null) {
     if (isG) scope ? goalieGame(body, pid, agg, byId.get(scope)) : goalieSeason(body, pid, agg);
     else scope ? skaterGame(body, pid, agg, byId.get(scope)) : skaterSeason(body, pid, agg);
     body.querySelectorAll("[data-game]").forEach(n => n.addEventListener("click", () => { scope = +n.dataset.game; draw(); $("#backdrop").scrollTop = 0; }));
-    body.querySelectorAll("[data-open-game]").forEach(n => n.addEventListener("click", () => { state.game = +n.dataset.openGame; close(); setTab("games"); }));
+    body.querySelectorAll("[data-open-game]").forEach(n => n.addEventListener("click", () => { state.game = +n.dataset.openGame; pushUrl(state.game); close(); setTab("games"); }));
   };
   $("#scopeseg").onclick = e => { const b = e.target.closest("button"); if (!b) return; scope = b.dataset.k === "game" ? (scope || games[games.length - 1].id) : null; draw(); };
   sel.onchange = () => { scope = +sel.value; draw(); };

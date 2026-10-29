@@ -1,7 +1,10 @@
 """Parsing and page-data tests, run against the fake sample season."""
 from __future__ import annotations
 
+import json
 import math
+import re
+import xml.etree.ElementTree as ET
 
 import pytest
 
@@ -188,13 +191,135 @@ def test_page_head_and_share_tags(sample_page):
     assert html.startswith("<!doctype html>")
     assert html.count("<head>") == html.count("</head>") == html.count("<body>") == html.count("</body>") == 1
     head = html.split("</head>")[0]
-    assert "<style>" in head and "<title>Stars Player Rankings 2025-26</title>" in head
-    assert "__DASHBOARD_" not in html and "<!--share-->" not in html, "every placeholder is filled"
+    assert "<style>" in head and "<title>Dallas Stars Player Rankings 2025-26 | Stick Language Stats</title>" in head
+    assert "__DASHBOARD_" not in html and "<!--share-->" not in html and "<!--seo-->" not in html, "every placeholder is filled"
     for tag in ('property="og:title"', 'property="og:description"', 'name="twitter:card" content="summary_large_image"',
-                'rel="icon" href="data:image/png;base64,', 'rel="apple-touch-icon"'):
+                'rel="icon" href="data:image/png;base64,', 'rel="apple-touch-icon"',
+                'property="og:site_name" content="Stick Language Stats"', 'name="robots" content="index, follow',
+                'rel="canonical" href="https://example.com/stars/"',
+                'name="google-site-verification" content="sample-code"'):
         assert tag in head, tag
     assert 'property="og:image" content="https://example.com/stars/og-image.png?v=' in head
     assert (sample_page.parent / "apple-touch-icon.png").stat().st_size > 500
+
+
+def test_title_and_description_fit_a_search_result(sample_page):
+    """Google cuts a title off around 60 characters and a description around 160."""
+    html = sample_page.read_text(encoding="utf-8")
+    title = re.search(r"<title>(.*?)</title>", html).group(1)
+    desc = re.search(r'<meta name="description" content="(.*?)">', html).group(1)
+    assert len(title) <= 60, (len(title), title)
+    assert 100 <= len(desc) <= 160, (len(desc), desc)
+    assert "Dallas Stars" in title and "Dallas Stars" in desc, "the city and the nickname, the way people search"
+    assert "Latest:" in desc, "the newest score, so the search result reads as current"
+
+
+def test_structured_data_is_valid_json(sample_page):
+    """The schema.org graph: who publishes the page, which team it's about, which game it shows."""
+    html = sample_page.read_text(encoding="utf-8")
+    blob = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S).group(1)
+    graph = json.loads(blob.replace("<\\/", "</"))["@graph"]
+    kinds = {n["@type"]: n for n in graph}
+    assert set(kinds) == {"Organization", "WebSite", "WebPage", "SportsTeam", "SportsEvent"}
+    assert kinds["SportsTeam"]["name"] == "Dallas Stars"
+    assert "en.wikipedia.org/wiki/Dallas_Stars" in " ".join(kinds["SportsTeam"]["sameAs"])
+    assert kinds["WebPage"]["url"] == "https://example.com/stars/"
+    assert kinds["SportsEvent"]["homeTeam"]["name"] and kinds["SportsEvent"]["awayTeam"]["name"]
+
+
+def test_robots_and_sitemap(sample_page, sample_data):
+    robots = (sample_page.parent / "robots.txt").read_text(encoding="utf-8")
+    sitemap = (sample_page.parent / "sitemap.xml").read_text(encoding="utf-8")
+    assert "User-agent: *" in robots and "Allow: /" in robots
+    assert "Sitemap: https://example.com/stars/sitemap.xml" in robots
+    assert "<loc>https://example.com/stars/</loc>" in sitemap and "<lastmod>" in sitemap
+    root = ET.fromstring(sitemap)  # well-formed XML
+    ns = "{http://www.sitemaps.org/schemas/sitemap/0.9}"
+    locs = [u.findtext(f"{ns}loc") for u in root.findall(f"{ns}url")]
+    assert len(locs) == len(sample_data["games"]) + 1 == len(set(locs)), "the site, then every game, once each"
+    for g in sample_data["games"]:
+        assert f"https://example.com/stars/game/{g['slug']}/" in locs
+
+
+def test_one_page_per_game(sample_page, sample_data):
+    """Every game played gets its own page, opening on that game, saying something of its own."""
+    games = sample_data["games"]
+    pages = sorted((sample_page.parent / "game").glob("*/index.html"))
+    assert len(pages) == len(games)
+    titles, canons = set(), set()
+    for g in games:
+        f = sample_page.parent / "game" / g["slug"] / "index.html"
+        html = f.read_text(encoding="utf-8")
+        head = html.split("</head>")[0]
+        title = re.search(r"<title>(.*?)</title>", html).group(1)
+        desc = re.search(r'<meta name="description" content="(.*?)">', html).group(1)
+        url = f"https://example.com/stars/game/{g['slug']}/"
+        assert f'<link rel="canonical" href="{url}">' in head, "each page points at itself"
+        assert f'<meta property="og:url" content="{url}">' in head
+        assert f"const OPEN = {g['id']};" in html, "the page opens on its own game"
+        assert len(title) <= 65, (len(title), title)
+        assert 100 <= len(desc) <= 170, (len(desc), desc)
+        assert str(g["gf"]) in desc and str(g["ga"]) in desc, "the score, so the result says how it went"
+        titles.add(title)
+        canons.add(url)
+    assert len(titles) == len(canons) == len(games), "no two pages claim to be the same thing"
+
+
+def test_game_page_shows_its_own_game(sample_page, sample_data):
+    """The plain-HTML summary on a game's page is that game, and links back to the season."""
+    g = sample_data["games"][3]
+    html = (sample_page.parent / "game" / g["slug"] / "index.html").read_text(encoding="utf-8")
+    frag = re.search(r'<section id="games">(.*?)</section>', html, re.S).group(1)
+    assert 'href="https://example.com/stars/"' in frag, "the way back to the whole season"
+    assert f"{g['gf']}" in frag and g["oppFull"] in frag
+    for row in g["sk"][:5]:
+        assert sample_data["players"][str(row[0])]["name"] in frag
+    for other in sample_data["games"][:5]:
+        assert f'href="https://example.com/stars/game/{other["slug"]}/"' in frag, "a crawler can walk the season"
+    assert html.count("<h1") == 1
+
+
+def test_game_page_structured_data_has_a_breadcrumb(sample_page, sample_data):
+    g = sample_data["games"][-1]
+    html = (sample_page.parent / "game" / g["slug"] / "index.html").read_text(encoding="utf-8")
+    blob = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S).group(1)
+    kinds = {n["@type"]: n for n in json.loads(blob.replace("<\\/", "</"))["@graph"]}
+    assert kinds["WebPage"]["url"] == f"https://example.com/stars/game/{g['slug']}/"
+    steps = kinds["BreadcrumbList"]["itemListElement"]
+    assert [x["position"] for x in steps] == [1, 2]
+    assert steps[0]["item"] == "https://example.com/stars/" and steps[1]["item"] == kinds["WebPage"]["url"]
+
+
+def test_game_slugs_are_unique_and_tidy(sample_data):
+    slugs = [g["slug"] for g in sample_data["games"]]
+    assert len(set(slugs)) == len(slugs)
+    for g, slug in zip(sample_data["games"], slugs):
+        assert re.fullmatch(r"[a-z0-9-]+", slug), slug
+        assert slug.startswith(g["date"]) and ("-vs-" in slug if g["home"] else "-at-" in slug)
+
+
+def test_no_game_pages_without_a_site_address(sample_cache, tmp_path):
+    """A page built for your own computer stays one file: game pages need absolute addresses."""
+    out = tmp_path / "local" / "dashboard.html"
+    build_dashboard.main(["--offline", "--cache", str(sample_cache), "--season", "20252026", "--out", str(out)])
+    assert not (out.parent / "game").exists() and not (out.parent / "sitemap.xml").exists()
+    assert "const OPEN = null;" in out.read_text(encoding="utf-8")
+
+
+def test_page_without_javascript_still_has_the_latest_game(sample_page, sample_data):
+    """The builder bakes the newest game into #games as plain HTML, for anything that doesn't run scripts.
+    The page's own code replaces it on load."""
+    html = sample_page.read_text(encoding="utf-8")
+    frag = re.search(r'<section id="games">(.*?)</section>', html, re.S).group(1)
+    g = sample_data["games"][-1]
+    assert "<table>" in frag and frag.count("<tr>") >= len(g["sk"])
+    for row in g["sk"][:5]:
+        assert sample_data["players"][str(row[0])]["name"] in frag
+    assert frag.count("<li>") >= len(sample_data["games"]), "every game played is listed"
+    assert 'class="crumb"' not in frag, "the site's own page is already the top: nothing to go back to"
+    assert "Latest game" in frag
+    assert html.count("<h1") == 1, "one heading in words, for crawlers and screen readers"
+    assert '<h1 class="vh">Dallas Stars player ratings, game by game</h1>' in html
 
 
 def test_fragment_has_no_wrapper(sample_cache, tmp_path):

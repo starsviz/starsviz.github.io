@@ -79,15 +79,17 @@ jobs:
         env:
           CREDIT: ${{ vars.CREDIT }}
           FEEDBACK_KEY: ${{ vars.FEEDBACK_KEY }}   # Web3Forms key for the Bugs/Requests form (blank = no form)
+          GOOGLE_VERIFY: ${{ vars.GOOGLE_VERIFY }}  # Search Console's meta-tag code, if you verify the site that way
           SITE_URL: ${{ steps.pages.outputs.base_url }}
         run: |
           # --ttl 0: fetch the schedule and stats reports fresh (the restored cache can be up to 30 minutes old);
           # finished games still come from the cache
-          python build_dashboard.py --credit "$CREDIT" --feedback-key "$FEEDBACK_KEY" --site-url "$SITE_URL/" --ttl 0 --out _site/index.html
+          python build_dashboard.py --credit "$CREDIT" --feedback-key "$FEEDBACK_KEY" --verify-google "$GOOGLE_VERIFY" \
+            --site-url "$SITE_URL/" --ttl 0 --out _site/index.html
           python tools/make_share_image.py _site/index.html _site/og-image.png
 
       - name: Smoke-test the real page
-        run: python -m pytest -q tests/test_browser.py --page _site/index.html -k "loads_and_draws or player_card or share_game or share_player or safari"
+        run: python -m pytest -q tests/test_browser.py --page _site/index.html -k "loads_and_draws or game_page or player_card or share_game or share_player or safari"
 
       - name: Pull the latest game's numbers for the post-game email
         run: python tools/postgame_email.py brief _site/index.html --out postgame/brief.json

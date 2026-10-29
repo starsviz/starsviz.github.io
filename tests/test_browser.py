@@ -57,6 +57,31 @@ def skater_rows(page):
     return page.locator("tr[data-pid]:has(.scv)")
 
 
+def test_game_page_opens_on_its_game(browser, built_page, built_data):
+    """A game's own page (/game/<slug>/) opens on that game, with the way back to the season,
+    and its chips are real links - that's what a search engine follows."""
+    g = built_data["games"][-2]
+    f = built_page.parent / "game" / g["slug"] / "index.html"
+    if not f.exists():
+        pytest.skip("page built without a site address, so there are no game pages")
+    page, errors = open_page(browser, f)
+    sel = page.locator('.chip[aria-current="true"]')
+    assert sel.get_attribute("data-id") == str(g["id"])
+    assert sel.get_attribute("href").endswith(f"/game/{g['slug']}/")
+    assert page.locator(".crumb a").count() == 1, "a way back to the whole season"
+    assert page.locator("a.chip").count() == page.locator(".chip").count() == len(built_data["games"])
+    assert str(g["gf"]) in page.locator(".score-strip").inner_text()
+    # clicking another game switches in place, without leaving the page
+    page.locator(f'.chip[data-id="{built_data["games"][0]["id"]}"]').click()
+    page.wait_for_selector(f'.chip[data-id="{built_data["games"][0]["id"]}"][aria-current="true"]')
+    assert page.locator(".crumb a").count() == 1
+    page.set_viewport_size({"width": 390, "height": 900})
+    page.wait_for_timeout(250)
+    assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 0
+    assert errors == []
+    page.close()
+
+
 @pytest.mark.parametrize("width,scheme", [(1280, "light"), (390, "light"), (390, "dark")])
 def test_page_loads_and_draws(browser, built_page, built_data, width, scheme):
     page, errors = open_page(browser, built_page, width=width, scheme=scheme)
@@ -79,7 +104,7 @@ def test_page_loads_and_draws(browser, built_page, built_data, width, scheme):
 def test_header_logo_matches_theme(browser, built_page, scheme, shown):
     """The header shows the Stick Language logo: dark letters on the light theme, white letters on the dark one."""
     page, errors = open_page(browser, built_page, width=390, scheme=scheme)
-    logos = page.locator(".brand h1 img")
+    logos = page.locator(".brand .wm img")
     assert logos.count() == 2
     visible = [im for im in logos.all() if im.is_visible()]
     assert len(visible) == 1 and visible[0].get_attribute("class") == shown
@@ -110,7 +135,7 @@ def test_subscribe_button(browser, built_page, built_data, width, label, wide):
     assert btn.is_visible() and btn.inner_text().strip() == label
     assert btn.get_attribute("href") == brand + "/subscribe" and btn.get_attribute("target") == "_blank"
     assert page.locator("#brand-link").get_attribute("href") == brand
-    logo, b = page.locator(".brand h1").bounding_box(), btn.bounding_box()
+    logo, b = page.locator(".brand .wm").bounding_box(), btn.bounding_box()
     assert b["y"] < logo["y"] + logo["height"], "the button sits on the logo's row, not wrapped below it"
     assert logo["x"] + logo["width"] <= b["x"], "the logo (and the STATS pill, where it shows) is clear of the button"
     assert page.locator(".brand .tag").is_visible() == (width > 350), "the STATS pill shows except on the narrowest phones"
@@ -123,7 +148,7 @@ def test_subscribe_button(browser, built_page, built_data, width, label, wide):
 def test_game_picker_and_player_card(browser, built_page):
     page, errors = open_page(browser, built_page)
     page.locator(".chip").first.click()
-    assert page.locator(".chip").first.get_attribute("aria-pressed") == "true"
+    assert page.locator(".chip").first.get_attribute("aria-current") == "true"
     assert page.locator("#quad .qd").count() == skater_rows(page).count()
     page.locator("tr[data-pid] .linkish").first.click()
     page.wait_for_selector(".sheet")
@@ -633,8 +658,8 @@ def test_team_score_card(browser, built_page, built_data):
     page.evaluate("document.querySelector('#tchart').scrollIntoView({ block: 'center' })")
     box = page.locator("#tchart .tdot").first.bounding_box()
     page.mouse.click(box["x"] + box["width"] / 2, box["y"] + box["height"] / 2)
-    page.wait_for_selector('.chip[aria-pressed="true"]')
-    assert page.locator(".chip").first.get_attribute("aria-pressed") == "true"
+    page.wait_for_selector('.chip[aria-current="true"]')
+    assert page.locator(".chip").first.get_attribute("aria-current") == "true"
     assert page.locator("#tchart .tdot").first.get_attribute("class").endswith(" on")
     page.locator("#teamcard details.how summary").click()
     assert "70 is an average game" in page.locator("#teamcard details.how").inner_text()
@@ -642,7 +667,7 @@ def test_team_score_card(browser, built_page, built_data):
     assert page.locator("#teamcard").count() == 1
     page.locator("#pane-switch").click()
     page.wait_for_selector("#quad svg")
-    assert page.locator(".chip").last.get_attribute("aria-pressed") == "true"
+    assert page.locator(".chip").last.get_attribute("aria-current") == "true"
     assert errors == []
     page.close()
 
@@ -726,7 +751,8 @@ def test_upcoming_games_in_the_picker(browser, sample_page, tmp_path, width):
     page, errors = open_page(browser, page_with_first_games(sample_page, 82, tmp_path / "upcoming.html", add), width=width)
     fut = page.locator(".chips .fut")
     assert fut.count() == 4 and page.locator(".chip").count() == 82
-    assert page.locator(".chips .fut button, .chips button.fut").count() == 0
+    assert page.locator(".chips .fut a, .chips a.fut, .chips .fut button, .chips button.fut").count() == 0, \
+        "a game not played yet is neither a link nor a button: there's nothing to show for it"
     # a finished game whose stats aren't official yet waits in the strip
     assert "Stats soon" in fut.nth(0).inner_text() and "officia" in fut.nth(0).get_attribute("title")
     fut = page.locator(".chips .fut").filter(has_not_text="Stats soon")
@@ -735,7 +761,7 @@ def test_upcoming_games_in_the_picker(browser, sample_page, tmp_path, width):
     assert "KDFW 4" in fut.nth(1).get_attribute("title")
     assert "TBD" in fut.nth(2).inner_text()
     fut.nth(1).click()
-    assert page.locator(".chip").last.get_attribute("aria-pressed") == "true"
+    assert page.locator(".chip").last.get_attribute("aria-current") == "true"
     # at the latest game the right arrow keeps going along the schedule, then stops at its end
     scroll = lambda: page.evaluate("document.querySelector('.chips').scrollLeft")
     # the click above can jump the strip to its end; the arrows catch up on the next frame's scroll event
@@ -752,7 +778,7 @@ def test_upcoming_games_in_the_picker(browser, sample_page, tmp_path, width):
           const tick = () => { if (c.scrollLeft === last) return done(); last = c.scrollLeft; setTimeout(tick, 80); }; tick(); })""")
     assert page.locator("#next").is_disabled()
     assert page.evaluate("(c => c.scrollLeft + c.clientWidth >= c.scrollWidth - 2)(document.querySelector('.chips'))")
-    assert page.locator(".chip").last.get_attribute("aria-pressed") == "true", "scrolling doesn't change the game"
+    assert page.locator(".chip").last.get_attribute("aria-current") == "true", "scrolling doesn't change the game"
     assert not page.locator("#prev").is_disabled()
     assert page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth") <= 0
     assert errors == []
