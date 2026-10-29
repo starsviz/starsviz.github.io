@@ -2381,8 +2381,8 @@
   "line": -245,
   "source": "DraftKings at pick time (4:30 PM CT)",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "PHI 2, WSH 5",
   "emailed": false
  },
  {
@@ -2397,8 +2397,8 @@
   "line": 150,
   "source": "DraftKings at pick time (4:30 PM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "CGY 0, EDM 4",
   "emailed": true
  },
  {
@@ -2413,8 +2413,8 @@
   "line": 124,
   "source": "DraftKings at pick time (4:30 PM CT)",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "NJD 2, COL 5",
   "emailed": false
  },
  {
@@ -2429,8 +2429,8 @@
   "line": -135,
   "source": "DraftKings at pick time (4:30 PM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "TOR 4, SEA 5",
   "emailed": true
  }
 ]
