@@ -483,6 +483,11 @@ def render(data: dict, template: Path, out: Path, fragment: bool = False, site_u
     Every game page is the same page opened on that game, with its own title, description, heading,
     canonical link and plain-HTML summary, so each one can be found and shared on its own. The season's
     data is baked in once and reused for all of them."""
+    # Each game carries the title and heading of its own page, so that switching games in place can keep
+    # the tab and the heading in step with the address bar. Written here, from the same page_head() the
+    # served pages use, rather than rebuilt in the page's JavaScript, where the two could drift apart.
+    for g in data["games"]:
+        g["title"], _, g["h1"] = page_head(data, g)
     blob = json.dumps(clean(data), separators=(",", ":"), ensure_ascii=False).replace("</", "<\\/")
     base_html = template.read_text(encoding="utf-8")
     assert "__DASHBOARD_DATA__" in base_html, "template is missing its data placeholder"

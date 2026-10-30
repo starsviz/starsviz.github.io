@@ -2,10 +2,13 @@
 the dashboard built from it, both made once per test run in a temp folder."""
 from __future__ import annotations
 
+import functools
+import http.server
 import json
 import re
 import subprocess
 import sys
+import threading
 from pathlib import Path
 
 import pytest
@@ -47,6 +50,23 @@ def sample_page(sample_cache, tmp_path_factory) -> Path:
 @pytest.fixture(scope="session")
 def sample_data(sample_page) -> dict:
     return page_data(sample_page.read_text(encoding="utf-8"))
+
+
+@pytest.fixture(scope="session")
+def served_site(sample_cache, tmp_path_factory):
+    """The sample season built for a real address, and served from it.
+
+    A file:// page has no origin of its own, so the page never routes there: switching games leaves the
+    address bar alone. Served properly, it does route, and that is the only way to exercise it."""
+    out = tmp_path_factory.mktemp("served")
+    srv = http.server.ThreadingHTTPServer(
+        ("127.0.0.1", 0), functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(out)))
+    url = f"http://127.0.0.1:{srv.server_address[1]}"
+    build_dashboard.main(["--offline", "--cache", str(sample_cache), "--season", "20252026",
+                          "--site-url", url + "/", "--out", str(out / "index.html")])
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    yield dict(url=url, dir=out, data=page_data((out / "index.html").read_text(encoding="utf-8")))
+    srv.shutdown()
 
 
 def pytest_addoption(parser):

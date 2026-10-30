@@ -1411,20 +1411,34 @@ const state = { game: byId.has(OPEN) ? OPEN : (G.length ? G[G.length - 1].id : n
 
 /* Every game played has a page of its own (/game/<slug>/, built whenever the site has an address), so the
    game chips are real links: a search engine can follow them, and a reader can copy one. Clicking still
-   switches in place - nobody should wait for 700 KB to load again - so on a game's page the address bar is
-   moved to match, which also makes Back go to the game he came from. The site's own page stays at "/":
-   it is always "the latest game", and churning its history would only get in the reader's way. */
+   switches in place - nobody should wait for 700 KB to load again - so the address bar is moved to match,
+   wherever he started: the game on screen is always the link he can copy, and Back goes to the one before.
+   Going back past the first game lands on "/" again, which is the latest game. */
 const SITE = (() => { try { return M.siteUrl ? new URL(M.siteUrl) : null; } catch (e) { return null; } })();
 const gameUrl = g => g && g.slug && M.siteUrl ? `${M.siteUrl}game/${g.slug}/` : null;
-const routing = !!(OPEN && SITE && location.origin === SITE.origin);
+const routing = !!(SITE && location.origin === SITE.origin);
+// the tab's name, the page's heading and the canonical link belong to whatever the address bar says
+const HOME = { title: document.title, h1: ($("h1.vh") || {}).textContent || "", url: M.siteUrl };
+function head(title, h1, url) {
+  if (title) document.title = title;
+  const el = $("h1.vh"); if (el && h1) el.textContent = h1;
+  const can = $('link[rel="canonical"]'); if (can && url) can.href = url;
+}
 function pushUrl(id) {
-  const u = gameUrl(byId.get(id));
-  if (routing && u) { try { history.pushState({ game: id }, "", u); } catch (e) { /* a file:// copy */ } }
+  const g = byId.get(id), u = gameUrl(g);
+  if (!routing || !u) return;
+  try { history.pushState({ game: id }, "", u); } catch (e) { return; /* a file:// copy */ }
+  head(g.title, g.h1, u);
 }
 function setGame(id) { state.game = id; pushUrl(id); renderGame(); }
 window.addEventListener("popstate", e => {
-  const id = (e.state && e.state.game) || OPEN;
-  if (byId.has(id)) { state.game = id; renderGame(); }
+  const back = e.state && e.state.game;      // no state: the entry the reader arrived on
+  const id = back || OPEN || (G.length ? G[G.length - 1].id : null);
+  if (!byId.has(id)) return;
+  state.game = id;
+  const g = byId.get(id);
+  if (back || OPEN) head(g.title, g.h1, gameUrl(g)); else head(HOME.title, HOME.h1, HOME.url);
+  renderGame();
 });
 function render() { hideTip(); renderGame(); }
 function setTab() { render(); window.scrollTo({ top: 0 }); }

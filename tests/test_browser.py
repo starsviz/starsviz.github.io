@@ -57,6 +57,48 @@ def skater_rows(page):
     return page.locator("tr[data-pid]:has(.scv)")
 
 
+def test_switching_games_moves_the_address_bar(browser, served_site):
+    """Served from the address it was built for, the page keeps the address bar, the tab's name, the
+    heading and the canonical link on whichever game is showing - and Back goes where it came from.
+    The site's own page stays at "/": it is always the latest game."""
+    games, base = served_site["data"]["games"], served_site["url"]
+    a, b = games[-1], games[-3]
+    page = browser.new_page(viewport={"width": 1280, "height": 900})
+    errors = []
+    page.on("pageerror", lambda e: errors.append(str(e)))
+    page.on("console", lambda m: m.type == "error" and "Failed to load resource" not in m.text and errors.append(m.text))
+    # the site itself is served; everything else (Google Fonts) stays blocked
+    page.route("**/*", lambda r: r.continue_() if r.request.url.startswith((base, "data:", "blob:")) else r.abort())
+
+    page.goto(f"{base}/game/{a['slug']}/")
+    page.wait_for_selector("#quad svg")
+    assert page.title() == a["title"]
+    page.click(f'.chip[data-id="{b["id"]}"]')
+    page.wait_for_url(f"**/game/{b['slug']}/")
+    assert page.title() == b["title"], "the tab follows the game"
+    assert page.locator("h1.vh").text_content() == b["h1"]
+    assert page.get_attribute('link[rel="canonical"]', "href") == f"{base}/game/{b['slug']}/"
+    page.go_back()
+    page.wait_for_url(f"**/game/{a['slug']}/")
+    assert page.title() == a["title"] and page.locator('.chip[aria-current="true"]').get_attribute("data-id") == str(a["id"])
+
+    # the same from the site's own page: the address bar follows, and Back comes home to the latest game
+    page.goto(base + "/")
+    page.wait_for_selector("#quad svg")
+    site_title, site_h1 = page.title(), page.locator("h1.vh").text_content()
+    page.click(f'.chip[data-id="{b["id"]}"]')
+    page.wait_for_url(f"**/game/{b['slug']}/")
+    assert page.title() == b["title"]
+    page.go_back()
+    page.wait_for_url(base + "/")
+    assert page.title() == site_title and page.locator("h1.vh").text_content() == site_h1
+    assert page.get_attribute('link[rel="canonical"]', "href") == base + "/"
+    assert page.locator('.chip[aria-current="true"]').get_attribute("data-id") == str(games[-1]["id"]), \
+        "home is the latest game"
+    assert errors == []
+    page.close()
+
+
 def test_game_page_opens_on_its_game(browser, built_page, built_data):
     """A game's own page (/game/<slug>/) opens on that game, with the way back to the season,
     and its chips are real links - that's what a search engine follows."""
