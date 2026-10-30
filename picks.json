@@ -2608,5 +2608,53 @@
   "result": "L",
   "final": "VAN 2, SJS 3",
   "emailed": false
+ },
+ {
+  "id": 2026020214,
+  "date": "2026-10-30",
+  "start": "2026-10-30T22:00:00Z",
+  "away": "NJD",
+  "home": "VGK",
+  "away_prev": 47.51,
+  "home_prev": 73.16,
+  "pick": "VGK",
+  "line": -115,
+  "source": "DraftKings at pick time (3:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
+ },
+ {
+  "id": 2026020215,
+  "date": "2026-10-30",
+  "start": "2026-10-30T23:00:00Z",
+  "away": "WPG",
+  "home": "FLA",
+  "away_prev": 60.07,
+  "home_prev": 80.93,
+  "pick": "FLA",
+  "line": -225,
+  "source": "DraftKings at pick time (3:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
+ },
+ {
+  "id": 2026020216,
+  "date": "2026-10-30",
+  "start": "2026-10-31T00:00:00Z",
+  "away": "SEA",
+  "home": "CGY",
+  "away_prev": 71.77,
+  "home_prev": 54.69,
+  "pick": "SEA",
+  "line": -115,
+  "source": "DraftKings at pick time (3:00 PM CT)",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
  }
 ]
