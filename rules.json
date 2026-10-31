@@ -168,5 +168,22 @@
    "all_units": 12.25
   },
   "emailed": true
+ },
+ {
+  "date": "2026-10-31",
+  "rule": {
+   "lo": null,
+   "hi": 136,
+   "dlo": 0.0,
+   "dhi": 20.86,
+   "venue": "home",
+   "bets": 62,
+   "wins": 46,
+   "units": 24.04,
+   "all_bets": 160,
+   "all_wins": 94,
+   "all_units": 10.95
+  },
+  "emailed": false
  }
 ]

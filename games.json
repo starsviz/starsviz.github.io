@@ -2341,5 +2341,38 @@
   "home_goals": 3,
   "away_ts": 67.47,
   "home_ts": 72.53
+ },
+ {
+  "id": 2026020214,
+  "date": "2026-10-30",
+  "start": "2026-10-30T22:00:00Z",
+  "away": "NJD",
+  "home": "VGK",
+  "away_goals": 5,
+  "home_goals": 2,
+  "away_ts": 84.1,
+  "home_ts": 55.9
+ },
+ {
+  "id": 2026020215,
+  "date": "2026-10-30",
+  "start": "2026-10-30T23:00:00Z",
+  "away": "WPG",
+  "home": "FLA",
+  "away_goals": 2,
+  "home_goals": 5,
+  "away_ts": 53.3,
+  "home_ts": 86.7
+ },
+ {
+  "id": 2026020216,
+  "date": "2026-10-30",
+  "start": "2026-10-31T00:00:00Z",
+  "away": "SEA",
+  "home": "CGY",
+  "away_goals": 2,
+  "home_goals": 6,
+  "away_ts": 53.11,
+  "home_ts": 86.89
  }
 ]

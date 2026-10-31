@@ -2621,8 +2621,8 @@
   "line": -115,
   "source": "DraftKings at pick time (3:00 PM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "NJD 5, VGK 2",
   "emailed": true
  },
  {
@@ -2637,8 +2637,8 @@
   "line": -225,
   "source": "DraftKings at pick time (3:00 PM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "WPG 2, FLA 5",
   "emailed": true
  },
  {
@@ -2653,8 +2653,8 @@
   "line": -115,
   "source": "DraftKings at pick time (3:00 PM CT)",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "SEA 2, CGY 6",
   "emailed": false
  }
 ]
