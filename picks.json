@@ -2669,8 +2669,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "CHI 4, BOS 5",
   "emailed": false
  },
  {
@@ -2685,8 +2685,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "STL 5, DET 4",
   "emailed": false
  },
  {
@@ -2701,8 +2701,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "TBL 4, NSH 5",
   "emailed": false
  },
  {
@@ -2717,8 +2717,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "EDM 4, NYI 0",
   "emailed": false
  },
  {
@@ -2733,8 +2733,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "BUF 3, LAK 2",
   "emailed": false
  },
  {
@@ -2749,8 +2749,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "OTT 5, SJS 1",
   "emailed": false
  },
  {
@@ -2765,8 +2765,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "PIT 4, MTL 5",
   "emailed": false
  },
  {
@@ -2781,8 +2781,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "TOR 4, VAN 2",
   "emailed": false
  },
  {
@@ -2797,8 +2797,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "CBJ 1, DAL 3",
   "emailed": false
  },
  {
@@ -2813,8 +2813,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "CGY 2, COL 5",
   "emailed": false
  }
 ]
