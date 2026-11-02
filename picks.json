@@ -2829,8 +2829,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "WPG 0, CAR 7",
   "emailed": false
  },
  {
@@ -2845,8 +2845,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "MIN 5, WSH 1",
   "emailed": false
  },
  {
@@ -2861,8 +2861,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "UTA 3, PHI 6",
   "emailed": false
  },
  {
@@ -2877,8 +2877,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "EDM 4, NYR 1",
   "emailed": false
  },
  {
@@ -2893,8 +2893,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "OTT 3, ANA 6",
   "emailed": false
  }
 ]
