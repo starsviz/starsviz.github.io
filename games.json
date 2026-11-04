@@ -2583,5 +2583,126 @@
   "home_goals": 1,
   "away_ts": 67.16,
   "home_ts": 72.84
+ },
+ {
+  "id": 2026020236,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:00:00Z",
+  "away": "UTA",
+  "home": "TOR",
+  "away_goals": 3,
+  "home_goals": 2,
+  "away_ts": 81.44,
+  "home_ts": 58.56
+ },
+ {
+  "id": 2026020237,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:00:00Z",
+  "away": "WPG",
+  "home": "MTL",
+  "away_goals": 5,
+  "home_goals": 4,
+  "away_ts": 79.94,
+  "home_ts": 60.06
+ },
+ {
+  "id": 2026020238,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:00:00Z",
+  "away": "DET",
+  "home": "TBL",
+  "away_goals": 2,
+  "home_goals": 4,
+  "away_ts": 54.97,
+  "home_ts": 85.03
+ },
+ {
+  "id": 2026020240,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:00:00Z",
+  "away": "STL",
+  "home": "NYR",
+  "away_goals": 1,
+  "home_goals": 3,
+  "away_ts": 63.85,
+  "home_ts": 76.15
+ },
+ {
+  "id": 2026020241,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:00:00Z",
+  "away": "MIN",
+  "home": "PHI",
+  "away_goals": 4,
+  "home_goals": 2,
+  "away_ts": 71.69,
+  "home_ts": 68.31
+ },
+ {
+  "id": 2026020242,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:00:00Z",
+  "away": "VGK",
+  "home": "PIT",
+  "away_goals": 3,
+  "home_goals": 2,
+  "away_ts": 68.16,
+  "home_ts": 71.84
+ },
+ {
+  "id": 2026020243,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:00:00Z",
+  "away": "DAL",
+  "home": "WSH",
+  "away_goals": 6,
+  "home_goals": 5,
+  "away_ts": 74.62,
+  "home_ts": 65.38
+ },
+ {
+  "id": 2026020244,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:00:00Z",
+  "away": "COL",
+  "home": "CBJ",
+  "away_goals": 2,
+  "home_goals": 7,
+  "away_ts": 59.57,
+  "home_ts": 80.43
+ },
+ {
+  "id": 2026020239,
+  "date": "2026-11-03",
+  "start": "2026-11-04T00:30:00Z",
+  "away": "EDM",
+  "home": "NJD",
+  "away_goals": 3,
+  "home_goals": 4,
+  "away_ts": 61.63,
+  "home_ts": 78.37
+ },
+ {
+  "id": 2026020245,
+  "date": "2026-11-03",
+  "start": "2026-11-04T01:00:00Z",
+  "away": "CAR",
+  "home": "NSH",
+  "away_goals": 1,
+  "home_goals": 4,
+  "away_ts": 70.54,
+  "home_ts": 69.46
+ },
+ {
+  "id": 2026020246,
+  "date": "2026-11-03",
+  "start": "2026-11-04T02:00:00Z",
+  "away": "ANA",
+  "home": "VAN",
+  "away_goals": 5,
+  "home_goals": 4,
+  "away_ts": 73.62,
+  "home_ts": 66.38
  }
 ]

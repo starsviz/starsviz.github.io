@@ -2973,8 +2973,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "UTA 3, TOR 2",
   "emailed": false
  },
  {
@@ -2989,8 +2989,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "WPG 5, MTL 4",
   "emailed": false
  },
  {
@@ -3005,8 +3005,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "DET 2, TBL 4",
   "emailed": false
  },
  {
@@ -3021,8 +3021,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "STL 1, NYR 3",
   "emailed": false
  },
  {
@@ -3037,8 +3037,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "MIN 4, PHI 2",
   "emailed": false
  },
  {
@@ -3053,8 +3053,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "VGK 3, PIT 2",
   "emailed": false
  },
  {
@@ -3069,8 +3069,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "DAL 6, WSH 5",
   "emailed": false
  },
  {
@@ -3085,8 +3085,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "COL 2, CBJ 7",
   "emailed": false
  },
  {
@@ -3101,8 +3101,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "EDM 3, NJD 4",
   "emailed": false
  },
  {
@@ -3117,8 +3117,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "CAR 1, NSH 4",
   "emailed": false
  },
  {
@@ -3133,8 +3133,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "ANA 5, VAN 4",
   "emailed": false
  }
 ]
