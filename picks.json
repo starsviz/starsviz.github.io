@@ -3149,8 +3149,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "OTT 2, BUF 1",
   "emailed": false
  },
  {
@@ -3165,8 +3165,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "CHI 3, FLA 5",
   "emailed": false
  },
  {
@@ -3181,8 +3181,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "SJS 2, LAK 7",
   "emailed": false
  },
  {
@@ -3197,8 +3197,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "CGY 1, SEA 2",
   "emailed": false
  }
 ]
