@@ -3376,5 +3376,53 @@
   "result": "W",
   "final": "NSH 3, COL 2",
   "emailed": false
+ },
+ {
+  "id": 2026020262,
+  "date": "2026-11-06",
+  "start": "2026-11-07T00:00:00Z",
+  "away": "CBJ",
+  "home": "BUF",
+  "away_prev": 70.86,
+  "home_prev": 64.02,
+  "pick": "CBJ",
+  "line": 142,
+  "source": "DraftKings at pick time (4:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
+ },
+ {
+  "id": 2026020263,
+  "date": "2026-11-06",
+  "start": "2026-11-07T01:00:00Z",
+  "away": "SJS",
+  "home": "MIN",
+  "away_prev": 54.23,
+  "home_prev": 71.69,
+  "pick": "MIN",
+  "line": -285,
+  "source": "DraftKings at pick time (4:00 PM CT)",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
+ },
+ {
+  "id": 2026020264,
+  "date": "2026-11-06",
+  "start": "2026-11-07T01:00:00Z",
+  "away": "ANA",
+  "home": "CGY",
+  "away_prev": 72.98,
+  "home_prev": 72.24,
+  "pick": "ANA",
+  "line": 124,
+  "source": "DraftKings at pick time (4:00 PM CT)",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
  }
 ]
