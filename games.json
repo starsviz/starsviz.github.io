@@ -2869,5 +2869,38 @@
   "home_goals": 2,
   "away_ts": 67.94,
   "home_ts": 72.06
+ },
+ {
+  "id": 2026020262,
+  "date": "2026-11-06",
+  "start": "2026-11-07T00:00:00Z",
+  "away": "CBJ",
+  "home": "BUF",
+  "away_goals": 2,
+  "home_goals": 5,
+  "away_ts": 57.61,
+  "home_ts": 82.39
+ },
+ {
+  "id": 2026020263,
+  "date": "2026-11-06",
+  "start": "2026-11-07T01:00:00Z",
+  "away": "SJS",
+  "home": "MIN",
+  "away_goals": 1,
+  "home_goals": 4,
+  "away_ts": 57.08,
+  "home_ts": 82.92
+ },
+ {
+  "id": 2026020264,
+  "date": "2026-11-06",
+  "start": "2026-11-07T01:00:00Z",
+  "away": "ANA",
+  "home": "CGY",
+  "away_goals": 5,
+  "home_goals": 3,
+  "away_ts": 78.03,
+  "home_ts": 61.97
  }
 ]

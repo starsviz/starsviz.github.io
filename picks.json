@@ -3389,8 +3389,8 @@
   "line": 142,
   "source": "DraftKings at pick time (4:00 PM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "CBJ 2, BUF 5",
   "emailed": true
  },
  {
@@ -3405,8 +3405,8 @@
   "line": -285,
   "source": "DraftKings at pick time (4:00 PM CT)",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "SJS 1, MIN 4",
   "emailed": false
  },
  {
@@ -3421,8 +3421,8 @@
   "line": 124,
   "source": "DraftKings at pick time (4:00 PM CT)",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "ANA 5, CGY 3",
   "emailed": false
  }
 ]
