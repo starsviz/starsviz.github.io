@@ -3437,8 +3437,8 @@
   "line": 102,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "FLA 3, WSH 4",
   "emailed": true
  },
  {
@@ -3453,8 +3453,8 @@
   "line": -110,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "STL 1, NSH 3",
   "emailed": true
  },
  {
@@ -3469,8 +3469,8 @@
   "line": -135,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "NYR 4, SEA 3",
   "emailed": true
  },
  {
@@ -3485,8 +3485,8 @@
   "line": -122,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "MTL 4, TOR 2",
   "emailed": true
  },
  {
@@ -3501,8 +3501,8 @@
   "line": -105,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "UTA 2, OTT 4",
   "emailed": true
  },
  {
@@ -3517,8 +3517,8 @@
   "line": -155,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "NJD 5, NYI 4",
   "emailed": true
  },
  {
@@ -3533,8 +3533,8 @@
   "line": -440,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "CHI 2, CAR 9",
   "emailed": false
  },
  {
@@ -3549,8 +3549,8 @@
   "line": -305,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "SJS 3, DAL 4",
   "emailed": true
  },
  {
@@ -3565,8 +3565,8 @@
   "line": -142,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "TBL 4, MIN 3",
   "emailed": true
  },
  {
@@ -3581,8 +3581,8 @@
   "line": -225,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "DET 0, COL 4",
   "emailed": true
  },
  {
@@ -3597,8 +3597,8 @@
   "line": -130,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "PIT 5, LAK 2",
   "emailed": false
  },
  {
@@ -3613,8 +3613,8 @@
   "line": -310,
   "source": "DraftKings at pick time (9:30 AM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "VAN 2, EDM 4",
   "emailed": true
  }
 ]
