@@ -3034,5 +3034,71 @@
   "home_goals": 4,
   "away_ts": 65.89,
   "home_ts": 74.11
+ },
+ {
+  "id": 2026020277,
+  "date": "2026-11-08",
+  "start": "2026-11-08T18:00:00Z",
+  "away": "FLA",
+  "home": "BOS",
+  "away_goals": 1,
+  "home_goals": 4,
+  "away_ts": 60.57,
+  "home_ts": 79.43
+ },
+ {
+  "id": 2026020278,
+  "date": "2026-11-08",
+  "start": "2026-11-08T20:30:00Z",
+  "away": "VGK",
+  "home": "BUF",
+  "away_goals": 4,
+  "home_goals": 1,
+  "away_ts": 71.52,
+  "home_ts": 68.48
+ },
+ {
+  "id": 2026020280,
+  "date": "2026-11-08",
+  "start": "2026-11-08T23:00:00Z",
+  "away": "TBL",
+  "home": "WPG",
+  "away_goals": 3,
+  "home_goals": 4,
+  "away_ts": 68.01,
+  "home_ts": 71.99
+ },
+ {
+  "id": 2026020279,
+  "date": "2026-11-08",
+  "start": "2026-11-09T00:00:00Z",
+  "away": "NJD",
+  "home": "TOR",
+  "away_goals": 4,
+  "home_goals": 0,
+  "away_ts": 77.35,
+  "home_ts": 62.65
+ },
+ {
+  "id": 2026020281,
+  "date": "2026-11-08",
+  "start": "2026-11-09T00:00:00Z",
+  "away": "PHI",
+  "home": "CGY",
+  "away_goals": 3,
+  "home_goals": 4,
+  "away_ts": 67.57,
+  "home_ts": 72.43
+ },
+ {
+  "id": 2026020282,
+  "date": "2026-11-08",
+  "start": "2026-11-09T01:00:00Z",
+  "away": "PIT",
+  "home": "ANA",
+  "away_goals": 2,
+  "home_goals": 5,
+  "away_ts": 65.83,
+  "home_ts": 74.17
  }
 ]
