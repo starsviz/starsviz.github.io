@@ -3712,5 +3712,53 @@
   "result": "W",
   "final": "PIT 2, ANA 5",
   "emailed": true
+ },
+ {
+  "id": 2026020283,
+  "date": "2026-11-09",
+  "start": "2026-11-10T01:00:00Z",
+  "away": "NYR",
+  "home": "EDM",
+  "away_prev": 71.66,
+  "home_prev": 74.11,
+  "pick": "EDM",
+  "line": -162,
+  "source": "DraftKings at pick time (5:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
+ },
+ {
+  "id": 2026020284,
+  "date": "2026-11-09",
+  "start": "2026-11-10T02:30:00Z",
+  "away": "PHI",
+  "home": "VAN",
+  "away_prev": 67.57,
+  "home_prev": 65.89,
+  "pick": "PHI",
+  "line": -135,
+  "source": "DraftKings at pick time (5:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
+ },
+ {
+  "id": 2026020285,
+  "date": "2026-11-09",
+  "start": "2026-11-10T03:00:00Z",
+  "away": "NYI",
+  "home": "SJS",
+  "away_prev": 59.8,
+  "home_prev": 63.26,
+  "pick": "SJS",
+  "line": 120,
+  "source": "DraftKings at pick time (5:00 PM CT)",
+  "fits": true,
+  "result": null,
+  "final": null,
+  "emailed": true
  }
 ]
