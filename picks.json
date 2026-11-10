@@ -3725,8 +3725,8 @@
   "line": -162,
   "source": "DraftKings at pick time (5:00 PM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "NYR 1, EDM 3",
   "emailed": true
  },
  {
@@ -3741,8 +3741,8 @@
   "line": -135,
   "source": "DraftKings at pick time (5:00 PM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "PHI 3, VAN 1",
   "emailed": true
  },
  {
@@ -3757,8 +3757,8 @@
   "line": 120,
   "source": "DraftKings at pick time (5:00 PM CT)",
   "fits": true,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "NYI 2, SJS 3",
   "emailed": true
  }
 ]

@@ -3100,5 +3100,38 @@
   "home_goals": 5,
   "away_ts": 65.83,
   "home_ts": 74.17
+ },
+ {
+  "id": 2026020283,
+  "date": "2026-11-09",
+  "start": "2026-11-10T01:00:00Z",
+  "away": "NYR",
+  "home": "EDM",
+  "away_goals": 1,
+  "home_goals": 3,
+  "away_ts": 72.02,
+  "home_ts": 67.98
+ },
+ {
+  "id": 2026020284,
+  "date": "2026-11-09",
+  "start": "2026-11-10T02:30:00Z",
+  "away": "PHI",
+  "home": "VAN",
+  "away_goals": 3,
+  "home_goals": 1,
+  "away_ts": 77.31,
+  "home_ts": 62.69
+ },
+ {
+  "id": 2026020285,
+  "date": "2026-11-09",
+  "start": "2026-11-10T03:00:00Z",
+  "away": "NYI",
+  "home": "SJS",
+  "away_goals": 2,
+  "home_goals": 3,
+  "away_ts": 68.3,
+  "home_ts": 71.7
  }
 ]
