@@ -389,5 +389,22 @@
    "all_units": 35.33
   },
   "emailed": true
+ },
+ {
+  "date": "2026-11-13",
+  "rule": {
+   "lo": null,
+   "hi": 180,
+   "dlo": 0.0,
+   "dhi": 20.32,
+   "venue": "either",
+   "bets": 176,
+   "wins": 116,
+   "units": 46.53,
+   "all_bets": 212,
+   "all_wins": 132,
+   "all_units": 35.33
+  },
+  "emailed": false
  }
 ]
