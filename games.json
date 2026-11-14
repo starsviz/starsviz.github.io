@@ -3397,5 +3397,27 @@
   "home_goals": 2,
   "away_ts": 68.38,
   "home_ts": 71.62
+ },
+ {
+  "id": 2026020310,
+  "date": "2026-11-13",
+  "start": "2026-11-14T02:00:00Z",
+  "away": "NYR",
+  "home": "VAN",
+  "away_goals": 5,
+  "home_goals": 1,
+  "away_ts": 85.3,
+  "home_ts": 54.7
+ },
+ {
+  "id": 2026020311,
+  "date": "2026-11-13",
+  "start": "2026-11-14T03:00:00Z",
+  "away": "NSH",
+  "home": "VGK",
+  "away_goals": 3,
+  "home_goals": 2,
+  "away_ts": 70.51,
+  "home_ts": 69.49
  }
 ]

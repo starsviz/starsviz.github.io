@@ -4157,8 +4157,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "NYR 5, VAN 1",
   "emailed": false
  },
  {
@@ -4173,8 +4173,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "NSH 3, VGK 2",
   "emailed": false
  }
 ]
