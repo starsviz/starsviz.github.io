@@ -4480,5 +4480,37 @@
   "result": "L",
   "final": "NSH 2, SJS 4",
   "emailed": true
+ },
+ {
+  "id": 2026020331,
+  "date": "2026-11-16",
+  "start": "2026-11-17T00:30:00Z",
+  "away": "MTL",
+  "home": "NYR",
+  "away_prev": 62.65,
+  "home_prev": 85.3,
+  "pick": "NYR",
+  "line": null,
+  "source": "no line at pick time",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
+ },
+ {
+  "id": 2026020332,
+  "date": "2026-11-16",
+  "start": "2026-11-17T02:30:00Z",
+  "away": "VAN",
+  "home": "UTA",
+  "away_prev": 72.61,
+  "home_prev": 72.57,
+  "pick": "VAN",
+  "line": null,
+  "source": "no line at pick time",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
  }
 ]
