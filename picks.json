@@ -4493,8 +4493,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "MTL 1, NYR 3",
   "emailed": false
  },
  {
@@ -4509,8 +4509,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "VAN 3, UTA 2",
   "emailed": false
  }
 ]
