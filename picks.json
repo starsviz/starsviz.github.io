@@ -4688,5 +4688,53 @@
   "result": "L",
   "final": "CGY 5, SJS 2",
   "emailed": false
+ },
+ {
+  "id": 2026020344,
+  "date": "2026-11-18",
+  "start": "2026-11-19T00:30:00Z",
+  "away": "BOS",
+  "home": "DET",
+  "away_prev": 66.23,
+  "home_prev": 68.34,
+  "pick": "DET",
+  "line": null,
+  "source": "no line at pick time",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
+ },
+ {
+  "id": 2026020345,
+  "date": "2026-11-18",
+  "start": "2026-11-19T00:30:00Z",
+  "away": "MTL",
+  "home": "NJD",
+  "away_prev": 66.35,
+  "home_prev": 69.47,
+  "pick": "NJD",
+  "line": null,
+  "source": "no line at pick time",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
+ },
+ {
+  "id": 2026020346,
+  "date": "2026-11-18",
+  "start": "2026-11-19T03:00:00Z",
+  "away": "COL",
+  "home": "UTA",
+  "away_prev": 77.35,
+  "home_prev": 77.44,
+  "pick": "UTA",
+  "line": null,
+  "source": "no line at pick time",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
  }
 ]
