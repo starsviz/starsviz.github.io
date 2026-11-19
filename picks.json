@@ -4701,8 +4701,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "BOS 4, DET 1",
   "emailed": false
  },
  {
@@ -4717,8 +4717,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "MTL 3, NJD 2",
   "emailed": false
  },
  {
@@ -4733,8 +4733,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "COL 1, UTA 4",
   "emailed": false
  }
 ]

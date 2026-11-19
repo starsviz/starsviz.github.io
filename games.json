@@ -3771,5 +3771,38 @@
   "home_goals": 2,
   "away_ts": 77.74,
   "home_ts": 62.26
+ },
+ {
+  "id": 2026020344,
+  "date": "2026-11-18",
+  "start": "2026-11-19T00:30:00Z",
+  "away": "BOS",
+  "home": "DET",
+  "away_goals": 4,
+  "home_goals": 1,
+  "away_ts": 75.54,
+  "home_ts": 64.46
+ },
+ {
+  "id": 2026020345,
+  "date": "2026-11-18",
+  "start": "2026-11-19T00:30:00Z",
+  "away": "MTL",
+  "home": "NJD",
+  "away_goals": 3,
+  "home_goals": 2,
+  "away_ts": 72.25,
+  "home_ts": 67.75
+ },
+ {
+  "id": 2026020346,
+  "date": "2026-11-18",
+  "start": "2026-11-19T03:00:00Z",
+  "away": "COL",
+  "home": "UTA",
+  "away_goals": 1,
+  "home_goals": 4,
+  "away_ts": 65.46,
+  "home_ts": 74.54
  }
 ]
