@@ -4749,8 +4749,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "LAK 4, TOR 3",
   "emailed": false
  },
  {
@@ -4765,8 +4765,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "PHI 6, OTT 5",
   "emailed": false
  },
  {
@@ -4781,8 +4781,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "STL 5, PIT 2",
   "emailed": false
  },
  {
@@ -4797,8 +4797,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "BUF 6, WSH 3",
   "emailed": false
  },
  {
@@ -4813,8 +4813,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "MTL 2, CAR 1",
   "emailed": false
  },
  {
@@ -4829,8 +4829,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "NYI 3, WPG 4",
   "emailed": false
  },
  {
@@ -4845,8 +4845,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "EDM 1, TBL 3",
   "emailed": false
  },
  {
@@ -4861,8 +4861,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "CBJ 4, CHI 2",
   "emailed": false
  },
  {
@@ -4877,8 +4877,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "MIN 4, CGY 1",
   "emailed": false
  },
  {
@@ -4893,8 +4893,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "ANA 0, COL 4",
   "emailed": false
  },
  {
@@ -4909,8 +4909,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "VAN 1, SEA 5",
   "emailed": false
  },
  {
@@ -4925,8 +4925,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "DAL 4, VGK 3",
   "emailed": false
  }
 ]
