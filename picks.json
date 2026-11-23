@@ -5165,8 +5165,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "CAR 5, NYR 2",
   "emailed": false
  },
  {
@@ -5181,8 +5181,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "BUF 6, TBL 2",
   "emailed": false
  },
  {
@@ -5197,8 +5197,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "EDM 4, STL 5",
   "emailed": false
  },
  {
@@ -5213,8 +5213,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "PIT 0, DAL 1",
   "emailed": false
  },
  {
@@ -5229,8 +5229,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "W",
+  "final": "CHI 6, VAN 3",
   "emailed": false
  }
 ]
