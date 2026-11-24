@@ -5344,5 +5344,21 @@
   "result": "L",
   "final": "MIN 5, SJS 2",
   "emailed": true
+ },
+ {
+  "id": 2026020385,
+  "date": "2026-11-24",
+  "start": "2026-11-25T01:00:00Z",
+  "away": "VGK",
+  "home": "EDM",
+  "away_prev": 76.29,
+  "home_prev": 78.5,
+  "pick": "EDM",
+  "line": null,
+  "source": "no line at pick time",
+  "fits": false,
+  "result": null,
+  "final": null,
+  "emailed": false
  }
 ]
