@@ -5357,8 +5357,8 @@
   "line": null,
   "source": "no line at pick time",
   "fits": false,
-  "result": null,
-  "final": null,
+  "result": "L",
+  "final": "VGK 5, EDM 3",
   "emailed": false
  }
 ]

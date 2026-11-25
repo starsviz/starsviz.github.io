@@ -4222,5 +4222,16 @@
   "home_goals": 2,
   "away_ts": 75.47,
   "home_ts": 64.53
+ },
+ {
+  "id": 2026020385,
+  "date": "2026-11-24",
+  "start": "2026-11-25T01:00:00Z",
+  "away": "VGK",
+  "home": "EDM",
+  "away_goals": 5,
+  "home_goals": 3,
+  "away_ts": 72.8,
+  "home_ts": 67.2
  }
 ]
